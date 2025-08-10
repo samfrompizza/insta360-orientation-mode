@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <EditTextPreference
+        android:dialogTitle="@string/setting_input_stab_cache_frame_num"
+        android:key="@string/pref_stab_cache_frame_num"
+        android:layout="@layout/layout_preference_edit"
+        android:summary="0"
+        android:title="@string/setting_stab_cache_frame_num" />
+
+    <SwitchPreference
+        android:key="@string/pref_real_time_capture_logs"
+        android:layout="@layout/layout_preference_switch"
+        android:title="@string/setting_real_time_capture_logs" />
+
+    <Preference
+        android:key="@string/pref_export_log"
+        android:layout="@layout/layout_preference"
+        android:title="@string/setting_export_log" />
+
+
+    <EditTextPreference
+        android:dialogTitle="@string/setting_input_live_rtmp"
+        android:key="@string/pref_live_rtmp"
+        android:layout="@layout/layout_preference_edit"
+        android:summary=""
+        android:title="@string/setting_live_rtmp" />
+
+    <SwitchPreference
+        android:key="@string/pref_live_bind_mobile_network"
+        android:layout="@layout/layout_preference_switch"
+        android:title="@string/setting_live_bind_mobile_network" />
+
+</PreferenceScreen>

@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg_color">
+
+    <com.arashivision.sdkmedia.player.image.InstaImagePlayerView
+        android:id="@+id/image_player_view"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="44dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:visibility="visible" />
+
+    <com.arashivision.sdkmedia.player.video.InstaVideoPlayerView
+        android:id="@+id/video_player_view"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="44dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:visibility="visible" />
+
+    <TextView
+        android:id="@+id/tv_current"
+        style="@style/TextStyle.Main.White"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        app:layout_constraintBottom_toBottomOf="@+id/seek_bar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/seek_bar"
+        tools:text="00:26" />
+
+    <SeekBar
+        android:id="@+id/seek_bar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="12dp"
+        android:backgroundTint="@android:color/white"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/tv_total"
+        app:layout_constraintStart_toEndOf="@+id/tv_current" />
+
+    <TextView
+        android:id="@+id/tv_total"
+        style="@style/TextStyle.Main.White"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="16dp"
+        app:layout_constraintBottom_toBottomOf="@+id/seek_bar"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/seek_bar"
+        tools:text="12:32" />
+
+    <ImageView
+        android:id="@+id/iv_play"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:src="@drawable/ic_play_button_play"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@+id/video_player_view"
+        app:layout_constraintEnd_toEndOf="@+id/video_player_view"
+        app:layout_constraintStart_toStartOf="@+id/video_player_view"
+        app:layout_constraintTop_toTopOf="@+id/video_player_view"
+        tools:visibility="visible" />
+
+    <androidx.constraintlayout.widget.Group
+        android:id="@+id/group_progress"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:constraint_referenced_ids="tv_current,tv_total,seek_bar"
+        tools:visibility="visible" />
+
+    <ImageView
+        android:id="@+id/iv_setting"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:layout_marginEnd="24dp"
+        android:src="@drawable/ic_player_setting"
+        app:layout_constraintBottom_toBottomOf="@+id/iv_export"
+        app:layout_constraintEnd_toStartOf="@+id/iv_export"
+        app:layout_constraintTop_toTopOf="@+id/iv_export" />
+
+    <ImageView
+        android:id="@+id/iv_export"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:layout_marginTop="44dp"
+        android:layout_marginEnd="24dp"
+        android:src="@drawable/ic_export"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/tv_preview_normal"
+        style="@style/TextStyle.Main.Button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:text="@string/player_setting_preview_mode_normal"
+        android:textSize="14sp"
+        app:layout_constraintBottom_toBottomOf="@+id/iv_setting"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/iv_setting" />
+
+    <TextView
+        android:id="@+id/tv_preview_fisheye"
+        style="@style/TextStyle.Main.Button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
+        android:text="@string/player_setting_preview_mode_fisheye"
+        android:textSize="14sp"
+        app:layout_constraintBottom_toBottomOf="@+id/iv_setting"
+        app:layout_constraintStart_toEndOf="@+id/tv_preview_normal"
+        app:layout_constraintTop_toTopOf="@+id/iv_setting" />
+
+    <TextView
+        android:id="@+id/tv_preview_perspective"
+        style="@style/TextStyle.Main.Button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
+        android:text="@string/player_setting_preview_mode_perspective"
+        android:textSize="14sp"
+        app:layout_constraintBottom_toBottomOf="@+id/iv_setting"
+        app:layout_constraintStart_toEndOf="@+id/tv_preview_fisheye"
+        app:layout_constraintTop_toTopOf="@+id/iv_setting" />
+
+    <TextView
+        android:id="@+id/tv_hdr_stitch"
+        style="@style/TextStyle.Main.Button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="24dp"
+        android:text="@string/player_hdr_stitch"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/tv_pure_shot_stitch"
+        app:layout_constraintHorizontal_chainStyle="spread"
+        app:layout_constraintStart_toStartOf="parent"
+        tools:visibility="visible" />
+
+    <TextView
+        android:id="@+id/tv_pure_shot_stitch"
+        style="@style/TextStyle.Main.Button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="24dp"
+        android:text="@string/player_pure_shot_stitch"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_chainStyle="spread"
+        app:layout_constraintStart_toEndOf="@+id/tv_hdr_stitch"
+        tools:visibility="visible" />
+
+    <com.arashivision.sdk.demo.view.picker.PickerView
+        android:id="@+id/pick_player_setting"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@color/dialog_bg_color"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <com.arashivision.sdk.demo.view.picker.PickerView
+        android:id="@+id/pick_export_setting"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@color/dialog_bg_color"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

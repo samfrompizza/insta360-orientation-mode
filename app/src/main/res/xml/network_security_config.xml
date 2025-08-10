@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <!-- 可选：仅允许本地 IP（更安全） -->
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+    <!-- 针对特定域名/IP 单独配置（优先级高于 base-config） -->
+    <domain-config>
+        <domain includeSubdomains="false">192.168.42.1</domain>
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+        <cleartextTrafficPermitted>true</cleartextTrafficPermitted>
+    </domain-config>
+</network-security-config>

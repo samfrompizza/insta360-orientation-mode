@@ -1,0 +1,213 @@
+{
+    "plane": {
+        "lens_name": {
+            "depend_on": [],
+            "value": {
+                "default": "06C"
+            }
+        },
+        "project_name": {
+            "depend_on": [],
+            "value": {
+                "default": "X5"
+            }
+        },
+        "render_mode_type": {
+            "depend_on": ["capture_mode"],
+            "value": {
+                "VIDEO_SELFIE": 2,
+                "PHOTO_SINGLE": 4,
+                "VIDEO_SUPER": 4,
+                "default": 20
+            }
+        },
+        "fit_type": {
+            "depend_on": ["capture_mode"],
+            "value": {
+                "VIDEO_SELFIE": 10,
+                "PHOTO_SINGLE": 10,
+                "VIDEO_SUPER": 10,
+                "default": 3
+            }
+        },
+        "stitch_type": {
+            "depend_on": [],
+            "value": {
+                "default": 2
+            }
+        },
+        "ai_stitch_version": {
+            "depend_on": [],
+            "value": {
+                "default": 1
+            }
+        },
+        "stab_type": {
+            "depend_on": ["flowstate_base_enable"],
+            "value": {
+                "true": -1,
+                "default": 2
+            }
+        },
+        "file_type": {
+            "depend_on": ["capture_mode"],
+            "value": {
+                "VIDEO_SELFIE": "SPECIAL_SELFIE",
+                "PHOTO_SINGLE": "FISH_EYE",
+                "VIDEO_SUPER": "FISH_EYE",
+                "default": "UNPANORAMA"
+            }
+        },
+        "is_stream_change_when_switch_scale": {
+            "depend_on": [],
+            "value": {
+                "default": true
+            }
+        },
+        "is_stream_change_when_switch_recording_status": {
+            "depend_on": [],
+            "value": {
+                "default": false
+            }
+        },
+        "should_detect_posture_from_gyro_data": {
+            "depend_on": [],
+            "value": {
+                "default": true
+            }
+        },
+        "should_rotate_preview_when_change_posture": {
+            "depend_on": ["capture_mode"],
+            "value": {
+                "VIDEO_SELFIE": false,
+                "default": true
+            }
+        },
+        "should_switch_preview_scale_when_change_posture": {
+            "depend_on": ["capture_mode"],
+            "value": {
+                "VIDEO_SELFIE": false,
+                "default": true
+            }
+        },
+        "should_fill_black_background": {
+            "depend_on": [],
+            "value": {
+                "default": true
+            }
+        },
+        "support_dynamic_alpha": {
+            "depend_on": [],
+            "value": {
+                "default": false
+            }
+        },
+        "support_blend_using_fisheye_mask": {
+            "depend_on": [],
+            "value": {
+                "default": false
+            }
+        }
+    },
+    "sphere": {
+        "lens_name": {
+            "depend_on": [],
+            "value": {
+                "default": "06C"
+            }
+        },
+        "project_name": {
+            "depend_on": [],
+            "value": {
+                "default": "X5"
+            }
+        },
+        "render_mode_type": {
+            "depend_on": [],
+            "value": {
+                "default": 2
+            }
+        },
+        "fit_type": {
+            "depend_on": [],
+            "value": {
+                "default": 10
+            }
+        },
+        "stitch_type": {
+            "depend_on": [],
+            "value": {
+                "default": 2
+            }
+        },
+        "ai_stitch_version": {
+            "depend_on": [],
+            "value": {
+                "default": 1
+            }
+        },
+        "stab_type": {
+            "depend_on": ["apply_one_take", "capture_mode"],
+            "value": {
+                "false|VIDEO_BULLETTIME": 2,
+                "true|VIDEO_NORMAL": 4,
+                "default": 0
+            }
+        },
+        "file_type": {
+            "depend_on": ["capture_mode"],
+            "value": {
+                "VIDEO_BULLETTIME": "SPECIAL_SELFIE",
+                "default": "VR360"
+            }
+        },
+        "is_stream_change_when_switch_scale": {
+            "depend_on": [],
+            "value": {
+                "default": false
+            }
+        },
+        "is_stream_change_when_switch_recording_status": {
+            "depend_on": [],
+            "value": {
+                "default": false
+            }
+        },
+        "should_detect_posture_from_gyro_data": {
+            "depend_on": [],
+            "value": {
+                "default": false
+            }
+        },
+        "should_rotate_preview_when_change_posture": {
+            "depend_on": [],
+            "value": {
+                "default": false
+            }
+        },
+        "should_switch_preview_scale_when_change_posture": {
+            "depend_on": [],
+            "value": {
+                "default": false
+            }
+        },
+        "should_fill_black_background": {
+            "depend_on": [],
+            "value": {
+                "default": false
+            }
+        },
+        "support_dynamic_alpha": {
+            "depend_on": [],
+            "value": {
+                "default": true
+            }
+        },
+        "support_blend_using_fisheye_mask": {
+            "depend_on": [],
+            "value": {
+                "default": true
+            }
+        }
+    }
+}

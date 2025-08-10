@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/black">
+
+    <com.arashivision.sdkmedia.player.capture.InstaCapturePlayerView
+        android:id="@+id/capture_player_view"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:background="#777777" />
+
+    <com.arashivision.sdk.demo.view.discretescrollview.DiscreteScrollView
+        android:id="@+id/sv_capture_mode"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:foregroundGravity="center"
+        android:overScrollMode="never"
+        app:dsv_orientation="horizontal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <com.arashivision.sdk.demo.view.CaptureShutterButton
+        android:id="@+id/btn_capture"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:layout_marginBottom="24dp"
+        android:src="@drawable/ic_capture_normal"
+        app:layout_constraintBottom_toTopOf="@+id/sv_capture_mode"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        tools:background="@drawable/ic_capture_shutter_record_idle" />
+
+    <ImageView
+        android:id="@+id/iv_capture_setting"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_marginEnd="36dp"
+        android:src="@drawable/ic_capture_setting"
+        app:layout_constraintBottom_toBottomOf="@+id/btn_capture"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/btn_capture" />
+
+    <TextView
+        android:id="@+id/tv_record_time"
+        style="@style/TextStyle.Main.White"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        app:layout_constraintBottom_toTopOf="@+id/btn_capture"
+        app:layout_constraintEnd_toStartOf="@+id/iv_arrow"
+        app:layout_constraintStart_toStartOf="@+id/btn_capture"
+        tools:text="10:00:36" />
+
+    <ImageView
+        android:id="@+id/iv_arrow"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:src="@drawable/ic_double_arrow_right"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@+id/tv_video_duration"
+        app:layout_constraintEnd_toStartOf="@+id/tv_video_duration"
+        app:layout_constraintStart_toEndOf="@+id/tv_record_time"
+        app:layout_constraintTop_toTopOf="@+id/tv_video_duration" />
+
+    <TextView
+        android:id="@+id/tv_video_duration"
+        style="@style/TextStyle.Main.White"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@+id/btn_capture"
+        app:layout_constraintEnd_toEndOf="@+id/btn_capture"
+        app:layout_constraintStart_toEndOf="@+id/iv_arrow"
+        tools:text="10:00:36" />
+
+
+    <com.arashivision.sdk.demo.view.picker.PickerView
+        android:id="@+id/pick_capture_setting"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone"
+        android:background="@color/dialog_bg_color"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

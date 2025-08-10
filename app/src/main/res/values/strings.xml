@@ -1,0 +1,327 @@
+<resources>
+    <string name="app_name">Insta360 SDK</string>
+
+
+    <string name="pref_stab_cache_frame_num">Stabilization cache frame number</string>
+    <string name="pref_real_time_capture_logs">Real-time capture logs</string>
+    <string name="pref_export_log">Export today\'s logs</string>
+    <string name="pref_live_rtmp">RTMP stream URL</string>
+    <string name="pref_live_bind_mobile_network">Bind mobile network during live stream</string>
+
+    <string name="slide_up_full_screen">Slide up to enter fullscreen</string>
+    <string name="slide_down_full_screen">Slide down to exit fullscreen</string>
+
+    <string name="dialog_title_remind">Special Reminder</string>
+    <string name="dialog_positive_text">Confirm</string>
+    <string name="dialog_negative_text">Cancel</string>
+    <string name="unrealized">Not implemented</string>
+
+    <string name="picker_apply_text">Apply changes</string>
+
+    <string name="auto">Auto</string>
+    <string name="off">Off</string>
+    <string name="on">On</string>
+
+    <string name="nav_connect">Connect</string>
+    <string name="nav_album">Album</string>
+    <string name="nav_ability">Features</string>
+    <string name="nav_setting">Settings</string>
+
+    <string name="refresh">Refresh</string>
+    <string name="refresh_failed">Refresh failed</string>
+
+    <string name="text_camera_connect_status">Connection Status:</string>
+    <string name="text_camera_model">Camera Model:</string>
+    <string name="text_camera_serial">Camera Serial Number:</string>
+    <string name="text_camera_fw_version">Firmware Version:</string>
+    <string name="text_camera_active_time">Activation Time:</string>
+    <string name="text_camera_media_time">Media Time:</string>
+    <string name="text_camera_battery_level">Battery Level:</string>
+    <string name="text_camera_charge_status">Charging Status:</string>
+    <string name="text_camera_charging">Charging</string>
+    <string name="text_camera_uncharged">Not Charging</string>
+    <string name="text_camera_sd_status">SD Card Status:</string>
+    <string name="text_camera_sd_status_enable">Inserted</string>
+    <string name="text_camera_sd_status_disable">Not Inserted</string>
+    <string name="text_camera_sd_total">Total SD Capacity:</string>
+    <string name="text_camera_sd_free">Available SD Capacity:</string>
+    <string name="text_camera_connected">Connected to %s</string>
+    <string name="text_camera_disconnected">Not Connected</string>
+
+    <string name="button_connect_camera_usb">USB Connect</string>
+    <string name="button_connect_camera_wifi">Wi-Fi Connect</string>
+    <string name="button_scan_device_by_ble">Scan Device</string>
+    <string name="button_scanning_device_by_ble">Scanning…</string>
+    <string name="button_disconnect">Disconnect</string>
+    <string name="button_enter_capture">Enter Capture Page</string>
+    <string name="button_connect_only_ble">BLE Only</string>
+    <string name="button_connect_wifi">Connect Wi-Fi</string>
+
+    <string name="camera_storage_full_soon">Camera storage almost full</string>
+    <string name="camera_battery_charging">Camera is charging, current battery: %d</string>
+    <string name="camera_battery_stop_charging">Charging interrupted</string>
+    <string name="camera_sd_card_extract">SD card removed</string>
+    <string name="camera_sd_card_insert">SD card inserted</string>
+    <string name="camera_battery_low">Battery too low</string>
+
+
+    <string name="toast_ble_scan_failed">Bluetooth scan failed</string>
+    <string name="toast_ble_connect_failed">Bluetooth connection failed %d</string>
+    <string name="toast_wifi_connect_failed">Wi-Fi connection failed %d</string>
+    <string name="toast_usb_connect_failed">USB connection failed %d</string>
+    <string name="toast_camera_connected">Camera connected</string>
+    <string name="toast_camera_ble_connected">Bluetooth connected</string>
+    <string name="toast_no_sd">No SD card</string>
+
+    <string name="toast_permission_request_failed">Authorization failed, some features may not work.</string>
+    <string name="toast_permission_request_complete">Authorization complete</string>
+
+    <string name="loading_connecting_ble">Connecting to camera via Bluetooth</string>
+    <string name="loading_connecting_wifi">Connecting to camera via Wi-Fi</string>
+    <string name="loading_connecting_usb">Connecting to camera via USB</string>
+
+    <string name="capture_init_check_camera_sensor_mode">Checking Dual-Lens 360 Mod</string>
+    <string name="capture_init_switch_camera_sensor_mode_failed">Failed to switch Dual-Lens 360 Mod</string>
+    <string name="capture_init_fetch_camera_options">Syncing camera parameters</string>
+    <string name="capture_init_fetch_camera_options_failed">Failed to sync camera parameters</string>
+    <string name="capture_init_init_support_config">Syncing capture configuration file</string>
+    <string name="capture_init_init_support_config_failed">Failed to sync capture configuration file</string>
+    <string name="capture_opening_preview_stream">Opening preview stream</string>
+    <string name="capture_opening_preview_stream_failed">Failed to open preview stream</string>
+    <string name="capture_rendering_player">Rendering frame</string>
+
+    <string name="capture_mode_switching">Switching capture mode</string>
+    <string name="capture_mode_switch_failed">Failed to switch capture mode</string>
+    <string name="capture_taking_photo">Taking photo</string>
+    <string name="capture_count">%d photos</string>
+    <string name="capture_preparing">Preparing</string>
+    <string name="capture_stopping">Stopping</string>
+    <string name="capture_error">Capture error, code: %d</string>
+
+    <string name="capture_live_rtmp_empty">RTMP URL not set, please configure in settings</string>
+    <string name="capture_live_starting">Live streaming starting…</string>
+    <string name="capture_live_closing">Live streaming closing…</string>
+    <string name="capture_live_start_push">Start pushing stream</string>
+    <string name="capture_live_push_error">Streaming error occurred</string>
+
+    <string name="capture_settings">Capture Settings</string>
+
+    <string name="capture_mode_normal_capture">Photo</string>
+    <string name="capture_mode_hdr_capture">HDR Photo</string>
+    <string name="capture_mode_star_lapse">Starlapse</string>
+    <string name="capture_mode_interval_shooting">Interval</string>
+    <string name="capture_mode_night_scene">Night Shot</string>
+    <string name="capture_mode_burst">Burst</string>
+    <string name="capture_mode_normal_record">Video</string>
+    <string name="capture_mode_hdr_record">HDR Video</string>
+    <string name="capture_mode_bullet_time">Bullet Time</string>
+    <string name="capture_mode_timelapse">Timelapse</string>
+    <string name="capture_mode_time_shift">TimeShift</string>
+    <string name="capture_mode_looper_recording">Loop Recording</string>
+    <string name="capture_mode_live">Live Streaming</string>
+    <string name="capture_mode_live_animation">Reframe Live</string>
+    <string name="capture_mode_super_record">Pro Video</string>
+    <string name="capture_mode_slow_motion">Slow Motion</string>
+    <string name="capture_mode_selfie_record">Me Mode</string>
+    <string name="capture_mode_pure_record">Purevideo</string>
+
+    <string name="capture_setting_exposure_name">Exposure</string>
+    <string name="capture_setting_ev_name">EV</string>
+    <string name="capture_setting_ev_interval_name">EV Interval</string>
+    <string name="capture_setting_shutter_name">Shutter (seconds)</string>
+    <string name="capture_setting_shutter_mode_name">Shutter</string>
+    <string name="capture_setting_iso_name">ISO</string>
+    <string name="capture_setting_iso_max_name">Max ISO</string>
+    <string name="capture_setting_record_resolution_name">Resolution</string>
+    <string name="capture_setting_photo_resolution_name">Resolution</string>
+    <string name="capture_setting_wb_name">WB</string>
+    <string name="capture_setting_aeb_name">AEB</string>
+    <string name="capture_setting_interval_name">Interval Duration</string>
+    <string name="capture_setting_gamma_mode_name">Color</string>
+    <string name="capture_setting_format_name">Format</string>
+    <string name="capture_setting_record_duration_name">Record Duration</string>
+    <string name="capture_setting_dark_eis">Low Light Stabilization</string>
+    <string name="capture_setting_exposure_isolated">Panorama Isolated Exposure</string>
+    <string name="capture_setting_burst_capture_num_name">Number of Burst photos</string>
+    <string name="capture_setting_internal_splicing_name">In-camera Stitching</string>
+    <string name="capture_setting_hdr_status_name">HDR</string>
+    <string name="capture_setting_photo_hdr_type_name">HDR</string>
+    <string name="capture_setting_live_bitrate">Bitrate</string>
+    <string name="capture_setting_i_log">I-Log</string>
+
+    <string name="exposure_auto">Auto</string>
+    <string name="exposure_full_auto">Full Auto Exposure</string>
+    <string name="exposure_iso">ISO Priority</string>
+    <string name="exposure_isolated">Isolated Exposure</string>
+    <string name="exposure_manual">Manual</string>
+    <string name="exposure_shutter">Shutter Priority</string>
+
+    <string name="shutter_mode_auto">Off</string>
+    <string name="shutter_mode_sport">Indoor low-light stability</string>
+    <string name="shutter_mode_faster">Ultra Fast</string>
+
+    <string name="capture_setting_gamma_mode_stand">Standard</string>
+    <string name="capture_setting_gamma_mode_log">LOG</string>
+    <string name="capture_setting_gamma_mode_vivid">Vivid</string>
+    <string name="capture_setting_gamma_mode_flat">Flat</string>
+
+    <string name="record_duration_no_limit">No Limit</string>
+
+    <string name="capture_setting_pano_exposure_mode_light">Standard</string>
+    <string name="capture_setting_pano_exposure_mode_lsolated">Isolated Exposure</string>
+
+    <string name="capture_setting_burst_capture_text">%d shots / %d seconds</string>
+
+    <string name="capture_setting_photo_hdr_type_aeb">Auto Exposure Bracketing</string>
+
+
+    <string name="album_tab_source_camera">Camera Files</string>
+    <string name="album_tab_source_local">Downloaded</string>
+    <string name="album_tab_type_all">All</string>
+    <string name="album_tab_type_video">Video</string>
+    <string name="album_tab_type_image">Photo</string>
+
+    <string name="album_loading_works">Loading album files</string>
+    <string name="album_loading_works_failed">Failed to load camera files</string>
+    <string name="album_deleting_works">Deleting album files</string>
+    <string name="album_deleting_works_failed">Failed to delete album files</string>
+    <string name="album_deleting_works_success">Deleted album files successfully</string>
+    <string name="album_downloading_works">Downloading album file %d: %d%%(%s)</string>
+    <string name="album_downloading_works_failed">Failed to download album files</string>
+    <string name="album_downloading_works_success">Downloaded album files successfully</string>
+    <string name="album_enum_download">Download</string>
+    <string name="album_enum_delete">Delete</string>
+    <string name="album_enum_share">Share</string>
+
+    <string name="player_setting_dialog_title">Playback Settings</string>
+    <string name="player_setting_image_fusion">Chromatic Aberration Correction</string>
+    <string name="player_setting_de_purple_filter">Purple Fringe Removal</string>
+    <string name="player_setting_gesture">Gesture Toggle</string>
+    <string name="player_setting_render_mode">Rendering Mode</string>
+    <string name="player_setting_dynamic_stitch">Dynamic Stitching</string>
+    <string name="player_setting_denoise">Denoise</string>
+    <string name="player_setting_stab_type">Stabilization Type</string>
+    <string name="player_setting_screen_ratio">Screen Ratio</string>
+    <string name="player_setting_preview_mode">Preview Mode</string>
+    <string name="player_setting_offset_type">Protector Type</string>
+    <string name="player_setting_render_plane">Tile</string>
+
+    <string name="player_setting_export_mode">Export Mode</string>
+    <string name="player_setting_export_resolution">Resolution</string>
+    <string name="player_setting_export_fps">FPS</string>
+    <string name="player_setting_export_denoise">Denoise</string>
+    <string name="player_setting_export_bitrate">Bitrate</string>
+
+    <string name="export_params_setting_dialog_title">Export Parameter Settings</string>
+
+    <string name="export_dialog_btn_text">Confirm export</string>
+
+    <string name="export_original">Original</string>
+    <string name="export_dialog_exporting">Exporting</string>
+    <string name="export_dialog_export_success">Export Successful</string>
+    <string name="export_dialog_export_failed">Export Failed</string>
+    <string name="export_dialog_export_mode_panorama">Panorama</string>
+    <string name="export_dialog_export_mode_sphere">Sphere</string>
+
+    <string name="player_setting_stab_type_panorama">Panorama Stabilization</string>
+    <string name="player_setting_stab_type_calibrate_horizon">Horizon Calibration Only</string>
+    <string name="player_setting_stab_type_footage_motion_smooth">Camera Motion Smoothing, No Horizon Calibration</string>
+
+    <string name="player_setting_offset_type_original">No Protector</string>
+    <string name="player_setting_offset_type_protector_fasten">Snap Protector Stitching</string>
+    <string name="player_setting_offset_type_diving_water">Diving Case Underwater (Old)</string>
+    <string name="player_setting_offset_type_diving_air">Diving Case Above Water (Old)</string>
+    <string name="player_setting_offset_type_waterproof">Waterproof Case</string>
+    <string name="player_setting_offset_type_protector_adhere">Adhesive Protector Stitching</string>
+    <string name="player_setting_offset_type_diving_invisible_water">Invisible Diving Case Underwater</string>
+    <string name="player_setting_offset_type_diving_invisible_air">Invisible Diving Case Above Water</string>
+    <string name="player_setting_offset_type_protector_a">Protector Grade A (Plastic)</string>
+    <string name="player_setting_offset_type_protector_s">Protector Grade S (Glass)</string>
+    <string name="player_setting_offset_type_protector_as_average">Protector A/S Average</string>
+
+    <string name="player_setting_preview_mode_normal">Normal</string>
+    <string name="player_setting_preview_mode_fisheye">Fisheye</string>
+    <string name="player_setting_preview_mode_perspective">Perspective</string>
+
+    <string name="player_hdr_stitch">HDR Stitching</string>
+    <string name="player_hdr_stitching">HDR Stitching in Progress</string>
+    <string name="player_hdr_stitch_failed">HDR Stitching Failed</string>
+    <string name="player_hdr_stitch_success">HDR Stitching Successful</string>
+    <string name="player_hdr_stitch_play">Play HDR</string>
+
+    <string name="player_pure_shot_stitch">PureShot Stitching</string>
+    <string name="player_pure_shot_stitching">PureShot Stitching in Progress</string>
+    <string name="player_pure_shot_stitch_failed">PureShot Stitching Failed</string>
+    <string name="player_pure_shot_stitch_success">PureShot Stitching Successful</string>
+    <string name="player_pure_shot_stitch_play">Play PureShot</string>
+
+    <string name="player_show_original_image">Show Original Image</string>
+
+    <string name="player_video_load_failed">Video Load Failed</string>
+    <string name="player_image_load_failed">Image Load Failed</string>
+
+    <string name="setting_category_live">Live Streaming</string>
+
+    <string name="setting_stab_cache_frame_num">Stabilization Cache Frame Number</string>
+    <string name="setting_input_stab_cache_frame_num">Input Stabilization Cache Frame Number</string>
+
+
+    <string name="setting_real_time_capture_logs">Real-time Capture Logs</string>
+    <string name="setting_export_log">Export Logs</string>
+    <string name="setting_exporting_log">Exporting…</string>
+    <string name="setting_export_log_failed">Export Failed</string>
+
+    <string name="setting_live_rtmp">RTMP Stream URL</string>
+    <string name="setting_input_live_rtmp">Input RTMP Stream URL</string>
+    <string name="setting_live_bind_mobile_network">Bind Mobile Network for Live Streaming</string>
+
+    <string name="ability_camera_beep">Camera Beep: %s</string>
+    <string name="ability_format_sd_card">Format SD Card</string>
+    <string name="ability_formatting_sd_card">Formatting SD Card</string>
+    <string name="ability_format_sd_card_dialog_desc">Are you sure you want to format your SD card?</string>
+    <string name="ability_format_sd_card_success">SD Card formatted successfully</string>
+    <string name="ability_format_sd_card_failed">SD Card format failed</string>
+    <string name="ability_shutdown">Power Off (Supported only on X5 and above)</string>
+    <string name="ability_firmware_upgrade">Firmware Upgrade</string>
+    <string name="ability_export_log">Export Logs</string>
+    <string name="ability_connect_camera_first">Please connect to the camera first</string>
+    <string name="ability_fw_upgrade_prompt">Note: Firmware upgrade files usually have a .bin or .pkg extension. Please do not upload incorrect files to the camera to avoid bricking. For example, do not upload OneX firmware to OneX2 camera.</string>
+    <string name="ability_fw_upgrade_choose_file">Please select firmware upgrade file</string>
+    <string name="ability_fw_upgrade_file_path">File Path: %s</string>
+    <string name="ability_fw_upgrade_start_upgrade">Start Upload</string>
+    <string name="ability_fw_upgrade_cancel">Upload Cancelled</string>
+    <string name="ability_fw_upgrade_progress">Upload Progress: %s</string>
+    <string name="ability_fw_upgrade_fail">Upload Failed, Error Code: %1$d, Details: %2$s</string>
+    <string name="ability_fw_upgrade_success">Upload Successful, waiting for camera to upgrade and restart</string>
+
+    <string name="ability_capture_control">Capture Capability</string>
+
+    <string name="ability_active_camera">Activate Camera</string>
+    <string name="ability_activating_camera">Activating</string>
+    <string name="ability_active_camera_success">Activation Successful</string>
+    <string name="ability_active_camera_failed">Activation Failed: %s</string>
+
+    <string name="shot_prompt_nanos_osc">Note: Nanos cameras do not support this page API. Use the OSC protocol for camera control. See OscActivity for details.</string>
+    <string name="shot_switch_panorama_sensor">Switch to panoramic lens</string>
+    <string name="shot_select_capture_mode_tip">Please select capture mode before setting parameters:</string>
+    <string name="shot_capture_time">Capture Duration: %s</string>
+    <string name="shot_capture_count">Capture Count: %d</string>
+    <string name="shot_view_film">View Finished Shots</string>
+    <string name="shot_select_capture_mode">Select Capture Mode</string>
+    <string name="shot_switching_panorama_sensor_mode">Switching panoramic lens</string>
+    <string name="shot_switch_panorama_sensor_mode_success">Switched panoramic lens successfully</string>
+    <string name="shot_switch_panorama_sensor_mode_failed">Failed to switch panoramic lens</string>
+    <string name="shot_select_capture_setting_params">Select Capture Parameters</string>
+    <string name="shot_select_capture_setting_params_tip">Cannot set capture parameters when connected via Bluetooth</string>
+
+    <string name="shot_capture_start">Start Capture</string>
+    <string name="shot_capture_stop">Stop Capture</string>
+
+    <string name="shot_capture_starting">Camera preparing</string>
+    <string name="shot_capture_working">Camera working</string>
+    <string name="shot_capture_stopping">Camera stopping</string>
+
+    <string name="shot_capture_failed">Capture failed, error code: %d</string>
+    <string name="shot_capture_setting">Set Capture Parameters</string>
+
+</resources>

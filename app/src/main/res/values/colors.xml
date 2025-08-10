@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <color name="transparent">#00000000</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="red">#FF0000</color>
+
+    <color name="press">#4D4D4D</color>
+    <color name="unselect">#777777</color>
+    <color name="disable">#888888</color>
+
+
+    <color name="main_select_selected">#000000</color>
+    <color name="main_select_normal">#666666</color>
+    <color name="main_button_press">#4F4F4F</color>
+    <color name="main_button_bg">#000000</color>
+
+    <color name="main_float_bg_color">#80000000</color>
+    <color name="capture_mode_bg">#70000000</color>
+
+
+    <color name="bg_color">#282828</color>
+    <color name="item_bg_color">#444444</color>
+
+
+    <color name="line">#30444444</color>
+
+    <color name="dialog_bg_color">#80000000</color>
+
+
+</resources>

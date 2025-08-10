@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?><!-- res/drawable/btn_background_selector.xml -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 按下状态 -->
+    <item android:state_pressed="true">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/main_button_press" /> <!-- 按下颜色 -->
+        </shape>
+    </item>
+    <!-- 禁用状态 -->
+    <item android:state_enabled="false">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/disable" />
+        </shape>
+    </item>
+    <!-- 默认状态 -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/main_button_bg" />
+        </shape>
+    </item>
+</selector>

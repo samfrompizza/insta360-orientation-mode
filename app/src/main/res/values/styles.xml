@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 自定义 TextView 样式 -->
+    <style name="TextStyle.Main" parent="Widget.AppCompat.TextView">
+        <!-- 基础属性 -->
+        <item name="android:textColor">@color/black</item> <!-- 文字颜色 -->
+        <item name="android:textSize">16sp</item> <!-- 文字大小 -->
+        <item name="android:lineHeight">24dp</item> <!-- 行高 -->
+        <!-- 可选属性 -->
+        <item name="android:textStyle">normal</item>
+        <item name="android:gravity">center</item>
+    </style>
+
+    <!-- 自定义 TextView 样式 -->
+    <style name="TextStyle.Main.White" parent="TextStyle.Main">
+        <item name="android:textColor">@color/white</item> <!-- 文字颜色 -->
+    </style>
+
+    <style name="TextStyle.Main.Button" parent="TextStyle.Main">
+        <item name="android:textColor">@color/white</item> <!-- 文字颜色 -->
+        <item name="android:background">@drawable/main_button_bg</item>
+        <item name="android:paddingStart">12dp</item>
+        <item name="android:paddingEnd">12dp</item>
+        <item name="android:paddingTop">8dp</item>
+        <item name="android:paddingBottom">8dp</item>
+    </style>
+
+    <style name="TextStyle.Main.Check" parent="TextStyle.Main.Button">
+        <item name="android:textColor">@color/white</item> <!-- 文字颜色 -->
+        <item name="android:background">@drawable/main_select_bg</item>
+    </style>
+
+
+    <style name="BaseDialogStyle" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowFrame">@null</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowTranslucentStatus">true</item><!-- 解决全屏时状态栏变黑 -->
+        <item name="android:backgroundDimEnabled">true</item>   <!-- 是否允许背景模糊 -->
+        <item name="android:windowIsTranslucent">true</item>    <!-- 是否半透明 -->
+        <item name="android:windowIsFloating">true</item>       <!-- 是否浮现在activity之上 -->
+        <item name="android:windowContentOverlay">@null</item>  <!-- 是否有遮盖 -->
+        <item name="android:backgroundDimAmount">0.8</item>     <!-- 设置背景模糊的透明度-->
+    </style>
+
+    <!-- res/values/styles.xml -->
+    <style name="MaterialPreference.SwitchPreference" parent="Preference.SwitchPreferenceCompat">
+        <item name="android:textColorPrimary">@color/black</item>
+        <item name="android:textColorSecondary">@color/black</item>
+    </style>
+</resources>
