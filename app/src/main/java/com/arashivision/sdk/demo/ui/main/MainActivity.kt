@@ -7,8 +7,6 @@ import com.arashivision.sdk.demo.R
 import com.arashivision.sdk.demo.base.BaseActivity
 import com.arashivision.sdk.demo.base.BaseEvent
 import com.arashivision.sdk.demo.databinding.ActivityMainBinding
-import com.arashivision.sdk.demo.ui.ability.AbilityFragment
-import com.arashivision.sdk.demo.ui.album.AlbumFragment
 import com.arashivision.sdk.demo.ui.connect.ConnectFragment
 import com.arashivision.sdk.demo.ui.main.MainEvent.PermissionDeniedEvent
 import com.arashivision.sdk.demo.ui.main.MainEvent.PermissionGrantedEvent
@@ -26,8 +24,6 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainViewModel>() {
     override fun initView() {
         super.initView()
         mFragments.add(ConnectFragment())
-        mFragments.add(AlbumFragment())
-        mFragments.add(AbilityFragment())
         mFragments.add(SettingFragment())
 
         // 默认显示第一个Fragment
@@ -38,9 +34,8 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainViewModel>() {
         super.initListener()
         binding.bottomNavigation.setOnItemSelectedListener { item: MenuItem ->
             when (item.itemId) {
-                R.id.nav_album -> checkFragment(1)
-                R.id.nav_ability -> checkFragment(2)
-                R.id.nav_setting -> checkFragment(3)
+                R.id.nav_ability -> checkFragment(1)
+                R.id.nav_setting -> checkFragment(2)
                 else -> checkFragment(0)
             }
 
