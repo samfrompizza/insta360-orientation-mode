@@ -34,11 +34,8 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainViewModel>() {
         super.initListener()
         binding.bottomNavigation.setOnItemSelectedListener { item: MenuItem ->
             when (item.itemId) {
-                R.id.nav_ability -> checkFragment(1)
-                R.id.nav_setting -> checkFragment(2)
                 else -> checkFragment(0)
             }
-
         }
     }
 
