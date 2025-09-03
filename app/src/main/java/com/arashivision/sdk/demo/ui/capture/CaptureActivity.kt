@@ -50,11 +50,11 @@ class CaptureActivity : BaseActivity<ActivityCaptureBinding, CaptureViewModel>()
     private var lastSensorUpdate = 0L
 
     // сглаживание (меньше = плавнее/медленнее отклик)
-    private var smoothingAlpha = 0.08f // можно уменьшить до 0.06..0.08 для более плавного отклика
+    private var smoothingAlpha = 0.1f // можно уменьшить до 0.06..0.08 для более плавного отклика
 
     // чувствительность / масштабирование (1.0 = линейно)
-    private var yawSensitivity = 0.1f   // 0.6 уменьшает отклик по yaw, попробуйте 0.4..1.0
-    private var pitchSensitivity = 0.1f // 0.6 уменьшает отклик по pitch
+    private var yawSensitivity = 0.025f   // 0.6 уменьшает отклик по yaw, попробуйте 0.4..1.0
+    private var pitchSensitivity = 0.0125f // 0.6 уменьшает отклик по pitch
 
     // инверсия осей (если управление наоборот)
     private var invertYaw = true   // true — инвертировать поворот влево/вправо
@@ -449,7 +449,7 @@ class CaptureActivity : BaseActivity<ActivityCaptureBinding, CaptureViewModel>()
             val yawRelative = normalizeAngle(yawDeg - yawOffset)
             val pitchRelative = pitchDeg
 
-            // --- правильная фильтрация через короткую дельту (предотвращает "многократные обороты") ---
+            // --- фильтрация ---
             // вычисляем относительный угол (в пределах -180..180)
             val targetYaw = yawRelative * yawSensitivity * if (invertYaw) -1f else 1f
             val targetPitch = pitchRelative * pitchSensitivity * if (invertPitch) -1f else 1f
@@ -458,7 +458,7 @@ class CaptureActivity : BaseActivity<ActivityCaptureBinding, CaptureViewModel>()
             val yawDelta = normalizeAngle(targetYaw - smoothedYaw)
             smoothedYaw = smoothedYaw + smoothingAlpha * yawDelta
 
-            // pitch: обычно pitch не имеет wrap-around, но на всякий случай тоже используем normalize
+            // pitch: на всякий случай тоже используем normalize
             val pitchDelta = normalizeAngle(targetPitch - smoothedPitch)
             smoothedPitch = smoothedPitch + smoothingAlpha * pitchDelta
 
@@ -477,11 +477,10 @@ class CaptureActivity : BaseActivity<ActivityCaptureBinding, CaptureViewModel>()
         override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
 
         private fun updateRawFromEvent(event: SensorEvent) {
-            // получаем матрицу из вектора вращения в rotMat
             try {
                 SensorManager.getRotationMatrixFromVector(rotMat, event.values)
             } catch (t: Throwable) {
-                // безопасно проигнорируем
+                // ignore
             }
         }
     }
@@ -493,17 +492,7 @@ class CaptureActivity : BaseActivity<ActivityCaptureBinding, CaptureViewModel>()
         return a
     }
 
-    /**
-     * Попытаться применить yaw/pitch к capturePlayerView.
-     * Сначала пробуем напрямую вызвать setYaw/setPitch,
-     * затем пытаем варианты через reflection:
-     * - setOrientation(float yaw, float pitch, float roll)
-     * - setViewYaw / setViewPitch
-     *
-     * Если у вашей версии SDK есть свои специфичные методы, замените вызовы на них.
-     */
     private fun tryApplyOrientationToPlayer(yawDeg: Float, pitchDeg: Float) {
-        // безопасная проверка: pipeline должен быть готов (как в displayPreviewStream используется instaCameraManager.setPipeline)
         val pipelinePresent = try {
             binding.capturePlayerView.pipeline != null
         } catch (e: Exception) {
@@ -511,9 +500,7 @@ class CaptureActivity : BaseActivity<ActivityCaptureBinding, CaptureViewModel>()
         }
         if (!pipelinePresent) return
 
-        // Первый вариант: прямой вызов (если они существуют)
         try {
-            // попытаемся вызвать setYaw / setPitch напрямую (если есть)
             val cls = binding.capturePlayerView.javaClass
             try {
                 val mYaw = cls.getMethod("setYaw", Float::class.javaPrimitiveType)
@@ -525,43 +512,6 @@ class CaptureActivity : BaseActivity<ActivityCaptureBinding, CaptureViewModel>()
                 val mPitch = cls.getMethod("setPitch", Float::class.javaPrimitiveType)
                 mPitch.invoke(binding.capturePlayerView, pitchDeg)
             } catch (e: NoSuchMethodException) {
-                // ignore
-            }
-
-            // Попробуем метод с тремя параметрами: setOrientation(yaw,pitch,roll)
-            try {
-                val mOrient = cls.getMethod(
-                    "setOrientation",
-                    Float::class.javaPrimitiveType,
-                    Float::class.javaPrimitiveType,
-                    Float::class.javaPrimitiveType
-                )
-                mOrient.invoke(binding.capturePlayerView, yawDeg, pitchDeg, 0f)
-                return
-            } catch (e: NoSuchMethodException) {
-                // нет такого метода — продолжаем
-            }
-
-            // Попробуем альтернативные имена
-            try {
-                val mViewYaw = cls.getMethod("setViewYaw", Float::class.javaPrimitiveType)
-                mViewYaw.invoke(binding.capturePlayerView, yawDeg)
-            } catch (e: NoSuchMethodException) {
-                // ignore
-            }
-            try {
-                val mViewPitch = cls.getMethod("setViewPitch", Float::class.javaPrimitiveType)
-                mViewPitch.invoke(binding.capturePlayerView, pitchDeg)
-            } catch (e: NoSuchMethodException) {
-                // ignore
-            }
-
-            // Если ничего не найдено — попробуем вызвать setRotation(float) (возможно применяет ротацию view)
-            try {
-                val mRot = binding.capturePlayerView.javaClass.getMethod("setRotation", Float::class.javaPrimitiveType)
-                // В Android View.setRotation ожидает градусы по Z (плоская ротация), вероятно не подходит, но на всякий случай:
-                mRot.invoke(binding.capturePlayerView, yawDeg)
-            } catch (e: Exception) {
                 // ignore
             }
 
