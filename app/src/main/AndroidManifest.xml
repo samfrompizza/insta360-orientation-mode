@@ -60,20 +60,11 @@
             android:exported="false"
             android:launchMode="singleInstance"/>
 
-        <activity
-            android:name=".ui.play.WorkPlayActivity"
-            android:exported="false"
-            android:launchMode="singleInstance" />
-
         <service
             android:name=".service.ConnectService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="connectedDevice" />
-
-        <activity
-            android:name=".ui.upgrade.FwUpgradeActivity"
-            android:exported="false" />
 
         <activity
             android:name=".ui.shot.ShotActivity"

@@ -5,17 +5,4 @@
         android:icon="@drawable/ic_connect"
         android:title="@string/nav_connect" />
 
-    <item
-        android:id="@+id/nav_album"
-        android:icon="@drawable/ic_album"
-        android:title="@string/nav_album" />
-
-    <item
-        android:id="@+id/nav_ability"
-        android:icon="@drawable/ic_ability"
-        android:title="@string/nav_ability" />
-    <item
-        android:id="@+id/nav_setting"
-        android:icon="@drawable/ic_setting"
-        android:title="@string/nav_setting" />
 </menu>
