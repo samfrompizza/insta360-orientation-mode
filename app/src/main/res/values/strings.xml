@@ -324,4 +324,7 @@
     <string name="shot_capture_failed">Capture failed, error code: %d</string>
     <string name="shot_capture_setting">Set Capture Parameters</string>
 
+    <string name="capture_settings_button">Настройки захвата</string>
+    <string name="desc_calibrate_button">Откалибровать гироскоп</string>
+    <string name="arrow_icon">Значок со стрелкой</string>
 </resources>
