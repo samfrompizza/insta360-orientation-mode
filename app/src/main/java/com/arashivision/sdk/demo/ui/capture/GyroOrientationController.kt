@@ -65,6 +65,7 @@ class GyroOrientationController(
 
     // calibration
     private var yawOffset = 0f
+    private var pitchOffset = 0f
     private var calibrated = false
 
     // enabled orientation controll flag
@@ -95,8 +96,10 @@ class GyroOrientationController(
     /** Re-calibrate */
     fun calibrate() {
         yawOffset = lastRawYawDeg
+        pitchOffset = lastRawPitchDeg
         calibrated = true
         logger.d("calibrated yawOffset=$yawOffset")
+        logger.d("calibrated pitchOffset=$pitchOffset")
     }
 
     /** Orientation control disable */
@@ -165,7 +168,7 @@ class GyroOrientationController(
         }
 
         val yawRelative = normalizeAngle(yawDeg - yawOffset)
-        val pitchRelative = pitchDeg
+        val pitchRelative = normalizeAngle(pitchDeg - pitchOffset)
 
         // apply sensitivity and inversion
         val targetYaw = yawRelative * yawSensitivity * if (invertYaw) -1f else 1f

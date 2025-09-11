@@ -79,6 +79,19 @@ class CaptureActivity : BaseActivity<ActivityCaptureBinding, CaptureViewModel>()
 
         binding.ivCaptureSetting.setOnClickListener { showCaptureSettingView() }
 
+        // calibrate button listener
+        binding.btnCalibrate.setOnClickListener {
+            try {
+                gyroController.calibrate()
+                vibrate(50, 10)
+                toast("Gyro calibration requested")
+                logger.d("Gyro: calibration requested (manual)")
+            } catch (e: Exception) {
+                logger.e("Gyro calibration failed: ${e.message}")
+                toast("Gyro calibration failed")
+            }
+        }
+
         binding.svCaptureMode.addOnItemChangedListener { _: RecyclerView.ViewHolder?, position: Int ->
             vibrate(50, 10)
             viewModel.switchCaptureMode(position)
@@ -192,7 +205,9 @@ class CaptureActivity : BaseActivity<ActivityCaptureBinding, CaptureViewModel>()
                     CaptureEvent.CaptureStatus.STOPPING -> showLoading(R.string.capture_stopping)
                     CaptureEvent.CaptureStatus.WORKING -> {
                         hideLoading()
+                        // hide settings + calibrate while recording
                         binding.ivCaptureSetting.visibility = View.GONE
+                        binding.btnCalibrate.visibility = View.GONE
                         binding.svCaptureMode.visibility = View.INVISIBLE
                         if (viewModel.isSingleClickAction) {
                             binding.btnCapture.setState(CaptureShutterButton.State.CAPTURING)
@@ -249,6 +264,7 @@ class CaptureActivity : BaseActivity<ActivityCaptureBinding, CaptureViewModel>()
     private fun captureComplete() {
         hideLoading()
         binding.ivCaptureSetting.visibility = View.VISIBLE
+        binding.btnCalibrate.visibility = View.VISIBLE
         binding.svCaptureMode.visibility = View.VISIBLE
         binding.tvRecordTime.visibility = View.GONE
         binding.tvVideoDuration.visibility = View.GONE
@@ -324,7 +340,19 @@ class CaptureActivity : BaseActivity<ActivityCaptureBinding, CaptureViewModel>()
     override fun onResume() {
         super.onResume()
         gyroController.start()
+
+        try {
+            val pipelinePresent = try { binding.capturePlayerView.pipeline != null } catch (e: Exception) { false }
+            if (!pipelinePresent) {
+                displayPreviewStream()
+            } else {
+                binding.capturePlayerView.play()
+            }
+        } catch (t: Throwable) {
+            logger.e("onResume preview reinit failed: ${t.message}")
+        }
     }
+
 
     override fun onPause() {
         super.onPause()
