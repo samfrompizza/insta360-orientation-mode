@@ -340,7 +340,19 @@ class CaptureActivity : BaseActivity<ActivityCaptureBinding, CaptureViewModel>()
     override fun onResume() {
         super.onResume()
         gyroController.start()
+
+        try {
+            val pipelinePresent = try { binding.capturePlayerView.pipeline != null } catch (e: Exception) { false }
+            if (!pipelinePresent) {
+                displayPreviewStream()
+            } else {
+                binding.capturePlayerView.play()
+            }
+        } catch (t: Throwable) {
+            logger.e("onResume preview reinit failed: ${t.message}")
+        }
     }
+
 
     override fun onPause() {
         super.onPause()
