@@ -79,7 +79,7 @@ class CaptureActivity : BaseActivity<ActivityCaptureBinding, CaptureViewModel>()
 
         binding.ivCaptureSetting.setOnClickListener { showCaptureSettingView() }
 
-        // NEW: calibrate button listener
+        // calibrate button listener
         binding.btnCalibrate.setOnClickListener {
             try {
                 gyroController.calibrate()
