@@ -35,7 +35,6 @@ class CaptureActivity : BaseActivity<ActivityCaptureBinding, CaptureViewModel>()
     private val logger: Logger = XLog.tag(CaptureActivity::class.java.simpleName).build()
     private var captureModeAdapter: CaptureModeAdapter? = null
 
-    // Gyro controller (outsourced logic)
     private lateinit var gyroController: GyroOrientationController
 
     override fun onStop() {

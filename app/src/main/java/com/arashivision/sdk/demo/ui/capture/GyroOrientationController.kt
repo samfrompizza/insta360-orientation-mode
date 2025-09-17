@@ -211,6 +211,10 @@ class GyroOrientationController(
         return a
     }
 
+    fun setCameraRotationFromQuaternion(qx: Float, qy: Float, qz: Float, qw: Float) {
+        // TODO: implement
+    }
+
     fun getLastRawYawDeg(): Float = lastRawYawDeg
     fun getSmoothedYaw(): Float = smoothedYaw
     fun getSmoothedPitch(): Float = smoothedPitch
