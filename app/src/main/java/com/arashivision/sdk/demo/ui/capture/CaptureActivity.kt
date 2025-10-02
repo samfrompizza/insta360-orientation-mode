@@ -297,6 +297,7 @@ class CaptureActivity : BaseActivity<ActivityCaptureBinding, CaptureViewModel>()
                 instaCameraManager.setPipeline(null)
             }
         })
+
         binding.capturePlayerView.prepare(viewModel.getCaptureParams())
         binding.capturePlayerView.play()
         binding.capturePlayerView.keepScreenOn = true

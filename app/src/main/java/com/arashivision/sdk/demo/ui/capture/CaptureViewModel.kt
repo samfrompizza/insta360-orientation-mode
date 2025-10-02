@@ -25,6 +25,7 @@ import com.arashivision.sdkcamera.camera.model.RecordResolution
 import com.arashivision.sdkcamera.camera.model.SensorMode
 import com.arashivision.sdkmedia.player.capture.CaptureParamsBuilderV2
 import com.arashivision.sdkmedia.player.capture.InstaCapturePlayerView
+import com.arashivision.sdkmedia.player.config.InstaStabType
 import com.elvishew.xlog.Logger
 import com.elvishew.xlog.XLog
 import kotlinx.coroutines.launch
@@ -146,6 +147,7 @@ class CaptureViewModel : BaseViewModel(), IPreviewStatusListener, ICaptureStatus
     fun getCaptureParams(): CaptureParamsBuilderV2 {
         return CaptureParamsBuilderV2().apply {
             this.stabCacheFrameNum = Pref.getStabCacheFrameNum()
+            this.setStabType(InstaStabType.STAB_TYPE_FOOTAGE_MOTION_SMOOTH)
         }
     }
 
