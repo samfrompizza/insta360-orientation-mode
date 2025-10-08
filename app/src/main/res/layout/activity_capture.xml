@@ -52,7 +52,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- NEW: calibrate button (manual gyro calibration) -->
+    <!-- calibrate button (manual gyro calibration) -->
     <ImageView
         android:id="@+id/btn_calibrate"
         android:layout_width="32dp"
@@ -63,6 +63,17 @@
         android:src="@drawable/ic_calibrate"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/iv_capture_setting" />
+
+    <ImageView
+        android:id="@+id/btn_vr_toggle"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_marginEnd="24dp"
+        android:layout_marginBottom="24dp"
+        android:contentDescription="@string/desc_calibrate_button"
+        android:src="@drawable/ic_glasses"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/btn_calibrate" />
 
     <TextView
         android:id="@+id/tv_record_time"
@@ -103,8 +114,8 @@
         android:id="@+id/pick_capture_setting"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:visibility="gone"
         android:background="@color/dialog_bg_color"
+        android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
