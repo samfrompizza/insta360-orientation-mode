@@ -36,14 +36,7 @@ class CaptureActivity : BaseActivity<ActivityCaptureBinding, CaptureViewModel>()
 
     private lateinit var gyroController: GyroOrientationController
 
-    // --- VR fields ---
-    private var isVrMode: Boolean = false
-    private var vrContainer: android.widget.LinearLayout? = null
-    private var leftVrPlayer: com.arashivision.sdkmedia.player.capture.InstaCapturePlayerView? = null
-    private var rightVrPlayer: com.arashivision.sdkmedia.player.capture.InstaCapturePlayerView? = null
-    // Межзрачковое смещение (в градусах) — подберите экспериментально
-    private val vrIpdYawDeg: Float = 3.0f
-    // --- end VR fields ---
+    private lateinit var vrManager: VrManager
 
     override fun onStop() {
         super.onStop()
@@ -81,6 +74,16 @@ class CaptureActivity : BaseActivity<ActivityCaptureBinding, CaptureViewModel>()
 
         // NOTE: button btn_vr_toggle expected in activity_capture.xml
         // If you used a different id, replace binding.btnVrToggle with your id.
+
+        vrManager = VrManager(
+            activity = this,
+            rootContainer = binding.root,
+            capturePlayerView = binding.capturePlayerView,
+            svCaptureMode = binding.svCaptureMode,
+            ivCaptureSetting = binding.ivCaptureSetting,
+            btnCalibrate = binding.btnCalibrate,
+            calibrateGyro = { try { gyroController.calibrate() } catch (_: Exception) {} }
+        )
     }
 
     override fun initListener() {
@@ -91,7 +94,7 @@ class CaptureActivity : BaseActivity<ActivityCaptureBinding, CaptureViewModel>()
 
         // VR toggle button (must be present in XML with id btn_vr_toggle)
         try {
-            binding.btnVrToggle.setOnClickListener { toggleVrMode() }
+            binding.btnVrToggle.setOnClickListener { vrManager.toggleVrMode() }
         } catch (e: Exception) {
             // если кнопки нет в макете — просто логируем, приложение продолжит работать без VR-переключателя
             logger.w("VR toggle button not found in layout: ${e.message}")
@@ -281,9 +284,6 @@ class CaptureActivity : BaseActivity<ActivityCaptureBinding, CaptureViewModel>()
 
     private fun captureComplete() {
         hideLoading()
-        binding.ivCaptureSetting.visibility = View.VISIBLE
-        binding.btnCalibrate.visibility = View.VISIBLE
-        binding.svCaptureMode.visibility = View.VISIBLE
         binding.tvRecordTime.visibility = View.GONE
         binding.tvVideoDuration.visibility = View.GONE
         binding.ivArrow.setVisibility(View.GONE)
@@ -291,6 +291,11 @@ class CaptureActivity : BaseActivity<ActivityCaptureBinding, CaptureViewModel>()
             binding.btnCapture.setState(CaptureShutterButton.State.CAPTURE_IDLE)
         } else {
             binding.btnCapture.setState(CaptureShutterButton.State.RECORD_IDLE)
+        }
+        if (!vrManager.isVrMode) {
+            binding.ivCaptureSetting.visibility = View.VISIBLE
+            binding.btnCalibrate.visibility = View.VISIBLE
+            binding.svCaptureMode.visibility = View.VISIBLE
         }
     }
 
@@ -347,18 +352,15 @@ class CaptureActivity : BaseActivity<ActivityCaptureBinding, CaptureViewModel>()
             binding.pickCaptureSetting.hide()
             return
         }
-        if (isVrMode) {
-            disableVrMode()
+        if (vrManager.isVrMode) {
+            vrManager.disableVrMode()
             return
         }
         if (!instaCameraManager.isCameraWorking) super.onBackPressed()
     }
 
     override fun onDestroy() {
-        try {
-            leftVrPlayer?.destroy()
-            rightVrPlayer?.destroy()
-        } catch (_: Exception) {}
+        vrManager.destroy()
         binding.capturePlayerView.destroy()
         super.onDestroy()
     }
@@ -379,28 +381,14 @@ class CaptureActivity : BaseActivity<ActivityCaptureBinding, CaptureViewModel>()
             logger.e("onResume preview reinit failed: ${t.message}")
         }
 
-        if (isVrMode) {
-            try {
-                leftVrPlayer?.play()
-                rightVrPlayer?.play()
-            } catch (t: Throwable) {
-                logger.e("VR resume failed: ${t.message}")
-            }
-        }
+        vrManager.onResume()
     }
 
 
     override fun onPause() {
         super.onPause()
         gyroController.stop()
-
-        if (isVrMode) {
-            try {
-                // TODO: Pause VR
-                //leftVrPlayer?.pause()
-                //rightVrPlayer?.pause()
-            } catch (_: Exception) {}
-        }
+        vrManager.onPause()
     }
     // --- end lifecycle hooks ---
 
@@ -432,124 +420,14 @@ class CaptureActivity : BaseActivity<ActivityCaptureBinding, CaptureViewModel>()
         }
 
         try {
-            // main player (original)
-            applyTo(binding.capturePlayerView, yawDeg, pitchDeg)
-
-            // if VR mode, apply to left/right
-            if (isVrMode) {
-                leftVrPlayer?.let { applyTo(it, yawDeg - vrIpdYawDeg, pitchDeg) }
-                rightVrPlayer?.let { applyTo(it, yawDeg + vrIpdYawDeg, pitchDeg) }
+            if (vrManager.isVrMode) {
+                vrManager.applyOrientation(yawDeg, pitchDeg)
+            } else {
+                applyTo(binding.capturePlayerView, yawDeg, pitchDeg)
             }
         } catch (e: Exception) {
             logger.e("tryApplyOrientationToPlayer error: ${e.message}")
         }
     }
-
-    // ---------------- VR helper methods ----------------
-
-    private fun toggleVrMode() {
-        if (isVrMode) disableVrMode() else enableVrMode()
-    }
-
-    private fun enableVrMode() {
-        if (isVrMode) return
-        isVrMode = true
-
-        // hide main player (мы делаем side-by-side)
-        binding.capturePlayerView.isVisible = false
-
-        // create container if needed
-        if (vrContainer == null) {
-            vrContainer = android.widget.LinearLayout(this).apply {
-                orientation = android.widget.LinearLayout.HORIZONTAL
-                layoutParams = android.widget.FrameLayout.LayoutParams(
-                    android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
-                    android.widget.FrameLayout.LayoutParams.MATCH_PARENT
-                )
-            }
-            (binding.root as? android.view.ViewGroup)?.addView(vrContainer)
-        }
-
-        fun createVrPlayer(): com.arashivision.sdkmedia.player.capture.InstaCapturePlayerView {
-            val p = com.arashivision.sdkmedia.player.capture.InstaCapturePlayerView(this)
-            p.setLifecycle(this.lifecycle)
-            val lp = android.widget.LinearLayout.LayoutParams(0, android.widget.FrameLayout.LayoutParams.MATCH_PARENT, 1f)
-            p.layoutParams = lp
-            p.keepScreenOn = true
-            return p
-        }
-
-        if (leftVrPlayer == null) {
-            leftVrPlayer = createVrPlayer()
-            vrContainer?.addView(leftVrPlayer)
-            leftVrPlayer?.setPlayerViewListener(object : PlayerViewListener {
-                override fun onFirstFrameRender() {}
-                override fun onLoadingFinish() {
-                    try { instaCameraManager.setPipeline(leftVrPlayer!!.pipeline) } catch (_: Exception) {}
-                }
-                override fun onReleaseCameraPipeline() {
-                    try { instaCameraManager.setPipeline(null) } catch (_: Exception) {}
-                }
-            })
-            leftVrPlayer?.prepare(viewModel.getCaptureParams())
-            leftVrPlayer?.play()
-        }
-
-        if (rightVrPlayer == null) {
-            rightVrPlayer = createVrPlayer()
-            vrContainer?.addView(rightVrPlayer)
-            rightVrPlayer?.setPlayerViewListener(object : PlayerViewListener {
-                override fun onFirstFrameRender() {}
-                override fun onLoadingFinish() {
-                    try { instaCameraManager.setPipeline(rightVrPlayer!!.pipeline) } catch (_: Exception) {}
-                }
-                override fun onReleaseCameraPipeline() {
-                    try { instaCameraManager.setPipeline(null) } catch (_: Exception) {}
-                }
-            })
-            rightVrPlayer?.prepare(viewModel.getCaptureParams())
-            rightVrPlayer?.play()
-        }
-
-        // optional: прятать элементы UI для полноты VR-вида
-        //binding.ivCaptureSetting.visibility = View.GONE
-        //binding.btnCalibrate.visibility = View.GONE
-        //binding.svCaptureMode.visibility = View.INVISIBLE
-        // калибровка гироскопа при включении VR
-        try { gyroController.calibrate() } catch (_: Exception) {}
-    }
-
-    private fun disableVrMode() {
-        if (!isVrMode) return
-        isVrMode = false
-
-        // restore UI
-        binding.ivCaptureSetting.visibility = View.VISIBLE
-        binding.btnCalibrate.visibility = View.VISIBLE
-        binding.svCaptureMode.visibility = View.VISIBLE
-
-        // stop & destroy VR players
-        try {
-            //leftVrPlayer?.pause()
-            leftVrPlayer?.destroy()
-        } catch (_: Exception) {}
-        try {
-            //rightVrPlayer?.pause()
-            rightVrPlayer?.destroy()
-        } catch (_: Exception) {}
-
-        // remove container
-        vrContainer?.removeAllViews()
-        (binding.root as? android.view.ViewGroup)?.removeView(vrContainer)
-        vrContainer = null
-        leftVrPlayer = null
-        rightVrPlayer = null
-
-        // show main player again
-        binding.capturePlayerView.isVisible = true
-        try { binding.capturePlayerView.play() } catch (_: Exception) {}
-    }
-
-    // ---------------------------------------------------
 
 }

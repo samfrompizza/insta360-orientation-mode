@@ -37,7 +37,7 @@ open class BaseActivity<T : ViewBinding, V : BaseViewModel> : AppCompatActivity(
 
     protected lateinit var binding: T
 
-    protected lateinit var viewModel: V
+    lateinit var viewModel: V
 
     private var loading: LoadingView? = null
 
