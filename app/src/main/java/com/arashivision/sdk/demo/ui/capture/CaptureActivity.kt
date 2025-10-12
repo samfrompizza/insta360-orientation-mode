@@ -126,6 +126,21 @@ class CaptureActivity : BaseActivity<ActivityCaptureBinding, CaptureViewModel>()
             val supportCaptureSettingList: List<CaptureSetting> = viewModel.cameraOfflineData.let {
                 instaCameraManager.getSupportCaptureSettingList(it.currentCaptureMode)
             }
+
+            // Если VR включен и позиция выходит за пределы списка camera settings —
+            // это наш добавленный VR-пункт
+            if (this::vrManager.isInitialized && vrManager.isVrMode && position >= supportCaptureSettingList.size) {
+                try {
+                    // закрываем панель общего выбора, открываем настройки VR
+                    binding.pickCaptureSetting.hide()
+                    vrManager.showVrSettingsDialog()
+                } catch (e: Exception) {
+                    logger.e("Failed to open VR settings dialog: ${e.message}")
+                }
+                return@setOnItemClickListener
+            }
+
+            // Обычная логика для настроек камеры
             val captureSetting: CaptureSetting = supportCaptureSettingList[position]
             viewModel.cameraOfflineData.setCaptureSetting(captureSetting, data) {
                 binding.pickCaptureSetting.setData(captureSettingDataList)
@@ -140,7 +155,25 @@ class CaptureActivity : BaseActivity<ActivityCaptureBinding, CaptureViewModel>()
                 instaCameraManager.getSupportCaptureSettingList(it.currentCaptureMode)
             }
 
-            return supportCaptureSettingList.map { getCaptureSettingData(it) }
+            val list = supportCaptureSettingList.map { getCaptureSettingData(it) }.toMutableList()
+
+            // Если сейчас VR-режим — добавляем отдельный пункт для VR-настроек
+            // (нажатие откроет диалог с ползунками)
+            try {
+                if (this::vrManager.isInitialized && vrManager.isVrMode) {
+                    val vrPick = PickData(
+                        true,
+                        "VR: Adjust eyes",
+                        0,
+                        listOf("Open VR settings" to 0)
+                    )
+                    list.add(vrPick)
+                }
+            } catch (e: Exception) {
+                // safety: если что-то не инициализировано, просто не добавляем
+            }
+
+            return list
         }
 
     private fun getCaptureSettingData(captureSetting: CaptureSetting): PickData {

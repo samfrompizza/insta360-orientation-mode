@@ -1,4 +1,5 @@
 package com.arashivision.sdk.demo.ui.capture
+
 import android.app.Activity
 import android.graphics.Bitmap as AndroidBitmap
 import android.graphics.Canvas
@@ -17,6 +18,18 @@ import com.arashivision.sdkmedia.player.capture.InstaCapturePlayerView
 import com.arashivision.sdkmedia.player.listener.PlayerViewListener
 import com.elvishew.xlog.Logger
 import com.elvishew.xlog.XLog
+
+// Новые импорты для настроек UI
+import android.app.AlertDialog
+import android.util.TypedValue
+import android.widget.FrameLayout
+import android.widget.ImageButton
+import android.widget.LinearLayout
+import android.widget.SeekBar
+import android.widget.TextView
+import android.view.Gravity
+import android.view.ViewGroup.MarginLayoutParams
+
 /**
 VrManager — отдельный класс, который включает/выключает VR-режим.
 
@@ -44,12 +57,19 @@ class VrManager(
     private var copying = false
     private val copyIntervalMs: Long = 33L // ~30 fps
     private val vrIpdYawDeg: Float = 3.0f
+
+    // --- новые поля для регулировки ---
+    private var eyeScale: Float = 1.0f               // масштаб изображений глаз (1.0 = оригинал)
+    private var eyeSpacingPx: Int = 0                // расстояние между глазами в px
+
     init {
         logger.i("VrManager created")
     }
+
     fun toggleVrMode() {
         if (isVrMode) disableVrMode() else enableVrMode()
     }
+
     fun enableVrMode() {
         if (isVrMode) {
             logger.w("enableVrMode called but already in VR mode")
@@ -70,23 +90,36 @@ class VrManager(
             return
         }
         try {
-            vrContainer = android.widget.LinearLayout(activity).apply {
-                orientation = android.widget.LinearLayout.HORIZONTAL
+            // Используем FrameLayout как контейнер, чтобы можно было накладывать кнопку настроек
+            vrContainer = FrameLayout(activity).apply {
                 layoutParams = ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT
                 )
             }
             rootContainer.addView(vrContainer)
-            logger.d("VR container added to root")
+            logger.d("VR container (FrameLayout) added to root")
         } catch (e: Exception) {
             logger.e("Failed to create/add vrContainer: ${e.message}")
             return
         }
+
+        // Контентный LinearLayout (горизонтально) внутри FrameLayout
+        val contentLinear = LinearLayout(activity).apply {
+            orientation = LinearLayout.HORIZONTAL
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            )
+        }
+        vrContainer?.addView(contentLinear)
+
 // Left: ImageView (will show bitmap copy of right)
         try {
             leftVrImage = ImageView(activity).apply {
-                val lp = android.widget.LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f)
+                val lp = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f)
+                lp.marginEnd = 0
+                lp.marginStart = 0
                 layoutParams = lp
                 scaleType = ImageView.ScaleType.FIT_CENTER   // ← безопаснее для отладки
 // НЕ ставьте цвет фона или ставьте чёрный, если нужно
@@ -94,24 +127,27 @@ class VrManager(
                 isClickable = false
                 isFocusable = false
             }
-            vrContainer?.addView(leftVrImage)
+            contentLinear.addView(leftVrImage)
             logger.d("Left ImageView added")
         } catch (e: Exception) {
             logger.e("Failed to create leftVrImage: ${e.message}")
         }
+
 // Right: real player
         try {
             rightVrPlayer = InstaCapturePlayerView(activity).apply {
                 setLifecycle((activity as? androidx.fragment.app.FragmentActivity)?.lifecycle)
-                val lp = android.widget.LinearLayout.LayoutParams(
+                val lp = LinearLayout.LayoutParams(
                     0,
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     1f
                 )
+                lp.marginStart = 0
+                lp.marginEnd = 0
                 layoutParams = lp
                 keepScreenOn = true
             }
-            vrContainer?.addView(rightVrPlayer)
+            contentLinear.addView(rightVrPlayer)
             rightVrPlayer?.setPlayerViewListener(object : PlayerViewListener {
                 override fun onFirstFrameRender() {
                     logger.i("rightVrPlayer:onFirstFrameRender")
@@ -147,6 +183,33 @@ class VrManager(
         } catch (e: Exception) {
             logger.e("Failed to create or start rightVrPlayer: ${e.message}")
         }
+
+// Добавляем кнопку настроек поверх VR (правый верхний угол)
+        try {
+            val sizeDp = 44
+            val sizePx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, sizeDp.toFloat(), activity.resources.displayMetrics).toInt()
+            val settingsBtn = ImageButton(activity).apply {
+                setImageResource(android.R.drawable.ic_menu_manage)
+                setBackgroundResource(android.R.color.transparent)
+                scaleType = ImageView.ScaleType.CENTER_INSIDE
+                val flp = FrameLayout.LayoutParams(sizePx, sizePx)
+                flp.gravity = Gravity.END or Gravity.TOP
+                val marginDp = 12
+                val marginPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, marginDp.toFloat(), activity.resources.displayMetrics).toInt()
+                flp.setMargins(marginPx, marginPx, marginPx, marginPx)
+                layoutParams = flp
+                // небольшая прозрачность чтобы не отвлекать
+                alpha = 0.85f
+            }
+            vrContainer?.addView(settingsBtn)
+            settingsBtn.setOnClickListener {
+                showVrSettingsDialog()
+            }
+            logger.d("VR settings button added")
+        } catch (e: Exception) {
+            logger.e("Failed to add VR settings button: ${e.message}")
+        }
+
 // hide other UI elements explicitly and disable touch on mode selector to avoid accidental swipes
         try {
             ivCaptureSetting.visibility = View.GONE
@@ -161,6 +224,7 @@ class VrManager(
         calibrateGyro()
         logger.i("enableVrMode: finished")
     }
+
     fun disableVrMode() {
         if (!isVrMode) {
             logger.w("disableVrMode called but not in VR mode")
@@ -225,6 +289,7 @@ class VrManager(
         }
         logger.i("disableVrMode: finished")
     }
+
     fun applyOrientation(yawDeg: Float, pitchDeg: Float) {
 // Apply to right player (real)
         try {
@@ -244,6 +309,7 @@ class VrManager(
         } catch (e: Exception) {
             logger.e("applyOrientation -> right player error: ${e.message}")
         }
+
 // Left is ImageView — no orientation API; log for debug
         try {
             if (leftVrImage != null) {
@@ -253,6 +319,7 @@ class VrManager(
             logger.e("applyOrientation -> left image logging failed: ${e.message}")
         }
     }
+
     fun onResume() {
         logger.d("VrManager.onResume called")
         rightVrPlayer?.play()
@@ -261,11 +328,13 @@ class VrManager(
             startCopyLoop()
         }
     }
+
     fun onPause() {
         logger.d("VrManager.onPause called")
         stopCopyLoop()
 // rightVrPlayer?.pause() // leave commented to avoid breaking pipeline state
     }
+
     fun destroy() {
         logger.i("VrManager.destroy called")
         stopCopyLoop()
@@ -274,6 +343,7 @@ class VrManager(
         } catch (_: Exception) {
         }
     }
+
     // --------- copy loop (bitmap from right player -> left ImageView) ---------
     private var pixelCopyInProgress = false
     private fun findSurfaceView(v: View): SurfaceView? {
@@ -380,6 +450,7 @@ class VrManager(
         handler.post(copyRunnable!!)
         logger.i("Copy loop started (interval=${copyIntervalMs}ms)")
     }
+
     private fun processAndSetBitmap(bmp: AndroidBitmap?, dst: ImageView) {
         if (bmp == null) return
         try {
@@ -404,6 +475,7 @@ class VrManager(
             logger.e("processAndSetBitmap failed: ${e.message}")
         }
     }
+
     private fun stopCopyLoop() {
         if (!copying) return
         copying = false
@@ -418,4 +490,144 @@ class VrManager(
             logger.e("stopCopyLoop failed: ${e.message}")
         }
     }
+
+    // ---------- новые вспомогательные функции для настроек VR ------------
+
+    // Показать диалог с двумя ползунками (масштаб и расстояние)
+
+    fun showVrSettingsDialog() {
+        if (!isVrMode) return
+        val dialogRoot = LinearLayout(activity).apply {
+            orientation = LinearLayout.VERTICAL
+            val pad = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 12f, activity.resources.displayMetrics).toInt()
+            setPadding(pad, pad, pad, pad)
+        }
+
+        val scaleLabel = TextView(activity).apply {
+            text = "Scale (size): ${"%.2f".format(eyeScale)}"
+            val lp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            layoutParams = lp
+        }
+        val scaleSeek = SeekBar(activity).apply {
+            // map 50..150 -> 0.5..1.5
+            max = 100
+            progress = ((eyeScale - 0.5f) * 100).toInt().coerceIn(0, 100)
+            val lp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            layoutParams = lp
+        }
+
+        val spacingLabel = TextView(activity).apply {
+            text = "Spacing (px): $eyeSpacingPx"
+            val lp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            lp.topMargin = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 8f, activity.resources.displayMetrics).toInt()
+            layoutParams = lp
+        }
+        val spacingSeek = SeekBar(activity).apply {
+            // Позволяем spacing в диапазоне [-maxDp, +maxDp] (dp), маппим на прогресс 0..2*maxPx
+            val maxDp = 200
+            val maxPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, maxDp.toFloat(), activity.resources.displayMetrics).toInt()
+            max = maxPx * 2
+            // прогресс отображает value + maxPx (чтобы центр = 0)
+            progress = (eyeSpacingPx + maxPx).coerceIn(0, max)
+            val lp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            layoutParams = lp
+        }
+
+
+        dialogRoot.addView(scaleLabel)
+        dialogRoot.addView(scaleSeek)
+        dialogRoot.addView(spacingLabel)
+        dialogRoot.addView(spacingSeek)
+
+        val dialog = AlertDialog.Builder(activity)
+            .setTitle("VR: Adjust eyes")
+            .setView(dialogRoot)
+            .setPositiveButton("OK", null)
+            .create()
+
+        // listeners: обновляем в реальном времени
+        scaleSeek.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(sb: SeekBar?, progress: Int, fromUser: Boolean) {
+                // progress 0..100 -> scale 0.5..1.5
+                eyeScale = 0.5f + progress.toFloat() / 100f
+                scaleLabel.text = "Scale (size): ${"%.2f".format(eyeScale)}"
+                applyVrAdjustments()
+            }
+            override fun onStartTrackingTouch(sb: SeekBar?) {}
+            override fun onStopTrackingTouch(sb: SeekBar?) {}
+        })
+        spacingSeek.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(sb: SeekBar?, progress: Int, fromUser: Boolean) {
+                val maxDp = 200
+                val maxPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, maxDp.toFloat(), activity.resources.displayMetrics).toInt()
+                // progress 0..2*maxPx -> spacing -maxPx..+maxPx
+                eyeSpacingPx = progress - maxPx
+                spacingLabel.text = "Spacing (px): ${eyeSpacingPx}"
+                applyVrAdjustments()
+            }
+            override fun onStartTrackingTouch(sb: SeekBar?) {}
+            override fun onStopTrackingTouch(sb: SeekBar?) {}
+        })
+
+
+        dialog.show()
+    }
+
+    // Применяем текущие значения eyeScale и eyeSpacingPx к views
+    private fun applyVrAdjustments() {
+        try {
+            // масштаб (scaleX/scaleY)
+            leftVrImage?.let { iv ->
+                iv.scaleX = eyeScale
+                iv.scaleY = eyeScale
+            }
+            rightVrPlayer?.let { pv ->
+                pv.scaleX = eyeScale
+                pv.scaleY = eyeScale
+            }
+
+            // расстояние: устанавливаем marginEnd у левого и marginStart у правого по eyeSpacingPx/2
+            val parentLinear = (vrContainer?.getChildAt(0) as? LinearLayout)
+            if (parentLinear != null && parentLinear.childCount >= 2) {
+                val left = parentLinear.getChildAt(0)
+                val right = parentLinear.getChildAt(1)
+                // половина интервала для каждой стороны (может быть отрицательной)
+                val half = (eyeSpacingPx / 2)
+
+                // helper: безопасно обновить margins, сохраняя тип LayoutParams и weight
+                fun setMarginStartEnd(view: View, start: Int? = null, end: Int? = null) {
+                    val lp = view.layoutParams
+                    when (lp) {
+                        is LinearLayout.LayoutParams -> {
+                            // сохраняем weight/width/height и только меняем marginStart/marginEnd
+                            if (start != null) lp.marginStart = start
+                            if (end != null) lp.marginEnd = end
+                            view.layoutParams = lp
+                        }
+                        is ViewGroup.MarginLayoutParams -> {
+                            if (start != null) lp.marginStart = start
+                            if (end != null) lp.marginEnd = end
+                            view.layoutParams = lp
+                        }
+                        else -> {
+                            // общий fallback: создаём MarginLayoutParams, но копируем основные поля
+                            val newLp = ViewGroup.MarginLayoutParams(lp)
+                            if (start != null) newLp.marginStart = start
+                            if (end != null) newLp.marginEnd = end
+                            view.layoutParams = newLp
+                        }
+                    }
+                }
+
+                setMarginStartEnd(left, end = half)
+                setMarginStartEnd(right, start = half)
+
+                parentLinear.requestLayout()
+            }
+        } catch (e: Exception) {
+            logger.e("applyVrAdjustments failed: ${e.message}")
+        }
+    }
+
+
 }

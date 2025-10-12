@@ -147,7 +147,7 @@ class CaptureViewModel : BaseViewModel(), IPreviewStatusListener, ICaptureStatus
     fun getCaptureParams(): CaptureParamsBuilderV2 {
         return CaptureParamsBuilderV2().apply {
             this.stabCacheFrameNum = Pref.getStabCacheFrameNum()
-            this.setStabType(InstaStabType.STAB_TYPE_FOOTAGE_MOTION_SMOOTH)
+            this.setStabType(InstaStabType.STAB_TYPE_OFF)
         }
     }
 
