@@ -56,10 +56,11 @@ class VrManager(
     private var copying = false
     private val copyIntervalMs: Long = 33L // ~30 fps
     private val vrIpdYawDeg: Float = 3.0f
-    private var eyeScale: Float = 1.0f
-    private var eyeSpacingPx: Int = 0
+    private var eyeScale: Float = 0.7f
+    private var eyeSpacingPx: Int = -400
 
     init {
+        applyVrAdjustments()
         logger.i("VrManager created")
     }
 
@@ -200,6 +201,7 @@ class VrManager(
             logger.e("Failed to hide UI elements: ${e.message}")
         }
         calibrateGyro()
+        applyVrAdjustments()
         logger.i("enableVrMode: finished")
     }
 
@@ -453,17 +455,15 @@ class VrManager(
             setPadding(pad, pad, pad, pad)
         }
 
+        // --- existing scale controls (unchanged) ---
         val scaleLabel = TextView(activity).apply {
             text = "Scale (size): ${"%.2f".format(eyeScale)}"
-            val lp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-            layoutParams = lp
+            layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
         }
         val scaleSeek = SeekBar(activity).apply {
-            // map 50..150 -> 0.5..1.5
             max = 100
             progress = ((eyeScale - 0.5f) * 100).toInt().coerceIn(0, 100)
-            val lp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-            layoutParams = lp
+            layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
         }
 
         val spacingLabel = TextView(activity).apply {
@@ -477,15 +477,32 @@ class VrManager(
             val maxPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, maxDp.toFloat(), activity.resources.displayMetrics).toInt()
             max = maxPx * 2
             progress = (eyeSpacingPx + maxPx).coerceIn(0, max)
-            val lp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-            layoutParams = lp
+            layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
         }
 
+        // --- NEW: sensitivity controls ---
+        val sensLabel = TextView(activity).apply {
+            // предполагается, что sensivity хранится в доступном месте: VREngine.sensivity или similar
+            val currentSens = GyroOrientationController.sensivity // <- замените на ваш путь к переменной
+            text = "Sensitivity: ${"%.2f".format(currentSens)}"
+            val lp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            lp.topMargin = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 8f, activity.resources.displayMetrics).toInt()
+            layoutParams = lp
+        }
+        val sensSeek = SeekBar(activity).apply {
+            // map 0..200 -> 0.00..2.00 (0.01 шаг)
+            max = 200
+            progress = ( (GyroOrientationController.sensivity * 100f).toInt() ).coerceIn(0, max) // стартовое положение
+            layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        }
 
         dialogRoot.addView(scaleLabel)
         dialogRoot.addView(scaleSeek)
         dialogRoot.addView(spacingLabel)
         dialogRoot.addView(spacingSeek)
+        // добавляем sensitivity
+        dialogRoot.addView(sensLabel)
+        dialogRoot.addView(sensSeek)
 
         val dialog = AlertDialog.Builder(activity)
             .setTitle("VR: Adjust eyes")
@@ -493,10 +510,9 @@ class VrManager(
             .setPositiveButton("OK", null)
             .create()
 
-        // listeners: обновляем в реальном времени
+        // listeners
         scaleSeek.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(sb: SeekBar?, progress: Int, fromUser: Boolean) {
-                // progress 0..100 -> scale 0.5..1.5
                 eyeScale = 0.5f + progress.toFloat() / 100f
                 scaleLabel.text = "Scale (size): ${"%.2f".format(eyeScale)}"
                 applyVrAdjustments()
@@ -504,6 +520,7 @@ class VrManager(
             override fun onStartTrackingTouch(sb: SeekBar?) {}
             override fun onStopTrackingTouch(sb: SeekBar?) {}
         })
+
         spacingSeek.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(sb: SeekBar?, progress: Int, fromUser: Boolean) {
                 val maxDp = 200
@@ -516,6 +533,19 @@ class VrManager(
             override fun onStopTrackingTouch(sb: SeekBar?) {}
         })
 
+        // listener для sensitivity
+        sensSeek.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(sb: SeekBar?, progress: Int, fromUser: Boolean) {
+                // progress 0..200 -> sens 0.00..2.00
+                val newSens = progress.toFloat() / 100f
+                // ОБНОВЛЯЕМ РЕАЛЬНУЮ ПЕРЕМЕННУ, а не создаём локальную
+                GyroOrientationController.sensivity = newSens // <- замените на ваш путь/сеттер
+                sensLabel.text = "Sensitivity: ${"%.2f".format(newSens)}"
+                applyVrAdjustments()
+            }
+            override fun onStartTrackingTouch(sb: SeekBar?) {}
+            override fun onStopTrackingTouch(sb: SeekBar?) {}
+        })
 
         dialog.show()
     }

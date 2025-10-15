@@ -47,8 +47,16 @@ class GyroOrientationController(
     var smoothingAlpha = 0.15f
 
     // sensitivity
-    var yawSensitivity = 0.04f
-    var pitchSensitivity = 0.02f
+    companion object {
+        var sensivity: Float = 1.0f
+    }
+    private val yawFactor = 0.04f
+    private val pitchFactor = 0.02f
+    private val yawSensitivity: Float
+        get() = yawFactor * sensivity
+
+    private val pitchSensitivity: Float
+        get() = pitchFactor * sensivity
 
     // inversion
     var invertYaw = true
