@@ -19,7 +19,6 @@ import com.arashivision.sdkmedia.player.listener.PlayerViewListener
 import com.elvishew.xlog.Logger
 import com.elvishew.xlog.XLog
 
-// Новые импорты для настроек UI
 import android.app.AlertDialog
 import android.util.TypedValue
 import android.widget.FrameLayout
@@ -51,16 +50,14 @@ class VrManager(
     private var leftVrImage: ImageView? = null
     private var rightVrPlayer: InstaCapturePlayerView? = null
     private var reusableBitmap: AndroidBitmap? = null
-    private var compositeBitmap: AndroidBitmap? = null  // для композитинга (opaque)
+    private var compositeBitmap: AndroidBitmap? = null
     private val handler = Handler(Looper.getMainLooper())
     private var copyRunnable: Runnable? = null
     private var copying = false
     private val copyIntervalMs: Long = 33L // ~30 fps
     private val vrIpdYawDeg: Float = 3.0f
-
-    // --- новые поля для регулировки ---
-    private var eyeScale: Float = 1.0f               // масштаб изображений глаз (1.0 = оригинал)
-    private var eyeSpacingPx: Int = 0                // расстояние между глазами в px
+    private var eyeScale: Float = 1.0f
+    private var eyeSpacingPx: Int = 0
 
     init {
         logger.i("VrManager created")
@@ -72,25 +69,20 @@ class VrManager(
 
     fun enableVrMode() {
         if (isVrMode) {
-            logger.w("enableVrMode called but already in VR mode")
             return
         }
         logger.i("enableVrMode: starting")
         isVrMode = true
-// hide main player
         try {
             capturePlayerView.visibility = View.INVISIBLE
-            logger.d("Main capturePlayerView hidden")
         } catch (e: Exception) {
             logger.e("Failed to hide main capturePlayerView: ${e.message}")
         }
-// create container in rootContainer
         if (rootContainer == null) {
             logger.e("enableVrMode: rootContainer is null! cannot add vr views")
             return
         }
         try {
-            // Используем FrameLayout как контейнер, чтобы можно было накладывать кнопку настроек
             vrContainer = FrameLayout(activity).apply {
                 layoutParams = ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
@@ -98,13 +90,11 @@ class VrManager(
                 )
             }
             rootContainer.addView(vrContainer)
-            logger.d("VR container (FrameLayout) added to root")
         } catch (e: Exception) {
             logger.e("Failed to create/add vrContainer: ${e.message}")
             return
         }
 
-        // Контентный LinearLayout (горизонтально) внутри FrameLayout
         val contentLinear = LinearLayout(activity).apply {
             orientation = LinearLayout.HORIZONTAL
             layoutParams = FrameLayout.LayoutParams(
@@ -114,15 +104,13 @@ class VrManager(
         }
         vrContainer?.addView(contentLinear)
 
-// Left: ImageView (will show bitmap copy of right)
         try {
             leftVrImage = ImageView(activity).apply {
                 val lp = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f)
                 lp.marginEnd = 0
                 lp.marginStart = 0
                 layoutParams = lp
-                scaleType = ImageView.ScaleType.FIT_CENTER   // ← безопаснее для отладки
-// НЕ ставьте цвет фона или ставьте чёрный, если нужно
+                scaleType = ImageView.ScaleType.FIT_CENTER
                 setBackgroundColor(Color.BLACK)
                 isClickable = false
                 isFocusable = false
@@ -133,7 +121,6 @@ class VrManager(
             logger.e("Failed to create leftVrImage: ${e.message}")
         }
 
-// Right: real player
         try {
             rightVrPlayer = InstaCapturePlayerView(activity).apply {
                 setLifecycle((activity as? androidx.fragment.app.FragmentActivity)?.lifecycle)
@@ -151,11 +138,9 @@ class VrManager(
             rightVrPlayer?.setPlayerViewListener(object : PlayerViewListener {
                 override fun onFirstFrameRender() {
                     logger.i("rightVrPlayer:onFirstFrameRender")
-// Start copy loop on first frame
                     startCopyLoop()
                 }
                 override fun onLoadingFinish() {
-                    logger.i("rightVrPlayer:onLoadingFinish - setting pipeline to right player")
                     try {
                         instaCameraManager.setPipeline(rightVrPlayer!!.pipeline)
                     } catch (e: Exception) {
@@ -163,7 +148,6 @@ class VrManager(
                     }
                 }
                 override fun onReleaseCameraPipeline() {
-                    logger.i("rightVrPlayer:onReleaseCameraPipeline")
                     try {
                         instaCameraManager.setPipeline(null)
                     } catch (e: Exception) {
@@ -171,7 +155,7 @@ class VrManager(
                     }
                 }
             })
-// Prepare & play right player with same params as main
+
             try {
                 val params = (activity as? CaptureActivity)?.viewModel?.getCaptureParams()
                 rightVrPlayer?.prepare(params)
@@ -179,12 +163,10 @@ class VrManager(
                 logger.w("Unable to obtain capture params to prepare right player: ${e.message}")
             }
             rightVrPlayer?.play()
-            logger.d("Right player prepared and play() called")
         } catch (e: Exception) {
             logger.e("Failed to create or start rightVrPlayer: ${e.message}")
         }
 
-// Добавляем кнопку настроек поверх VR (правый верхний угол)
         try {
             val sizeDp = 44
             val sizePx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, sizeDp.toFloat(), activity.resources.displayMetrics).toInt()
@@ -198,26 +180,22 @@ class VrManager(
                 val marginPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, marginDp.toFloat(), activity.resources.displayMetrics).toInt()
                 flp.setMargins(marginPx, marginPx, marginPx, marginPx)
                 layoutParams = flp
-                // небольшая прозрачность чтобы не отвлекать
                 alpha = 0.85f
             }
             vrContainer?.addView(settingsBtn)
             settingsBtn.setOnClickListener {
                 showVrSettingsDialog()
             }
-            logger.d("VR settings button added")
         } catch (e: Exception) {
             logger.e("Failed to add VR settings button: ${e.message}")
         }
 
-// hide other UI elements explicitly and disable touch on mode selector to avoid accidental swipes
         try {
             ivCaptureSetting.visibility = View.GONE
             btnCalibrate.visibility = View.GONE
             svCaptureMode.visibility = View.GONE
             svCaptureMode.isEnabled = false
-            svCaptureMode.setOnTouchListener { _, _ -> true } // consume touches
-            logger.d("UI elements hidden and svCaptureMode touch consumed")
+            svCaptureMode.setOnTouchListener { _, _ -> true }
         } catch (e: Exception) {
             logger.e("Failed to hide UI elements: ${e.message}")
         }
@@ -232,22 +210,17 @@ class VrManager(
         }
         logger.i("disableVrMode: starting")
         isVrMode = false
-// stop copy loop
         stopCopyLoop()
-// destroy right player
         try {
             rightVrPlayer?.destroy()
-            logger.d("rightVrPlayer destroyed")
         } catch (e: Exception) {
             logger.e("Failed to destroy rightVrPlayer: ${e.message}")
         }
-// clear left image
         try {
             leftVrImage?.setImageBitmap(null)
         } catch (e: Exception) {
             logger.e("Failed to clear left image bitmap: ${e.message}")
         }
-// recycle bitmaps
         reusableBitmap?.let {
             it.recycle()
             reusableBitmap = null
@@ -256,7 +229,6 @@ class VrManager(
             it.recycle()
             compositeBitmap = null
         }
-// remove vr container
         try {
             vrContainer?.removeAllViews()
             rootContainer?.removeView(vrContainer)
@@ -268,7 +240,6 @@ class VrManager(
             leftVrImage = null
             rightVrPlayer = null
         }
-// restore UI
         try {
             ivCaptureSetting.visibility = View.VISIBLE
             btnCalibrate.visibility = View.VISIBLE
@@ -279,7 +250,6 @@ class VrManager(
         } catch (e: Exception) {
             logger.e("Failed to restore UI elements: ${e.message}")
         }
-// show main player again
         try {
             capturePlayerView.visibility = View.VISIBLE
             capturePlayerView.play()
@@ -291,7 +261,6 @@ class VrManager(
     }
 
     fun applyOrientation(yawDeg: Float, pitchDeg: Float) {
-// Apply to right player (real)
         try {
             rightVrPlayer?.let { obj ->
                 val cls = obj.javaClass
@@ -309,22 +278,12 @@ class VrManager(
         } catch (e: Exception) {
             logger.e("applyOrientation -> right player error: ${e.message}")
         }
-
-// Left is ImageView — no orientation API; log for debug
-        try {
-            if (leftVrImage != null) {
-//logger.v("Left is ImageView; cannot apply yaw/pitch directly. (yaw-=$vrIpdYawDeg)")
-            }
-        } catch (e: Exception) {
-            logger.e("applyOrientation -> left image logging failed: ${e.message}")
-        }
     }
 
     fun onResume() {
         logger.d("VrManager.onResume called")
         rightVrPlayer?.play()
         if (rightVrPlayer != null && !copying) {
-// if onFirstFrameRender already fired previously, restart copying
             startCopyLoop()
         }
     }
@@ -332,7 +291,6 @@ class VrManager(
     fun onPause() {
         logger.d("VrManager.onPause called")
         stopCopyLoop()
-// rightVrPlayer?.pause() // leave commented to avoid breaking pipeline state
     }
 
     fun destroy() {
@@ -394,18 +352,16 @@ class VrManager(
                         var bmp: AndroidBitmap? = null
                         try {
                             bmp = src.drawToBitmap()
-                            if (bmp!!.width > 0 && bmp!!.height > 0) {
-                                logger.d("drawToBitmap produced bitmap ${bmp?.width}x${bmp?.height}")
-                            } else {
-                                logger.w("drawToBitmap returned empty bitmap w=${bmp?.width} h=${bmp?.height}")
-                                bmp?.recycle()
+                            if (!(bmp.width > 0 && bmp.height > 0)) {
+                                logger.w("drawToBitmap returned empty bitmap w=${bmp.width} h=${bmp.height}")
+                                bmp.recycle()
                                 bmp = null
                             }
                         } catch (e: Exception) {
                             logger.w("drawToBitmap exception: ${e.message}")
                         }
                         processAndSetBitmap(bmp, dst)
-                        if (bmp != null) bmp.recycle() // since new from drawToBitmap
+                        bmp?.recycle()
                     } else {
                         var bmp: AndroidBitmap? = null
                         if (renderView is SurfaceView) {
@@ -418,25 +374,23 @@ class VrManager(
                                     pixelCopyInProgress = false
                                     if (result == PixelCopy.SUCCESS) {
                                         bmp = reusableBitmap
-                                        logger.d("PixelCopy success ${bmp!!.width}x${bmp?.height}")
                                         processAndSetBitmap(bmp, dst)
                                     } else {
                                         logger.e("PixelCopy failed with code: $result")
                                     }
                                     if (copying) handler.postDelayed(this, copyIntervalMs)
                                 }, handler)
-                                return  // async, return now
+                                return
                             }
                         } else if (renderView is TextureView) {
                             try {
                                 bmp = renderView.getBitmap(width, height)
-                                logger.d("TextureView getBitmap produced ${bmp?.width}x${bmp?.height}")
                             } catch (e: Exception) {
                                 logger.e("TextureView getBitmap failed: ${e.message}")
                             }
                         }
                         processAndSetBitmap(bmp, dst)
-                        bmp?.recycle() // if from getBitmap, new bitmap
+                        bmp?.recycle()
                     }
                 } catch (t: Throwable) {
                     logger.e("copy loop throwable: ${t.message}")
@@ -462,7 +416,6 @@ class VrManager(
                 val canvas = Canvas(compositeBitmap!!)
                 canvas.drawColor(Color.BLACK)
                 canvas.drawBitmap(bmp, 0f, 0f, null)
-                logger.d("Composited opaque bitmap (original had alpha)")
                 compositeBitmap
             } else {
                 logger.d("Using original bitmap (opaque)")
@@ -470,7 +423,7 @@ class VrManager(
             }
             dst.setImageBitmap(finalBmp)
             dst.invalidate()
-            logger.i("setImageBitmap OK. dst.visible=${dst.visibility == View.VISIBLE} dst.alpha=${dst.alpha} bmp.size=${finalBmp?.width}x${finalBmp?.height}")
+            //logger.i("setImageBitmap OK. dst.visible=${dst.visibility == View.VISIBLE} dst.alpha=${dst.alpha} bmp.size=${finalBmp?.width}x${finalBmp?.height}")
         } catch (e: Exception) {
             logger.e("processAndSetBitmap failed: ${e.message}")
         }
@@ -484,7 +437,6 @@ class VrManager(
             copyRunnable = null
             reusableBitmap?.recycle()
             reusableBitmap = null
-// compositeBitmap recycled in disableVrMode after set null
             logger.i("Copy loop stopped")
         } catch (e: Exception) {
             logger.e("stopCopyLoop failed: ${e.message}")
@@ -492,8 +444,6 @@ class VrManager(
     }
 
     // ---------- новые вспомогательные функции для настроек VR ------------
-
-    // Показать диалог с двумя ползунками (масштаб и расстояние)
 
     fun showVrSettingsDialog() {
         if (!isVrMode) return
@@ -523,11 +473,9 @@ class VrManager(
             layoutParams = lp
         }
         val spacingSeek = SeekBar(activity).apply {
-            // Позволяем spacing в диапазоне [-maxDp, +maxDp] (dp), маппим на прогресс 0..2*maxPx
             val maxDp = 200
             val maxPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, maxDp.toFloat(), activity.resources.displayMetrics).toInt()
             max = maxPx * 2
-            // прогресс отображает value + maxPx (чтобы центр = 0)
             progress = (eyeSpacingPx + maxPx).coerceIn(0, max)
             val lp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
             layoutParams = lp
@@ -560,7 +508,6 @@ class VrManager(
             override fun onProgressChanged(sb: SeekBar?, progress: Int, fromUser: Boolean) {
                 val maxDp = 200
                 val maxPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, maxDp.toFloat(), activity.resources.displayMetrics).toInt()
-                // progress 0..2*maxPx -> spacing -maxPx..+maxPx
                 eyeSpacingPx = progress - maxPx
                 spacingLabel.text = "Spacing (px): ${eyeSpacingPx}"
                 applyVrAdjustments()
@@ -573,10 +520,8 @@ class VrManager(
         dialog.show()
     }
 
-    // Применяем текущие значения eyeScale и eyeSpacingPx к views
     private fun applyVrAdjustments() {
         try {
-            // масштаб (scaleX/scaleY)
             leftVrImage?.let { iv ->
                 iv.scaleX = eyeScale
                 iv.scaleY = eyeScale
@@ -586,20 +531,16 @@ class VrManager(
                 pv.scaleY = eyeScale
             }
 
-            // расстояние: устанавливаем marginEnd у левого и marginStart у правого по eyeSpacingPx/2
             val parentLinear = (vrContainer?.getChildAt(0) as? LinearLayout)
             if (parentLinear != null && parentLinear.childCount >= 2) {
                 val left = parentLinear.getChildAt(0)
                 val right = parentLinear.getChildAt(1)
-                // половина интервала для каждой стороны (может быть отрицательной)
                 val half = (eyeSpacingPx / 2)
 
-                // helper: безопасно обновить margins, сохраняя тип LayoutParams и weight
                 fun setMarginStartEnd(view: View, start: Int? = null, end: Int? = null) {
                     val lp = view.layoutParams
                     when (lp) {
                         is LinearLayout.LayoutParams -> {
-                            // сохраняем weight/width/height и только меняем marginStart/marginEnd
                             if (start != null) lp.marginStart = start
                             if (end != null) lp.marginEnd = end
                             view.layoutParams = lp
@@ -610,7 +551,6 @@ class VrManager(
                             view.layoutParams = lp
                         }
                         else -> {
-                            // общий fallback: создаём MarginLayoutParams, но копируем основные поля
                             val newLp = ViewGroup.MarginLayoutParams(lp)
                             if (start != null) newLp.marginStart = start
                             if (end != null) newLp.marginEnd = end
