@@ -72,9 +72,6 @@ class CaptureActivity : BaseActivity<ActivityCaptureBinding, CaptureViewModel>()
 
         binding.pickCaptureSetting.setTitleText(getString(R.string.capture_settings))
 
-        // NOTE: button btn_vr_toggle expected in activity_capture.xml
-        // If you used a different id, replace binding.btnVrToggle with your id.
-
         vrManager = VrManager(
             activity = this,
             rootContainer = binding.root,
@@ -92,15 +89,12 @@ class CaptureActivity : BaseActivity<ActivityCaptureBinding, CaptureViewModel>()
 
         binding.ivCaptureSetting.setOnClickListener { showCaptureSettingView() }
 
-        // VR toggle button (must be present in XML with id btn_vr_toggle)
         try {
             binding.btnVrToggle.setOnClickListener { vrManager.toggleVrMode() }
         } catch (e: Exception) {
-            // если кнопки нет в макете — просто логируем, приложение продолжит работать без VR-переключателя
             logger.w("VR toggle button not found in layout: ${e.message}")
         }
 
-        // calibrate button listener
         binding.btnCalibrate.setOnClickListener {
             try {
                 gyroController.calibrate()
@@ -127,11 +121,8 @@ class CaptureActivity : BaseActivity<ActivityCaptureBinding, CaptureViewModel>()
                 instaCameraManager.getSupportCaptureSettingList(it.currentCaptureMode)
             }
 
-            // Если VR включен и позиция выходит за пределы списка camera settings —
-            // это наш добавленный VR-пункт
             if (this::vrManager.isInitialized && vrManager.isVrMode && position >= supportCaptureSettingList.size) {
                 try {
-                    // закрываем панель общего выбора, открываем настройки VR
                     binding.pickCaptureSetting.hide()
                     vrManager.showVrSettingsDialog()
                 } catch (e: Exception) {
@@ -140,7 +131,6 @@ class CaptureActivity : BaseActivity<ActivityCaptureBinding, CaptureViewModel>()
                 return@setOnItemClickListener
             }
 
-            // Обычная логика для настроек камеры
             val captureSetting: CaptureSetting = supportCaptureSettingList[position]
             viewModel.cameraOfflineData.setCaptureSetting(captureSetting, data) {
                 binding.pickCaptureSetting.setData(captureSettingDataList)
@@ -157,8 +147,6 @@ class CaptureActivity : BaseActivity<ActivityCaptureBinding, CaptureViewModel>()
 
             val list = supportCaptureSettingList.map { getCaptureSettingData(it) }.toMutableList()
 
-            // Если сейчас VR-режим — добавляем отдельный пункт для VR-настроек
-            // (нажатие откроет диалог с ползунками)
             try {
                 if (this::vrManager.isInitialized && vrManager.isVrMode) {
                     val vrPick = PickData(
@@ -170,7 +158,6 @@ class CaptureActivity : BaseActivity<ActivityCaptureBinding, CaptureViewModel>()
                     list.add(vrPick)
                 }
             } catch (e: Exception) {
-                // safety: если что-то не инициализировано, просто не добавляем
             }
 
             return list
@@ -259,7 +246,6 @@ class CaptureActivity : BaseActivity<ActivityCaptureBinding, CaptureViewModel>()
                     CaptureEvent.CaptureStatus.STOPPING -> showLoading(R.string.capture_stopping)
                     CaptureEvent.CaptureStatus.WORKING -> {
                         hideLoading()
-                        // hide settings + calibrate while recording
                         binding.ivCaptureSetting.visibility = View.GONE
                         binding.btnCalibrate.visibility = View.GONE
                         binding.svCaptureMode.visibility = View.INVISIBLE
@@ -398,7 +384,6 @@ class CaptureActivity : BaseActivity<ActivityCaptureBinding, CaptureViewModel>()
         super.onDestroy()
     }
 
-    // --- sensor lifecycle hooks ---
     override fun onResume() {
         super.onResume()
         gyroController.start()
@@ -423,7 +408,6 @@ class CaptureActivity : BaseActivity<ActivityCaptureBinding, CaptureViewModel>()
         gyroController.stop()
         vrManager.onPause()
     }
-    // --- end lifecycle hooks ---
 
     private fun tryApplyOrientationToPlayer(yawDeg: Float, pitchDeg: Float) {
         val pipelinePresent = try {

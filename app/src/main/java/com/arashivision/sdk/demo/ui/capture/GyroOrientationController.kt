@@ -39,14 +39,11 @@ class GyroOrientationController(
         context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
     private val rotationVectorSensor: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
 
-    // rate limiting & smoothing
     var rateLimitMs = 33L // ~30Hz
     private var lastSensorUpdate = 0L
 
-    // smoothing
     var smoothingAlpha = 0.15f
 
-    // sensitivity
     companion object {
         var sensivity: Float = 1.0f
     }
@@ -58,28 +55,21 @@ class GyroOrientationController(
     private val pitchSensitivity: Float
         get() = pitchFactor * sensivity
 
-    // inversion
     var invertYaw = true
     var invertPitch = true
 
-    // raw values
     private var lastRawYawDeg = 0f
     private var lastRawPitchDeg = 0f
     private var lastRawRollDeg = 0f
 
-    // smoothed values
     private var smoothedYaw = 0f
     private var smoothedPitch = 0f
 
-    // calibration
     private var yawOffset = 0f
     private var pitchOffset = 0f
     private var calibrated = false
 
-    // enabled orientation controll flag
     var enabled = true
-
-    // internal buffers
     private val rotMat = FloatArray(9)
     private val remapped = FloatArray(9)
     private val out = FloatArray(3)
@@ -101,7 +91,6 @@ class GyroOrientationController(
         logger.d("GyroOrientationController stopped")
     }
 
-    /** Re-calibrate */
     fun calibrate() {
         yawOffset = lastRawYawDeg
         pitchOffset = lastRawPitchDeg
@@ -110,7 +99,6 @@ class GyroOrientationController(
         logger.d("calibrated pitchOffset=$pitchOffset")
     }
 
-    /** Orientation control disable */
     fun setzOrientationEnabled(enabled: Boolean) {
         this.enabled = enabled
     }
@@ -188,7 +176,6 @@ class GyroOrientationController(
         val pitchDelta = normalizeAngle(targetPitch - smoothedPitch)
         smoothedPitch = smoothedPitch + smoothingAlpha * pitchDelta
 
-        // clamp
         val maxYaw = 180f
         val maxPitch = 80f
         if (smoothedYaw > maxYaw) smoothedYaw = maxYaw
@@ -196,7 +183,6 @@ class GyroOrientationController(
         if (smoothedPitch > maxPitch) smoothedPitch = maxPitch
         if (smoothedPitch < -maxPitch) smoothedPitch = -maxPitch
 
-        // exporting result
         applyOrientation(smoothedYaw, smoothedPitch)
     }
 

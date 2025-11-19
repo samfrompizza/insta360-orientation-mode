@@ -32,7 +32,7 @@ import android.view.ViewGroup.MarginLayoutParams
 /**
 VrManager — отдельный класс, который включает/выключает VR-режим.
 
-Примечание: этот класс использует копирование битмапов из правого плеера в ImageView слева.
+Этот класс использует копирование битмапов из правого плеера в ImageView слева.
  */
 class VrManager(
     private val activity: Activity,
@@ -445,8 +445,6 @@ class VrManager(
         }
     }
 
-    // ---------- новые вспомогательные функции для настроек VR ------------
-
     fun showVrSettingsDialog() {
         if (!isVrMode) return
         val dialogRoot = LinearLayout(activity).apply {
@@ -455,7 +453,6 @@ class VrManager(
             setPadding(pad, pad, pad, pad)
         }
 
-        // --- existing scale controls (unchanged) ---
         val scaleLabel = TextView(activity).apply {
             text = "Scale (size): ${"%.2f".format(eyeScale)}"
             layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
@@ -480,17 +477,15 @@ class VrManager(
             layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
         }
 
-        // --- NEW: sensitivity controls ---
         val sensLabel = TextView(activity).apply {
-            // предполагается, что sensivity хранится в доступном месте: VREngine.sensivity или similar
-            val currentSens = GyroOrientationController.sensivity // <- замените на ваш путь к переменной
+            val currentSens = GyroOrientationController.sensivity
             text = "Sensitivity: ${"%.2f".format(currentSens)}"
             val lp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
             lp.topMargin = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 8f, activity.resources.displayMetrics).toInt()
             layoutParams = lp
         }
         val sensSeek = SeekBar(activity).apply {
-            // map 0..200 -> 0.00..2.00 (0.01 шаг)
+            // map 0..200 -> 0.00..2.00 (0.01 step)
             max = 200
             progress = ( (GyroOrientationController.sensivity * 100f).toInt() ).coerceIn(0, max) // стартовое положение
             layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
@@ -500,7 +495,6 @@ class VrManager(
         dialogRoot.addView(scaleSeek)
         dialogRoot.addView(spacingLabel)
         dialogRoot.addView(spacingSeek)
-        // добавляем sensitivity
         dialogRoot.addView(sensLabel)
         dialogRoot.addView(sensSeek)
 
@@ -510,7 +504,6 @@ class VrManager(
             .setPositiveButton("OK", null)
             .create()
 
-        // listeners
         scaleSeek.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(sb: SeekBar?, progress: Int, fromUser: Boolean) {
                 eyeScale = 0.5f + progress.toFloat() / 100f
@@ -533,13 +526,10 @@ class VrManager(
             override fun onStopTrackingTouch(sb: SeekBar?) {}
         })
 
-        // listener для sensitivity
         sensSeek.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(sb: SeekBar?, progress: Int, fromUser: Boolean) {
-                // progress 0..200 -> sens 0.00..2.00
                 val newSens = progress.toFloat() / 100f
-                // ОБНОВЛЯЕМ РЕАЛЬНУЮ ПЕРЕМЕННУ, а не создаём локальную
-                GyroOrientationController.sensivity = newSens // <- замените на ваш путь/сеттер
+                GyroOrientationController.sensivity = newSens
                 sensLabel.text = "Sensitivity: ${"%.2f".format(newSens)}"
                 applyVrAdjustments()
             }
@@ -598,6 +588,4 @@ class VrManager(
             logger.e("applyVrAdjustments failed: ${e.message}")
         }
     }
-
-
 }
