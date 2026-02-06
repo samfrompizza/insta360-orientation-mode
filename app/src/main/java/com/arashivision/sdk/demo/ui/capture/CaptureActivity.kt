@@ -1,7 +1,6 @@
 package com.arashivision.sdk.demo.ui.capture
 
 import android.annotation.SuppressLint
-import android.content.Context
 import android.os.SystemClock
 import android.view.Surface
 import android.view.View
@@ -35,8 +34,9 @@ class CaptureActivity : BaseActivity<ActivityCaptureBinding, CaptureViewModel>()
     private val logger: Logger = XLog.tag(CaptureActivity::class.java.simpleName).build()
     private var captureModeAdapter: CaptureModeAdapter? = null
 
-    // Gyro controller (outsourced logic)
     private lateinit var gyroController: GyroOrientationController
+
+    private lateinit var vrManager: VrManager
 
     override fun onStop() {
         super.onStop()
@@ -71,6 +71,16 @@ class CaptureActivity : BaseActivity<ActivityCaptureBinding, CaptureViewModel>()
         binding.svCaptureMode.addItemDecoration(FadingEdgeDecoration())
 
         binding.pickCaptureSetting.setTitleText(getString(R.string.capture_settings))
+
+        vrManager = VrManager(
+            activity = this,
+            rootContainer = binding.root,
+            capturePlayerView = binding.capturePlayerView,
+            svCaptureMode = binding.svCaptureMode,
+            ivCaptureSetting = binding.ivCaptureSetting,
+            btnCalibrate = binding.btnCalibrate,
+            calibrateGyro = { try { gyroController.calibrate() } catch (_: Exception) {} }
+        )
     }
 
     override fun initListener() {
@@ -79,7 +89,12 @@ class CaptureActivity : BaseActivity<ActivityCaptureBinding, CaptureViewModel>()
 
         binding.ivCaptureSetting.setOnClickListener { showCaptureSettingView() }
 
-        // calibrate button listener
+        try {
+            binding.btnVrToggle.setOnClickListener { vrManager.toggleVrMode() }
+        } catch (e: Exception) {
+            logger.w("VR toggle button not found in layout: ${e.message}")
+        }
+
         binding.btnCalibrate.setOnClickListener {
             try {
                 gyroController.calibrate()
@@ -105,6 +120,17 @@ class CaptureActivity : BaseActivity<ActivityCaptureBinding, CaptureViewModel>()
             val supportCaptureSettingList: List<CaptureSetting> = viewModel.cameraOfflineData.let {
                 instaCameraManager.getSupportCaptureSettingList(it.currentCaptureMode)
             }
+
+            if (this::vrManager.isInitialized && vrManager.isVrMode && position >= supportCaptureSettingList.size) {
+                try {
+                    binding.pickCaptureSetting.hide()
+                    vrManager.showVrSettingsDialog()
+                } catch (e: Exception) {
+                    logger.e("Failed to open VR settings dialog: ${e.message}")
+                }
+                return@setOnItemClickListener
+            }
+
             val captureSetting: CaptureSetting = supportCaptureSettingList[position]
             viewModel.cameraOfflineData.setCaptureSetting(captureSetting, data) {
                 binding.pickCaptureSetting.setData(captureSettingDataList)
@@ -119,7 +145,22 @@ class CaptureActivity : BaseActivity<ActivityCaptureBinding, CaptureViewModel>()
                 instaCameraManager.getSupportCaptureSettingList(it.currentCaptureMode)
             }
 
-            return supportCaptureSettingList.map { getCaptureSettingData(it) }
+            val list = supportCaptureSettingList.map { getCaptureSettingData(it) }.toMutableList()
+
+            try {
+                if (this::vrManager.isInitialized && vrManager.isVrMode) {
+                    val vrPick = PickData(
+                        true,
+                        "VR: Adjust eyes",
+                        0,
+                        listOf("Open VR settings" to 0)
+                    )
+                    list.add(vrPick)
+                }
+            } catch (e: Exception) {
+            }
+
+            return list
         }
 
     private fun getCaptureSettingData(captureSetting: CaptureSetting): PickData {
@@ -205,7 +246,6 @@ class CaptureActivity : BaseActivity<ActivityCaptureBinding, CaptureViewModel>()
                     CaptureEvent.CaptureStatus.STOPPING -> showLoading(R.string.capture_stopping)
                     CaptureEvent.CaptureStatus.WORKING -> {
                         hideLoading()
-                        // hide settings + calibrate while recording
                         binding.ivCaptureSetting.visibility = View.GONE
                         binding.btnCalibrate.visibility = View.GONE
                         binding.svCaptureMode.visibility = View.INVISIBLE
@@ -263,9 +303,6 @@ class CaptureActivity : BaseActivity<ActivityCaptureBinding, CaptureViewModel>()
 
     private fun captureComplete() {
         hideLoading()
-        binding.ivCaptureSetting.visibility = View.VISIBLE
-        binding.btnCalibrate.visibility = View.VISIBLE
-        binding.svCaptureMode.visibility = View.VISIBLE
         binding.tvRecordTime.visibility = View.GONE
         binding.tvVideoDuration.visibility = View.GONE
         binding.ivArrow.setVisibility(View.GONE)
@@ -273,6 +310,11 @@ class CaptureActivity : BaseActivity<ActivityCaptureBinding, CaptureViewModel>()
             binding.btnCapture.setState(CaptureShutterButton.State.CAPTURE_IDLE)
         } else {
             binding.btnCapture.setState(CaptureShutterButton.State.RECORD_IDLE)
+        }
+        if (!vrManager.isVrMode) {
+            binding.ivCaptureSetting.visibility = View.VISIBLE
+            binding.btnCalibrate.visibility = View.VISIBLE
+            binding.svCaptureMode.visibility = View.VISIBLE
         }
     }
 
@@ -298,6 +340,7 @@ class CaptureActivity : BaseActivity<ActivityCaptureBinding, CaptureViewModel>()
                 instaCameraManager.setPipeline(null)
             }
         })
+
         binding.capturePlayerView.prepare(viewModel.getCaptureParams())
         binding.capturePlayerView.play()
         binding.capturePlayerView.keepScreenOn = true
@@ -328,15 +371,19 @@ class CaptureActivity : BaseActivity<ActivityCaptureBinding, CaptureViewModel>()
             binding.pickCaptureSetting.hide()
             return
         }
+        if (vrManager.isVrMode) {
+            vrManager.disableVrMode()
+            return
+        }
         if (!instaCameraManager.isCameraWorking) super.onBackPressed()
     }
 
     override fun onDestroy() {
+        vrManager.destroy()
         binding.capturePlayerView.destroy()
         super.onDestroy()
     }
 
-    // --- sensor lifecycle hooks ---
     override fun onResume() {
         super.onResume()
         gyroController.start()
@@ -351,14 +398,16 @@ class CaptureActivity : BaseActivity<ActivityCaptureBinding, CaptureViewModel>()
         } catch (t: Throwable) {
             logger.e("onResume preview reinit failed: ${t.message}")
         }
+
+        vrManager.onResume()
     }
 
 
     override fun onPause() {
         super.onPause()
         gyroController.stop()
+        vrManager.onPause()
     }
-    // --- end lifecycle hooks ---
 
     private fun tryApplyOrientationToPlayer(yawDeg: Float, pitchDeg: Float) {
         val pipelinePresent = try {
@@ -368,20 +417,34 @@ class CaptureActivity : BaseActivity<ActivityCaptureBinding, CaptureViewModel>()
         }
         if (!pipelinePresent) return
 
+        fun applyTo(obj: Any?, yaw: Float, pitch: Float) {
+            if (obj == null) return
+            try {
+                val cls = obj.javaClass
+                try {
+                    val mYaw = cls.getMethod("setYaw", Float::class.javaPrimitiveType)
+                    mYaw.invoke(obj, yaw)
+                } catch (e: NoSuchMethodException) { /* ignore */ }
+
+                try {
+                    val mPitch = cls.getMethod("setPitch", Float::class.javaPrimitiveType)
+                    mPitch.invoke(obj, pitch)
+                } catch (e: NoSuchMethodException) { /* ignore */ }
+
+            } catch (e: Exception) {
+                logger.e("applyTo error: ${e.message}")
+            }
+        }
+
         try {
-            val cls = binding.capturePlayerView.javaClass
-            try {
-                val mYaw = cls.getMethod("setYaw", Float::class.javaPrimitiveType)
-                mYaw.invoke(binding.capturePlayerView, yawDeg)
-            } catch (e: NoSuchMethodException) { /* ignore */ }
-
-            try {
-                val mPitch = cls.getMethod("setPitch", Float::class.javaPrimitiveType)
-                mPitch.invoke(binding.capturePlayerView, pitchDeg)
-            } catch (e: NoSuchMethodException) { /* ignore */ }
-
+            if (vrManager.isVrMode) {
+                vrManager.applyOrientation(yawDeg, pitchDeg)
+            } else {
+                applyTo(binding.capturePlayerView, yawDeg, pitchDeg)
+            }
         } catch (e: Exception) {
             logger.e("tryApplyOrientationToPlayer error: ${e.message}")
         }
     }
+
 }
