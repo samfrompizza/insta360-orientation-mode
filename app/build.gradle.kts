@@ -36,7 +36,7 @@ android {
 
     signingConfigs {
         create("release") {
-            storeFile = file("G:\\camerasdk\\sdkdemo2\\app\\sdk.jks")
+            storeFile = file("sdk.jks")
             storePassword = "insta360"
             keyAlias = "insta360"
             keyPassword = "insta360"
@@ -104,16 +104,11 @@ dependencies {
     implementation(libs.insta.media)
 
 
-
     implementation(files("libs/glide_transformations.jar"))
 
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
-    // ML
-    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.17.0")
+    // Детектор сферических объектов
     implementation("org.opencv:opencv-android:4.9.0")
-
-    // Корутины для асинхронности
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.1")
 }

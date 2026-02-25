@@ -1,7 +1,5 @@
 package com.arashivision.sdk.demo.ui.capture
 
-import org.opencv.core.Mat
-import org.opencv.core.Scalar
 import com.elvishew.xlog.Logger
 import com.elvishew.xlog.XLog
 import org.opencv.core.*
@@ -26,6 +24,7 @@ class SphericalObjectDetector {
     private val redUpper2 = Scalar(180.0, 255.0, 255.0)
 
     private val cubeSize = 256
+    private val mapCache = HashMap<Int, List<Pair<Mat, Mat>>>()
 
     data class Detection(
         val yawDeg: Float,
@@ -91,20 +90,16 @@ class SphericalObjectDetector {
                 Imgproc.cvtColor(equiMat, rgb, Imgproc.COLOR_RGBA2RGB)
                 rgb
             } else {
-                equiMat
+                equiMat.clone()
             }
 
-            // математически некорректное преобразование, но для MVP сойдёт
-
-            val stepX = processMat.width() / 6
-            val stepY = processMat.height() / 3
-
-            faces.add(cropAndResize(processMat, stepX * 1, 0, stepX, stepY * 2, size))
-            faces.add(cropAndResize(processMat, stepX * 4, 0, stepX, stepY * 2, size))
-            faces.add(cropAndResize(processMat, stepX * 0, 0, stepX, stepY * 2, size))
-            faces.add(cropAndResize(processMat, stepX * 3, 0, stepX, stepY * 2, size))
-            faces.add(cropAndResize(processMat, 0, 0, processMat.width(), stepY, size))
-            faces.add(cropAndResize(processMat, 0, stepY * 2, processMat.width(), stepY, size))
+            val faceMaps = getOrCreateFaceMaps(processMat.width(), processMat.height(), size)
+            repeat(6) { faceIndex ->
+                val (mapX, mapY) = faceMaps[faceIndex]
+                val dst = Mat(size, size, processMat.type())
+                Imgproc.remap(processMat, dst, mapX, mapY, Imgproc.INTER_LINEAR)
+                faces.add(dst)
+            }
 
             processMat.release()
         } catch (e: Exception) {
@@ -114,22 +109,52 @@ class SphericalObjectDetector {
         return faces
     }
 
-    private fun cropAndResize(mat: Mat, x: Int, y: Int, width: Int, height: Int, size: Int): Mat {
-        return try {
-            val roi = Rect(
-                x.coerceAtLeast(0),
-                y.coerceAtLeast(0),
-                width.coerceAtMost(mat.width() - x),
-                height.coerceAtMost(mat.height() - y)
-            )
-            val cropped = mat.submat(roi)
-            val resized = Mat()
-            Imgproc.resize(cropped, resized, Size(size.toDouble(), size.toDouble()))
-            cropped.release()
-            resized
-        } catch (e: Exception) {
-            logger.e("cropAndResize error: ${e.message}")
-            Mat()
+    private fun getOrCreateFaceMaps(equiWidth: Int, equiHeight: Int, size: Int): List<Pair<Mat, Mat>> {
+        val key = (equiWidth shl 20) xor (equiHeight shl 8) xor size
+        mapCache[key]?.let { return it }
+
+        val maps = mutableListOf<Pair<Mat, Mat>>()
+        for (face in 0..5) {
+            val mapX = Mat(size, size, CvType.CV_32FC1)
+            val mapY = Mat(size, size, CvType.CV_32FC1)
+            for (y in 0 until size) {
+                val v = (2.0 * (y + 0.5) / size) - 1.0
+                for (x in 0 until size) {
+                    val u = (2.0 * (x + 0.5) / size) - 1.0
+                    val (dx, dy, dz) = faceUvToDirection(face, u, -v)
+                    val norm = sqrt(dx * dx + dy * dy + dz * dz)
+                    val nx = dx / norm
+                    val ny = dy / norm
+                    val nz = dz / norm
+
+                    val theta = atan2(nx, nz)
+                    val phi = asin(ny)
+
+                    val srcX = ((theta + PI) / (2.0 * PI) * equiWidth).toFloat().coerceIn(0f, (equiWidth - 1).toFloat())
+                    val srcY = ((PI / 2 - phi) / PI * equiHeight).toFloat().coerceIn(0f, (equiHeight - 1).toFloat())
+                    mapX.put(y, x, srcX)
+                    mapY.put(y, x, srcY)
+                }
+            }
+            maps.add(Pair(mapX, mapY))
+        }
+
+        // Храним только один часто используемый набор карт в памяти.
+        mapCache.values.flatten().forEach { (x, y) -> x.release(); y.release() }
+        mapCache.clear()
+        mapCache[key] = maps
+        return maps
+    }
+
+    private fun faceUvToDirection(faceIndex: Int, u: Double, v: Double): Triple<Double, Double, Double> {
+        return when (faceIndex) {
+            0 -> Triple(1.0, v, -u)     // Right (+X)
+            1 -> Triple(-1.0, v, u)     // Left (-X)
+            2 -> Triple(u, 1.0, -v)     // Top (+Y)
+            3 -> Triple(u, -1.0, v)     // Bottom (-Y)
+            4 -> Triple(u, v, 1.0)      // Front (+Z)
+            5 -> Triple(-u, v, -1.0)    // Back (-Z)
+            else -> Triple(u, v, 1.0)
         }
     }
 
@@ -142,8 +167,8 @@ class SphericalObjectDetector {
 
             val mask1 = Mat()
             val mask2 = Mat()
-            Core.inRangeI(hsvMat, Scalar(0.0, 50.0, 50.0), Scalar(10.0, 255.0, 255.0), mask1)
-            Core.inRangeI(hsvMat, Scalar(170.0, 50.0, 50.0), Scalar(180.0, 255.0, 255.0), mask2)
+            Core.inRange(hsvMat, redLower1, redUpper1, mask1)
+            Core.inRange(hsvMat, redLower2, redUpper2, mask2)
 
             val redMask = Mat()
             Core.bitwise_or(mask1, mask2, redMask)

@@ -28,6 +28,7 @@ import android.widget.SeekBar
 import android.widget.TextView
 import android.view.Gravity
 import android.view.ViewGroup.MarginLayoutParams
+import java.lang.reflect.Method
 
 /**
 VrManager — отдельный класс, который включает/выключает VR-режим.
@@ -58,6 +59,9 @@ class VrManager(
     private val vrIpdYawDeg: Float = 3.0f
     private var eyeScale: Float = 0.7f
     private var eyeSpacingPx: Int = -400
+
+    private var setYawMethod: Method? = null
+    private var setPitchMethod: Method? = null
 
     init {
         applyVrAdjustments()
@@ -241,6 +245,8 @@ class VrManager(
             vrContainer = null
             leftVrImage = null
             rightVrPlayer = null
+            setYawMethod = null
+            setPitchMethod = null
         }
         try {
             ivCaptureSetting.visibility = View.VISIBLE
@@ -263,22 +269,29 @@ class VrManager(
     }
 
     fun applyOrientation(yawDeg: Float, pitchDeg: Float) {
+        val obj = rightVrPlayer ?: return
         try {
-            rightVrPlayer?.let { obj ->
-                val cls = obj.javaClass
-                try {
-                    val mYaw = cls.getMethod("setYaw", Float::class.javaPrimitiveType)
-                    mYaw.invoke(obj, yawDeg + vrIpdYawDeg)
-                } catch (_: NoSuchMethodException) {
-                }
-                try {
-                    val mPitch = cls.getMethod("setPitch", Float::class.javaPrimitiveType)
-                    mPitch.invoke(obj, pitchDeg)
-                } catch (_: NoSuchMethodException) {
-                }
+            if (setYawMethod == null || setPitchMethod == null) {
+                cacheOrientationMethods(obj)
             }
+            setYawMethod?.invoke(obj, yawDeg + vrIpdYawDeg)
+            setPitchMethod?.invoke(obj, pitchDeg)
         } catch (e: Exception) {
             logger.e("applyOrientation -> right player error: ${e.message}")
+        }
+    }
+
+    private fun cacheOrientationMethods(obj: InstaCapturePlayerView) {
+        val cls = obj.javaClass
+        setYawMethod = try {
+            cls.getMethod("setYaw", Float::class.javaPrimitiveType)
+        } catch (_: NoSuchMethodException) {
+            null
+        }
+        setPitchMethod = try {
+            cls.getMethod("setPitch", Float::class.javaPrimitiveType)
+        } catch (_: NoSuchMethodException) {
+            null
         }
     }
 

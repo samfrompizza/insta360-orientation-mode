@@ -15,6 +15,7 @@ import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
 import kotlin.math.asin
+import kotlin.math.abs
 
 /**
  * Контроллер работы с гироскопом на основе кватернионов.
@@ -73,6 +74,7 @@ class GyroOrientationController(
 
     private var currentQuaternion = Quaternion(1f, 0f, 0f, 0f)
     private var smoothedQuaternion = Quaternion(1f, 0f, 0f, 0f)
+    private var lastStableYaw = 0f
 
     fun start() {
         if (!enabled) return
@@ -164,7 +166,8 @@ class GyroOrientationController(
 
         smoothedQuaternion = Quaternion.slerp(smoothedQuaternion, relativeQuaternion, smoothingAlpha)
 
-        val (yaw, pitch, roll) = smoothedQuaternion.toEulerAngles()
+        val (yaw, pitch) = smoothedQuaternion.toStableYawPitch(lastStableYaw)
+        lastStableYaw = yaw
 
         val targetYaw = yaw * yawSensitivity * if (invertYaw) -1f else 1f
         val targetPitch = pitch * pitchSensitivity * if (invertPitch) -1f else 1f
@@ -271,6 +274,22 @@ class GyroOrientationController(
             return Triple(yaw, pitch, roll)
         }
 
+        fun toStableYawPitch(previousYaw: Float): Pair<Float, Float> {
+            val q = this.normalize()
+
+            val forwardX = 2.0f * (q.x * q.z + q.w * q.y)
+            val forwardY = 2.0f * (q.y * q.z - q.w * q.x)
+            val forwardZ = 1.0f - 2.0f * (q.x * q.x + q.y * q.y)
+
+            val horizontalLength = sqrt(forwardX * forwardX + forwardZ * forwardZ)
+            val pitch = Math.toDegrees(atan2(forwardY.toDouble(), horizontalLength.toDouble())).toFloat()
+
+            val yawRaw = if (horizontalLength < 1e-4f) previousYaw else Math.toDegrees(atan2(forwardX.toDouble(), forwardZ.toDouble())).toFloat()
+            val yaw = unwrapAngle(yawRaw, previousYaw)
+
+            return Pair(yaw, pitch.coerceIn(-89.5f, 89.5f))
+        }
+
         companion object {
             /**
              * Конвертирование матрицы ротации 3x3 в кватернион
@@ -352,6 +371,13 @@ class GyroOrientationController(
 
                 // SLERP: q(t) = q1 * cos(θ) + q3 * sin(θ)
                 return (a * cos(theta.toDouble()).toFloat() + q3 * sin(theta.toDouble()).toFloat()).normalize()
+            }
+
+            private fun unwrapAngle(angle: Float, reference: Float): Float {
+                var result = angle
+                while (result - reference > 180f) result -= 360f
+                while (result - reference < -180f) result += 360f
+                return if (abs(result) < 1e-3f) 0f else result
             }
 
             private operator fun Quaternion.minus(other: Quaternion): Quaternion =
