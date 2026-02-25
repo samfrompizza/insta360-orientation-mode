@@ -122,8 +122,8 @@ class GyroOrientationController(
             )
             Surface.ROTATION_90 -> SensorManager.remapCoordinateSystem(
                 rotMat,
-                SensorManager.AXIS_Z,
                 SensorManager.AXIS_MINUS_X,
+                SensorManager.AXIS_Z,
                 remapped
             )
             Surface.ROTATION_180 -> SensorManager.remapCoordinateSystem(
@@ -134,8 +134,8 @@ class GyroOrientationController(
             )
             Surface.ROTATION_270 -> SensorManager.remapCoordinateSystem(
                 rotMat,
-                SensorManager.AXIS_MINUS_Z,
-                SensorManager.AXIS_X,
+                SensorManager.AXIS_MINUS_X,
+                SensorManager.AXIS_Z,
                 remapped
             )
             else -> SensorManager.remapCoordinateSystem(

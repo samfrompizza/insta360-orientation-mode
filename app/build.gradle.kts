@@ -109,4 +109,11 @@ dependencies {
 
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+
+    // ML
+    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.17.0")
+    implementation("org.opencv:opencv-android:4.9.0")
+
+    // Корутины для асинхронности
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.1")
 }
