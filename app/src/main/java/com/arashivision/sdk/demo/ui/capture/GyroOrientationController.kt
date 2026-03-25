@@ -57,11 +57,15 @@ class GyroOrientationController(
         var invertYaw = false
         var invertPitch = true
     }
+    private var lastLogTime = 0L
     private var lastRawYawDeg = 0f
     private var lastRawPitchDeg = 0f
     private var lastRawRollDeg = 0f
     private var smoothedYaw = 0f
     private var smoothedPitch = 0f
+    private var lastEulerYaw = 0f
+    private var lastEulerPitch = 0f
+    private var lastEulerRoll = 0f
 
     private var calibrationQuaternion = Quaternion(1f, 0f, 0f, 0f) // идентичный кватернион
     private var calibrated = false
@@ -93,6 +97,9 @@ class GyroOrientationController(
 
     fun calibrate() {
         calibrationQuaternion = currentQuaternion.copy()
+        lastEulerYaw = 0f
+        lastEulerPitch = 0f
+        lastEulerRoll = 0f
         calibrated = true
         logger.d("Gyro calibrated at quaternion: w=${calibrationQuaternion.w}, x=${calibrationQuaternion.x}, y=${calibrationQuaternion.y}, z=${calibrationQuaternion.z}")
     }
@@ -164,7 +171,15 @@ class GyroOrientationController(
 
         smoothedQuaternion = Quaternion.slerp(smoothedQuaternion, relativeQuaternion, smoothingAlpha)
 
-        val (yaw, pitch, roll) = smoothedQuaternion.toEulerAngles()
+        val (yaw, pitch, roll) = smoothedQuaternion.toEulerAngles(
+            previousYaw = lastEulerYaw,
+            previousPitch = lastEulerPitch,
+            previousRoll = lastEulerRoll
+        )
+
+        lastEulerYaw = yaw
+        lastEulerPitch = pitch
+        lastEulerRoll = roll
 
         val targetYaw = yaw * yawSensitivity * if (invertYaw) -1f else 1f
         val targetPitch = pitch * pitchSensitivity * if (invertPitch) -1f else 1f
@@ -178,6 +193,19 @@ class GyroOrientationController(
         smoothedYaw = clampedYaw
         smoothedPitch = clampedPitch
 
+        val thisMoment = SystemClock.elapsedRealtime()
+        if (thisMoment - lastLogTime >= 500L) {
+            lastLogTime = thisMoment
+            logger.d(
+                "yaw=$smoothedYaw pitch=$smoothedPitch " +
+                        "rawYaw=$lastRawYawDeg rawPitch=$lastRawPitchDeg rawRoll=$lastRawRollDeg " +
+                        "q=${smoothedQuaternion}"
+            )
+            logger.d(
+                "yawRawFromQuat=$yaw pitchRawFromQuat=$pitch rollRawFromQuat=$roll " +
+                        "targetYaw=${yaw * yawSensitivity} targetPitch=${pitch * pitchSensitivity}"
+            )
+        }
         applyOrientation(smoothedYaw, smoothedPitch)
     }
 
@@ -246,29 +274,56 @@ class GyroOrientationController(
          * - pitch : asin(2(wy - xz))
          * - roll  : atan2(2(wx + yz), 1 - 2(x² + y²))
          */
-        fun toEulerAngles(): Triple<Float, Float, Float> {
+        fun toEulerAngles(
+            previousYaw: Float? = null,
+            previousPitch: Float? = null,
+            previousRoll: Float? = null
+        ): Triple<Float, Float, Float> {
             val q = this.normalize()
 
-            val sinPitch = 2.0f * (q.w * q.y - q.z * q.x)
-            val pitch = if (sinPitch >= 1.0f) {
-                90f  // gimbal lock
+            val sinPitch = (2.0f * (q.w * q.y - q.z * q.x)).coerceIn(-1f, 1f)
+
+            var pitch = if (sinPitch >= 1.0f) {
+                90f
             } else if (sinPitch <= -1.0f) {
-                -90f  // gimbal lock
+                -90f
             } else {
                 Math.toDegrees(asin(sinPitch.toDouble())).toFloat()
             }
 
-            val yaw = Math.toDegrees(atan2(
-                2.0 * (q.w * q.z + q.x * q.y).toDouble(),
-                1.0 - 2.0 * (q.y * q.y + q.z * q.z).toDouble()
-            )).toFloat()
+            var yaw = Math.toDegrees(
+                atan2(
+                    2.0 * (q.w * q.z + q.x * q.y).toDouble(),
+                    1.0 - 2.0 * (q.y * q.y + q.z * q.z).toDouble()
+                )
+            ).toFloat()
 
-            val roll = Math.toDegrees(atan2(
-                2.0 * (q.w * q.x + q.y * q.z).toDouble(),
-                1.0 - 2.0 * (q.x * q.x + q.y * q.y).toDouble()
-            )).toFloat()
+            var roll = Math.toDegrees(
+                atan2(
+                    2.0 * (q.w * q.x + q.y * q.z).toDouble(),
+                    1.0 - 2.0 * (q.x * q.x + q.y * q.y).toDouble()
+                )
+            ).toFloat()
+
+            if (previousYaw != null) yaw = unwrapToNearest(yaw, previousYaw)
+            if (previousPitch != null) pitch = unwrapToNearest(pitch, previousPitch)
+            if (previousRoll != null) roll = unwrapToNearest(roll, previousRoll)
 
             return Triple(yaw, pitch, roll)
+        }
+
+        private fun wrap180(a: Float): Float {
+            var x = (a + 180f) % 360f
+            if (x < 0f) x += 360f
+            return x - 180f
+        }
+
+        private fun unwrapToNearest(angle: Float, reference: Float): Float {
+            var a = wrap180(angle)
+            var diff = a - reference
+            if (diff > 180f) a -= 360f
+            if (diff < -180f) a += 360f
+            return a
         }
 
         companion object {
