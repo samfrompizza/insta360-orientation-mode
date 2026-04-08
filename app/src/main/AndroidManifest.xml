@@ -59,6 +59,10 @@
             android:name=".ui.capture.CaptureActivity"
             android:exported="false"
             android:launchMode="singleInstance"/>
+        <activity
+            android:name=".ui.player.LocalSphericalPlayerActivity"
+            android:exported="false" />
+
 
         <service
             android:name=".service.ConnectService"
