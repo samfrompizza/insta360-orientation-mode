@@ -251,7 +251,7 @@ class LocalVrManager(
                     if (srcTexture != null) {
                         val bmp = srcTexture.getBitmap(width, height)
                         processAndSetBitmap(bmp)
-                        bmp.recycle()
+                        bmp?.recycle()
                     }
                 } catch (t: Throwable) {
                     logger.e("copy loop error: ${t.message}")

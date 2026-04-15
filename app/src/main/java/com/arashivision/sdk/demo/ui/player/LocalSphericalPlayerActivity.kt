@@ -3,10 +3,10 @@ package com.arashivision.sdk.demo.ui.player
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.net.Uri
-import android.view.ScaleGestureDetector
-import android.view.View
+import android.os.Build
+import android.view.Surface
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.annotation.OptIn
+import androidx.annotation.RequiresApi
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
@@ -19,6 +19,7 @@ import com.arashivision.sdk.demo.databinding.ActivityLocalSphericalPlayerBinding
 import com.arashivision.sdk.demo.ui.capture.GyroOrientationController
 import com.elvishew.xlog.XLog
 
+@UnstableApi
 @OptIn(UnstableApi::class)
 class LocalSphericalPlayerActivity :
     BaseActivity<ActivityLocalSphericalPlayerBinding, LocalSphericalPlayerViewModel>() {
@@ -44,6 +45,8 @@ class LocalSphericalPlayerActivity :
             startPlayback(uri)
         }
 
+    @RequiresApi(Build.VERSION_CODES.R)
+    @androidx.annotation.OptIn(UnstableApi::class)
     override fun initView() {
         super.initView()
 
@@ -65,6 +68,7 @@ class LocalSphericalPlayerActivity :
         )
     }
 
+    @androidx.annotation.OptIn(UnstableApi::class)
     @SuppressLint("ClickableViewAccessibility")
     override fun initListener() {
         super.initListener()
@@ -88,7 +92,7 @@ class LocalSphericalPlayerActivity :
         }
 
         binding.btnCenterView.setOnClickListener {
-            recenterSensorView()
+            gyroController.calibrate()
             toast(R.string.gyro_recentered)
         }
 
@@ -122,6 +126,7 @@ class LocalSphericalPlayerActivity :
         }
     }
 
+    @androidx.annotation.OptIn(UnstableApi::class)
     override fun onResume() {
         super.onResume()
         binding.sphericalView.onResume()
@@ -131,6 +136,7 @@ class LocalSphericalPlayerActivity :
         syncPlayPauseButton()
     }
 
+    @androidx.annotation.OptIn(UnstableApi::class)
     override fun onPause() {
         vrManager.onPause()
         gyroController.stop()
@@ -140,89 +146,17 @@ class LocalSphericalPlayerActivity :
     }
 
     override fun onStop() {
-        releasePlayers()
+        player?.release()
+        player = null
         super.onStop()
     }
 
-    @OptIn(UnstableApi::class)
-    private fun setupSphericalViews() {
-        binding.sphericalView.setDefaultStereoMode(C.STEREO_MODE_MONO)
-        binding.sphericalViewSecondary.setDefaultStereoMode(C.STEREO_MODE_MONO)
-        binding.sphericalView.setUseSensorRotation(sensorRotationEnabled)
-        binding.sphericalViewSecondary.setUseSensorRotation(sensorRotationEnabled)
-    }
-
-    private fun ensurePlayers() {
-        if (mainPlayer == null) {
-            mainPlayer = ExoPlayer.Builder(this).build().also { exo ->
-                exo.repeatMode = Player.REPEAT_MODE_ALL
-                exo.setVideoSurfaceView(binding.sphericalView)
-            }
-        }
-
-        if (vrPlayer == null) {
-            vrPlayer = ExoPlayer.Builder(this).build().also { exo ->
-                exo.repeatMode = Player.REPEAT_MODE_ALL
-                exo.volume = 0f
-                exo.setVideoSurfaceView(binding.sphericalViewSecondary)
-            }
-        }
-
-        currentVideoUri?.let { startPlayback(it) }
-    }
-
-    private fun releasePlayers() {
-        mainPlayer?.release()
-        vrPlayer?.release()
-        mainPlayer = null
-        vrPlayer = null
-    }
-
     private fun startPlayback(uri: Uri) {
-        val main = mainPlayer ?: return
-        val vr = vrPlayer ?: return
-
-        val mediaItem = MediaItem.fromUri(uri)
-        main.setMediaItem(mediaItem)
-        vr.setMediaItem(mediaItem)
-        main.prepare()
-        vr.prepare()
-
-        setPlayWhenReady(true)
+        val exo = player ?: return
+        exo.setMediaItem(MediaItem.fromUri(uri))
+        exo.prepare()
+        exo.playWhenReady = true
         syncPlayPauseButton()
-    }
-
-    private fun setPlayWhenReady(playWhenReady: Boolean) {
-        mainPlayer?.playWhenReady = playWhenReady
-        vrPlayer?.playWhenReady = playWhenReady
-    }
-
-    @OptIn(UnstableApi::class)
-    private fun recenterSensorView() {
-        if (!sensorRotationEnabled) return
-        binding.sphericalView.setUseSensorRotation(false)
-        binding.sphericalViewSecondary.setUseSensorRotation(false)
-        binding.sphericalView.post {
-            binding.sphericalView.setUseSensorRotation(true)
-            binding.sphericalViewSecondary.setUseSensorRotation(true)
-        }
-    }
-
-    private fun updateVrUi() {
-        binding.sphericalViewSecondary.visibility = if (isVrMode) View.VISIBLE else View.GONE
-        binding.controlsContainer.visibility = if (isVrMode) View.GONE else View.VISIBLE
-        binding.btnToggleVr.text = if (isVrMode) {
-            getString(R.string.exit_vr_mode)
-        } else {
-            getString(R.string.enter_vr_mode)
-        }
-    }
-
-    private fun updateZoom() {
-        binding.sphericalView.scaleX = zoomFactor
-        binding.sphericalView.scaleY = zoomFactor
-        binding.sphericalViewSecondary.scaleX = zoomFactor
-        binding.sphericalViewSecondary.scaleY = zoomFactor
     }
 
     private fun syncPlayPauseButton() {
