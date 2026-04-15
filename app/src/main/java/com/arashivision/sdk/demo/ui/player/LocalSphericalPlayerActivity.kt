@@ -1,27 +1,35 @@
 package com.arashivision.sdk.demo.ui.player
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.net.Uri
+import android.view.Surface
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import com.arashivision.sdk.demo.R
 import com.arashivision.sdk.demo.base.BaseActivity
 import com.arashivision.sdk.demo.base.BaseEvent
 import com.arashivision.sdk.demo.databinding.ActivityLocalSphericalPlayerBinding
 import com.arashivision.sdk.demo.ui.capture.GyroOrientationController
+import com.elvishew.xlog.XLog
 
-/**
- * Локальный режим: берет equirectangular-видео с телефона и рендерит его на сферу,
- * чтобы управлять обзором гироскопом.
- */
+@OptIn(UnstableApi::class)
 class LocalSphericalPlayerActivity :
     BaseActivity<ActivityLocalSphericalPlayerBinding, LocalSphericalPlayerViewModel>() {
 
+    private val logger = XLog.tag(LocalSphericalPlayerActivity::class.java.simpleName).build()
+
     private var player: ExoPlayer? = null
+    private var currentVideoUri: Uri? = null
+
     private lateinit var gyroController: GyroOrientationController
-    private var sensorRotationEnabled: Boolean = true
+    private lateinit var vrManager: LocalVrManager
+
+    private var sensorRotationEnabled = true
 
     private val pickVideoLauncher =
         registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
@@ -30,30 +38,51 @@ class LocalSphericalPlayerActivity :
                 contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
             binding.tvSelectedVideo.text = uri.toString()
+            currentVideoUri = uri
             startPlayback(uri)
         }
 
     override fun initView() {
         super.initView()
+
         binding.sphericalView.setDefaultStereoMode(C.STEREO_MODE_MONO)
-        sensorRotationEnabled = true
         binding.sphericalView.setUseSensorRotation(sensorRotationEnabled)
 
         gyroController = GyroOrientationController(
             context = this,
-            getDisplayRotation = { windowManager.defaultDisplay.rotation },
-            applyOrientation = { _, _ -> }
+            getDisplayRotation = { display?.rotation ?: Surface.ROTATION_0 },
+            applyOrientation = { yaw, pitch -> tryApplyOrientation(yaw, pitch) }
+        )
+
+        vrManager = LocalVrManager(
+            activity = this,
+            sourceView = binding.sphericalView,
+            leftEyeImage = binding.vrLeftEye,
+            controlsContainer = binding.controlsContainer,
+            btnVrToggle = binding.btnToggleVr
         )
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     override fun initListener() {
         super.initListener()
         binding.btnPickVideo.setOnClickListener { pickVideoLauncher.launch(arrayOf("video/*")) }
 
+        binding.btnPlayPause.setOnClickListener {
+            val newState = !(player?.isPlaying ?: false)
+            player?.playWhenReady = newState
+            syncPlayPauseButton()
+        }
+
         binding.btnToggleSensor.setOnClickListener {
             sensorRotationEnabled = !sensorRotationEnabled
             binding.sphericalView.setUseSensorRotation(sensorRotationEnabled)
-            binding.btnToggleSensor.text = if (sensorRotationEnabled) getString(R.string.disable_gyro_control) else getString(R.string.enable_gyro_control)
+            binding.btnToggleSensor.text = if (sensorRotationEnabled) {
+                getString(R.string.disable_gyro_control)
+            } else {
+                getString(R.string.enable_gyro_control)
+            }
+            gyroController.setzOrientationEnabled(sensorRotationEnabled)
         }
 
         binding.btnCenterView.setOnClickListener {
@@ -61,12 +90,17 @@ class LocalSphericalPlayerActivity :
             toast(R.string.gyro_recentered)
         }
 
-        binding.btnPlayPause.setOnClickListener {
-            player?.let {
-                it.playWhenReady = !it.playWhenReady
-                syncPlayPauseButton()
-            }
+        binding.btnToggleVr.setOnClickListener {
+            vrManager.toggleVrMode()
         }
+
+        binding.btnToggleVr.setOnLongClickListener {
+            vrManager.showVrSettingsDialog()
+            true
+        }
+
+        // in VR mode we block touches on player so accidental drags don't desync head-tracking
+        binding.sphericalView.setOnTouchListener { _, _ -> vrManager.isVrMode }
     }
 
     override fun onEvent(event: BaseEvent) = Unit
@@ -75,20 +109,30 @@ class LocalSphericalPlayerActivity :
         super.onStart()
         if (player == null) {
             player = ExoPlayer.Builder(this).build().also { exo ->
+                exo.repeatMode = Player.REPEAT_MODE_ALL
                 exo.setVideoSurfaceView(binding.sphericalView)
+                currentVideoUri?.let { uri ->
+                    exo.setMediaItem(MediaItem.fromUri(uri))
+                    exo.prepare()
+                    exo.playWhenReady = true
+                }
             }
         }
     }
 
     override fun onResume() {
         super.onResume()
+        binding.sphericalView.onResume()
         gyroController.start()
+        vrManager.onResume()
         player?.playWhenReady = true
         syncPlayPauseButton()
     }
 
     override fun onPause() {
+        vrManager.onPause()
         gyroController.stop()
+        binding.sphericalView.onPause()
         player?.playWhenReady = false
         super.onPause()
     }
@@ -108,7 +152,32 @@ class LocalSphericalPlayerActivity :
     }
 
     private fun syncPlayPauseButton() {
-        val playing = player?.playWhenReady == true
+        val playing = player?.isPlaying == true
         binding.btnPlayPause.text = if (playing) getString(R.string.pause) else getString(R.string.play)
+    }
+
+    private fun tryApplyOrientation(yawDeg: Float, pitchDeg: Float) {
+        if (!sensorRotationEnabled) return
+
+        fun applyTo(obj: Any?, yaw: Float, pitch: Float) {
+            if (obj == null) return
+            try {
+                val cls = obj.javaClass
+                runCatching {
+                    cls.getMethod("setYaw", Float::class.javaPrimitiveType).invoke(obj, yaw)
+                }
+                runCatching {
+                    cls.getMethod("setPitch", Float::class.javaPrimitiveType).invoke(obj, pitch)
+                }
+            } catch (e: Exception) {
+                logger.e("Orientation apply failed: ${e.message}")
+            }
+        }
+
+        try {
+            applyTo(binding.sphericalView, yawDeg, pitchDeg)
+        } catch (e: Exception) {
+            logger.e("tryApplyOrientation failed: ${e.message}")
+        }
     }
 }
