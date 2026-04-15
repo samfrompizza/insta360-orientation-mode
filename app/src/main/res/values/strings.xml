@@ -65,6 +65,8 @@
     <string name="gyro_recentered">Gyro view recentered</string>
     <string name="play">Play</string>
     <string name="pause">Pause</string>
+    <string name="enter_vr_mode">Enter VR</string>
+    <string name="exit_vr_mode">Exit VR</string>
 
     <string name="camera_storage_full_soon">Camera storage almost full</string>
     <string name="camera_battery_charging">Camera is charging, current battery: %d</string>

@@ -5,13 +5,39 @@
     android:layout_height="match_parent"
     android:background="@color/black">
 
-    <androidx.media3.exoplayer.video.spherical.SphericalGLSurfaceView
-        android:id="@+id/spherical_view"
+    <LinearLayout
+        android:id="@+id/spherical_container"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:orientation="horizontal"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <androidx.media3.exoplayer.video.spherical.SphericalGLSurfaceView
+            android:id="@+id/spherical_view"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1" />
+
+        <androidx.media3.exoplayer.video.spherical.SphericalGLSurfaceView
+            android:id="@+id/spherical_view_secondary"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/btn_toggle_vr"
+        style="@style/TextStyle.Main.Button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="18dp"
+        android:layout_marginEnd="16dp"
+        android:text="@string/enter_vr_mode"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <LinearLayout
@@ -71,6 +97,22 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
                 android:text="@string/recenter_view" />
+
+            <TextView
+                android:id="@+id/btn_zoom_out"
+                style="@style/TextStyle.Main.Button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="-" />
+
+            <TextView
+                android:id="@+id/btn_zoom_in"
+                style="@style/TextStyle.Main.Button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="+" />
 
         </LinearLayout>
     </LinearLayout>
