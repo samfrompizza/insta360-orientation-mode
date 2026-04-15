@@ -1,5 +1,6 @@
 package com.arashivision.sdk.demo.ui.player
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.net.Uri
 import android.view.ScaleGestureDetector
@@ -15,31 +16,22 @@ import com.arashivision.sdk.demo.R
 import com.arashivision.sdk.demo.base.BaseActivity
 import com.arashivision.sdk.demo.base.BaseEvent
 import com.arashivision.sdk.demo.databinding.ActivityLocalSphericalPlayerBinding
+import com.arashivision.sdk.demo.ui.capture.GyroOrientationController
+import com.elvishew.xlog.XLog
 
-/**
- * Локальный режим: берет equirectangular-видео с телефона и рендерит его на сферу.
- * Поддержка:
- * - офлайн-воспроизведение без подключения к камере;
- * - head-tracking через useSensorRotation;
- * - VR split-screen без лишних оверлеев;
- * - loop playback;
- * - zoom (кнопки + pinch).
- */
+@OptIn(UnstableApi::class)
 class LocalSphericalPlayerActivity :
     BaseActivity<ActivityLocalSphericalPlayerBinding, LocalSphericalPlayerViewModel>() {
 
-    private var mainPlayer: ExoPlayer? = null
-    private var vrPlayer: ExoPlayer? = null
+    private val logger = XLog.tag(LocalSphericalPlayerActivity::class.java.simpleName).build()
 
-    private var sensorRotationEnabled = true
-    private var isVrMode = false
+    private var player: ExoPlayer? = null
     private var currentVideoUri: Uri? = null
 
-    private var zoomFactor = 1.0f
-    private val minZoom = 1.0f
-    private val maxZoom = 2.5f
+    private lateinit var gyroController: GyroOrientationController
+    private lateinit var vrManager: LocalVrManager
 
-    private lateinit var scaleGestureDetector: ScaleGestureDetector
+    private var sensorRotationEnabled = true
 
     private val pickVideoLauncher =
         registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
@@ -54,36 +46,45 @@ class LocalSphericalPlayerActivity :
 
     override fun initView() {
         super.initView()
-        setupSphericalViews()
-        scaleGestureDetector = ScaleGestureDetector(this, ZoomGestureListener())
-        binding.sphericalContainer.setOnTouchListener { _, event ->
-            scaleGestureDetector.onTouchEvent(event)
-            isVrMode
-        }
-        updateZoom()
-        updateVrUi()
+
+        binding.sphericalView.setDefaultStereoMode(C.STEREO_MODE_MONO)
+        binding.sphericalView.setUseSensorRotation(sensorRotationEnabled)
+
+        gyroController = GyroOrientationController(
+            context = this,
+            getDisplayRotation = { display?.rotation ?: Surface.ROTATION_0 },
+            applyOrientation = { yaw, pitch -> tryApplyOrientation(yaw, pitch) }
+        )
+
+        vrManager = LocalVrManager(
+            activity = this,
+            sourceView = binding.sphericalView,
+            leftEyeImage = binding.vrLeftEye,
+            controlsContainer = binding.controlsContainer,
+            btnVrToggle = binding.btnToggleVr
+        )
     }
 
-    @OptIn(UnstableApi::class)
+    @SuppressLint("ClickableViewAccessibility")
     override fun initListener() {
         super.initListener()
         binding.btnPickVideo.setOnClickListener { pickVideoLauncher.launch(arrayOf("video/*")) }
 
         binding.btnPlayPause.setOnClickListener {
-            val newPlayState = !(mainPlayer?.isPlaying ?: false)
-            setPlayWhenReady(newPlayState)
+            val newState = !(player?.isPlaying ?: false)
+            player?.playWhenReady = newState
             syncPlayPauseButton()
         }
 
         binding.btnToggleSensor.setOnClickListener {
             sensorRotationEnabled = !sensorRotationEnabled
             binding.sphericalView.setUseSensorRotation(sensorRotationEnabled)
-            binding.sphericalViewSecondary.setUseSensorRotation(sensorRotationEnabled)
             binding.btnToggleSensor.text = if (sensorRotationEnabled) {
                 getString(R.string.disable_gyro_control)
             } else {
                 getString(R.string.enable_gyro_control)
             }
+            gyroController.setzOrientationEnabled(sensorRotationEnabled)
         }
 
         binding.btnCenterView.setOnClickListener {
@@ -92,36 +93,49 @@ class LocalSphericalPlayerActivity :
         }
 
         binding.btnToggleVr.setOnClickListener {
-            isVrMode = !isVrMode
-            updateVrUi()
+            vrManager.toggleVrMode()
         }
 
-        binding.btnZoomIn.setOnClickListener {
-            zoomFactor = (zoomFactor + 0.1f).coerceIn(minZoom, maxZoom)
-            updateZoom()
+        binding.btnToggleVr.setOnLongClickListener {
+            vrManager.showVrSettingsDialog()
+            true
         }
 
-        binding.btnZoomOut.setOnClickListener {
-            zoomFactor = (zoomFactor - 0.1f).coerceIn(minZoom, maxZoom)
-            updateZoom()
-        }
+        // in VR mode we block touches on player so accidental drags don't desync head-tracking
+        binding.sphericalView.setOnTouchListener { _, _ -> vrManager.isVrMode }
     }
 
     override fun onEvent(event: BaseEvent) = Unit
 
     override fun onStart() {
         super.onStart()
-        ensurePlayers()
+        if (player == null) {
+            player = ExoPlayer.Builder(this).build().also { exo ->
+                exo.repeatMode = Player.REPEAT_MODE_ALL
+                exo.setVideoSurfaceView(binding.sphericalView)
+                currentVideoUri?.let { uri ->
+                    exo.setMediaItem(MediaItem.fromUri(uri))
+                    exo.prepare()
+                    exo.playWhenReady = true
+                }
+            }
+        }
     }
 
     override fun onResume() {
         super.onResume()
-        setPlayWhenReady(true)
+        binding.sphericalView.onResume()
+        gyroController.start()
+        vrManager.onResume()
+        player?.playWhenReady = true
         syncPlayPauseButton()
     }
 
     override fun onPause() {
-        setPlayWhenReady(false)
+        vrManager.onPause()
+        gyroController.stop()
+        binding.sphericalView.onPause()
+        player?.playWhenReady = false
         super.onPause()
     }
 
@@ -212,15 +226,32 @@ class LocalSphericalPlayerActivity :
     }
 
     private fun syncPlayPauseButton() {
-        val playing = mainPlayer?.isPlaying == true
+        val playing = player?.isPlaying == true
         binding.btnPlayPause.text = if (playing) getString(R.string.pause) else getString(R.string.play)
     }
 
-    private inner class ZoomGestureListener : ScaleGestureDetector.SimpleOnScaleGestureListener() {
-        override fun onScale(detector: ScaleGestureDetector): Boolean {
-            zoomFactor = (zoomFactor * detector.scaleFactor).coerceIn(minZoom, maxZoom)
-            updateZoom()
-            return true
+    private fun tryApplyOrientation(yawDeg: Float, pitchDeg: Float) {
+        if (!sensorRotationEnabled) return
+
+        fun applyTo(obj: Any?, yaw: Float, pitch: Float) {
+            if (obj == null) return
+            try {
+                val cls = obj.javaClass
+                runCatching {
+                    cls.getMethod("setYaw", Float::class.javaPrimitiveType).invoke(obj, yaw)
+                }
+                runCatching {
+                    cls.getMethod("setPitch", Float::class.javaPrimitiveType).invoke(obj, pitch)
+                }
+            } catch (e: Exception) {
+                logger.e("Orientation apply failed: ${e.message}")
+            }
+        }
+
+        try {
+            applyTo(binding.sphericalView, yawDeg, pitchDeg)
+        } catch (e: Exception) {
+            logger.e("tryApplyOrientation failed: ${e.message}")
         }
     }
 }

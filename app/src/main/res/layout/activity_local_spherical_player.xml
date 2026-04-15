@@ -15,18 +15,20 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
+        <ImageView
+            android:id="@+id/vr_left_eye"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@android:color/black"
+            android:scaleType="fitCenter"
+            android:visibility="gone" />
+
         <androidx.media3.exoplayer.video.spherical.SphericalGLSurfaceView
             android:id="@+id/spherical_view"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1" />
-
-        <androidx.media3.exoplayer.video.spherical.SphericalGLSurfaceView
-            android:id="@+id/spherical_view_secondary"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:visibility="gone" />
     </LinearLayout>
 
     <TextView
