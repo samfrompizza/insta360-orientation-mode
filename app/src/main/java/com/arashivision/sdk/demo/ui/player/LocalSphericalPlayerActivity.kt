@@ -5,9 +5,11 @@ import android.net.Uri
 import android.view.ScaleGestureDetector
 import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.OptIn
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import com.arashivision.sdk.demo.R
 import com.arashivision.sdk.demo.base.BaseActivity
@@ -62,6 +64,7 @@ class LocalSphericalPlayerActivity :
         updateVrUi()
     }
 
+    @OptIn(UnstableApi::class)
     override fun initListener() {
         super.initListener()
         binding.btnPickVideo.setOnClickListener { pickVideoLauncher.launch(arrayOf("video/*")) }
@@ -127,6 +130,7 @@ class LocalSphericalPlayerActivity :
         super.onStop()
     }
 
+    @OptIn(UnstableApi::class)
     private fun setupSphericalViews() {
         binding.sphericalView.setDefaultStereoMode(C.STEREO_MODE_MONO)
         binding.sphericalViewSecondary.setDefaultStereoMode(C.STEREO_MODE_MONO)
@@ -179,6 +183,7 @@ class LocalSphericalPlayerActivity :
         vrPlayer?.playWhenReady = playWhenReady
     }
 
+    @OptIn(UnstableApi::class)
     private fun recenterSensorView() {
         if (!sensorRotationEnabled) return
         binding.sphericalView.setUseSensorRotation(false)
