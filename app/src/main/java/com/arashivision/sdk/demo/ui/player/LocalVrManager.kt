@@ -55,8 +55,11 @@ class LocalVrManager(
         isVrMode = true
         leftEyeImage.visibility = View.VISIBLE
         overlaysToHide.forEach { it.visibility = View.GONE }
-        applyVrAdjustments()
-        startCopyLoop()
+        sourceView.post {
+            if (!isVrMode) return@post
+            applyVrAdjustments()
+            restartCopyLoop()
+        }
     }
 
     fun disableVrMode() {
@@ -204,6 +207,10 @@ class LocalVrManager(
         return null
     }
 
+    private fun restartCopyLoop() {
+        stopCopyLoop()
+        startCopyLoop()
+    }
     private fun startCopyLoop() {
         if (copying) return
         val width = sourceView.width
