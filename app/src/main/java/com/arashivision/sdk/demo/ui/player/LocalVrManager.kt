@@ -17,22 +17,17 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.SeekBar
 import android.widget.TextView
-import com.arashivision.sdk.demo.R
 import com.arashivision.sdk.demo.ui.capture.GyroOrientationController
 import com.elvishew.xlog.XLog
 
 /**
- * VR helper for local spherical playback:
- * - right eye: real player surface
- * - left eye: pixel copy of right eye
- * - optional eye scale / spacing adjustments (same idea as capture VR mode)
+ * Local VR helper for offline spherical playback.
  */
 class LocalVrManager(
     private val activity: Activity,
     private val sourceView: View,
     private val leftEyeImage: ImageView,
-    private val controlsContainer: View,
-    private val btnVrToggle: TextView
+    private val overlaysToHide: List<View>
 ) {
     private val logger = XLog.tag("LocalVrManager").build()
 
@@ -59,8 +54,7 @@ class LocalVrManager(
         if (isVrMode) return
         isVrMode = true
         leftEyeImage.visibility = View.VISIBLE
-        controlsContainer.visibility = View.GONE
-        updateToggleText()
+        overlaysToHide.forEach { it.visibility = View.GONE }
         applyVrAdjustments()
         startCopyLoop()
     }
@@ -68,9 +62,8 @@ class LocalVrManager(
     fun disableVrMode() {
         if (!isVrMode) return
         isVrMode = false
-        controlsContainer.visibility = View.VISIBLE
+        overlaysToHide.forEach { it.visibility = View.VISIBLE }
         leftEyeImage.visibility = View.GONE
-        updateToggleText()
         stopCopyLoop()
         leftEyeImage.setImageBitmap(null)
     }
@@ -155,10 +148,6 @@ class LocalVrManager(
                 })
                 dialog.show()
             }
-    }
-
-    private fun updateToggleText() {
-        btnVrToggle.text = if (isVrMode) activity.getString(R.string.exit_vr_mode) else activity.getString(R.string.enter_vr_mode)
     }
 
     private fun applyVrAdjustments() {

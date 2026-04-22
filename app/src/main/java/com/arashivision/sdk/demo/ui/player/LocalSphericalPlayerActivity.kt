@@ -7,6 +7,7 @@ import android.os.Build
 import android.view.Surface
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
+import androidx.appcompat.app.AlertDialog
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
@@ -27,12 +28,9 @@ class LocalSphericalPlayerActivity :
     private val logger = XLog.tag(LocalSphericalPlayerActivity::class.java.simpleName).build()
 
     private var player: ExoPlayer? = null
-    private var currentVideoUri: Uri? = null
 
     private lateinit var gyroController: GyroOrientationController
     private lateinit var vrManager: LocalVrManager
-
-    private var sensorRotationEnabled = true
 
     private val pickVideoLauncher =
         registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
@@ -40,8 +38,8 @@ class LocalSphericalPlayerActivity :
             kotlin.runCatching {
                 contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
+            viewModel.onVideoSelected(uri)
             binding.tvSelectedVideo.text = uri.toString()
-            currentVideoUri = uri
             startPlayback(uri)
         }
 
@@ -51,7 +49,7 @@ class LocalSphericalPlayerActivity :
         super.initView()
 
         binding.sphericalView.setDefaultStereoMode(C.STEREO_MODE_MONO)
-        binding.sphericalView.setUseSensorRotation(sensorRotationEnabled)
+        binding.sphericalView.setUseSensorRotation(viewModel.sensorRotationEnabled)
 
         gyroController = GyroOrientationController(
             context = this,
@@ -63,9 +61,9 @@ class LocalSphericalPlayerActivity :
             activity = this,
             sourceView = binding.sphericalView,
             leftEyeImage = binding.vrLeftEye,
-            controlsContainer = binding.controlsContainer,
-            btnVrToggle = binding.btnToggleVr
+            overlaysToHide = listOf(binding.btnPlayPause, binding.ivCaptureSetting, binding.btnCalibrate)
         )
+        syncPlayPauseButton()
     }
 
     @androidx.annotation.OptIn(UnstableApi::class)
@@ -80,30 +78,18 @@ class LocalSphericalPlayerActivity :
             syncPlayPauseButton()
         }
 
-        binding.btnToggleSensor.setOnClickListener {
-            sensorRotationEnabled = !sensorRotationEnabled
-            binding.sphericalView.setUseSensorRotation(sensorRotationEnabled)
-            binding.btnToggleSensor.text = if (sensorRotationEnabled) {
-                getString(R.string.disable_gyro_control)
-            } else {
-                getString(R.string.enable_gyro_control)
-            }
-            gyroController.setzOrientationEnabled(sensorRotationEnabled)
-        }
-
-        binding.btnCenterView.setOnClickListener {
+        binding.btnCalibrate.setOnClickListener {
             gyroController.calibrate()
             toast(R.string.gyro_recentered)
         }
 
-        binding.btnToggleVr.setOnClickListener {
-            vrManager.toggleVrMode()
-        }
-
-        binding.btnToggleVr.setOnLongClickListener {
+        binding.btnVrToggle.setOnClickListener { vrManager.toggleVrMode() }
+        binding.btnVrToggle.setOnLongClickListener {
             vrManager.showVrSettingsDialog()
             true
         }
+
+        binding.ivCaptureSetting.setOnClickListener { showPlaybackSettings() }
 
         // in VR mode we block touches on player so accidental drags don't desync head-tracking
         binding.sphericalView.setOnTouchListener { _, _ -> vrManager.isVrMode }
@@ -117,7 +103,7 @@ class LocalSphericalPlayerActivity :
             player = ExoPlayer.Builder(this).build().also { exo ->
                 exo.repeatMode = Player.REPEAT_MODE_ALL
                 exo.setVideoSurfaceView(binding.sphericalView)
-                currentVideoUri?.let { uri ->
+                viewModel.currentVideoUri?.let { uri ->
                     exo.setMediaItem(MediaItem.fromUri(uri))
                     exo.prepare()
                     exo.playWhenReady = true
@@ -151,6 +137,50 @@ class LocalSphericalPlayerActivity :
         super.onStop()
     }
 
+    override fun onBackPressed() {
+        if (vrManager.isVrMode) {
+            vrManager.disableVrMode()
+            return
+        }
+        super.onBackPressed()
+    }
+
+    private fun showPlaybackSettings() {
+        val actions = mutableListOf(
+            getString(R.string.pick_local_video),
+            if (player?.isPlaying == true) getString(R.string.pause) else getString(R.string.play),
+            if (viewModel.sensorRotationEnabled) getString(R.string.disable_gyro_control) else getString(R.string.enable_gyro_control),
+            getString(R.string.recenter_view)
+        )
+        if (vrManager.isVrMode) {
+            actions.add("VR: Adjust eyes")
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle(R.string.capture_settings)
+            .setItems(actions.toTypedArray()) { _, which ->
+                when (actions[which]) {
+                    getString(R.string.pick_local_video) -> pickVideoLauncher.launch(arrayOf("video/*"))
+                    getString(R.string.pause), getString(R.string.play) -> {
+                        val newState = !(player?.isPlaying ?: false)
+                        player?.playWhenReady = newState
+                        syncPlayPauseButton()
+                    }
+                    getString(R.string.disable_gyro_control), getString(R.string.enable_gyro_control) -> {
+                        val enabled = viewModel.toggleSensorRotation()
+                        binding.sphericalView.setUseSensorRotation(enabled)
+                        gyroController.setzOrientationEnabled(enabled)
+                    }
+                    getString(R.string.recenter_view) -> {
+                        gyroController.calibrate()
+                        toast(R.string.gyro_recentered)
+                    }
+                    "VR: Adjust eyes" -> vrManager.showVrSettingsDialog()
+                }
+            }
+            .show()
+    }
+
     private fun startPlayback(uri: Uri) {
         val exo = player ?: return
         exo.setMediaItem(MediaItem.fromUri(uri))
@@ -165,7 +195,7 @@ class LocalSphericalPlayerActivity :
     }
 
     private fun tryApplyOrientation(yawDeg: Float, pitchDeg: Float) {
-        if (!sensorRotationEnabled) return
+        if (!viewModel.sensorRotationEnabled) return
 
         fun applyTo(obj: Any?, yaw: Float, pitch: Float) {
             if (obj == null) return
