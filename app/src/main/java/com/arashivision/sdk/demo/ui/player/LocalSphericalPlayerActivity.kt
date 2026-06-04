@@ -4,10 +4,13 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.view.Surface
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
+import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
@@ -18,7 +21,12 @@ import com.arashivision.sdk.demo.base.BaseActivity
 import com.arashivision.sdk.demo.base.BaseEvent
 import com.arashivision.sdk.demo.databinding.ActivityLocalSphericalPlayerBinding
 import com.arashivision.sdk.demo.ui.capture.GyroOrientationController
+import com.arashivision.sdk.demo.ui.player.detection.VideoDetectionSidecarParser
+import com.arashivision.sdk.demo.ui.player.detection.VideoDetectionTimeline
 import com.elvishew.xlog.XLog
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @UnstableApi
 @OptIn(UnstableApi::class)
@@ -32,15 +40,29 @@ class LocalSphericalPlayerActivity :
     private lateinit var gyroController: GyroOrientationController
     private lateinit var vrManager: LocalVrManager
 
+    private val uiHandler = Handler(Looper.getMainLooper())
+    private val detectionParser = VideoDetectionSidecarParser()
+    private val detectionUpdateRunnable = object : Runnable {
+        override fun run() {
+            updateCurrentDetections()
+            uiHandler.postDelayed(this, DETECTION_UPDATE_INTERVAL_MS)
+        }
+    }
+
     private val pickVideoLauncher =
         registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
             uri ?: return@registerForActivityResult
-            kotlin.runCatching {
-                contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            }
+            persistReadPermission(uri)
             viewModel.onVideoSelected(uri)
             binding.tvSelectedVideo.text = uri.toString()
             startPlayback(uri)
+        }
+
+    private val pickJsonLauncher =
+        registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
+            uri ?: return@registerForActivityResult
+            persistReadPermission(uri)
+            loadDetectionJson(uri)
         }
 
     @RequiresApi(Build.VERSION_CODES.R)
@@ -71,6 +93,7 @@ class LocalSphericalPlayerActivity :
     override fun initListener() {
         super.initListener()
         binding.btnPickVideo.setOnClickListener { pickVideoLauncher.launch(arrayOf("video/*")) }
+        binding.btnPickJson.setOnClickListener { pickJsonLauncher.launch(JSON_MIME_TYPES) }
 
         binding.btnPlayPause.setOnClickListener {
             val newState = !(player?.isPlaying ?: false)
@@ -120,6 +143,8 @@ class LocalSphericalPlayerActivity :
         vrManager.onResume()
         player?.playWhenReady = true
         syncPlayPauseButton()
+        uiHandler.removeCallbacks(detectionUpdateRunnable)
+        uiHandler.post(detectionUpdateRunnable)
     }
 
     @androidx.annotation.OptIn(UnstableApi::class)
@@ -127,11 +152,13 @@ class LocalSphericalPlayerActivity :
         vrManager.onPause()
         gyroController.stop()
         binding.sphericalView.onPause()
+        uiHandler.removeCallbacks(detectionUpdateRunnable)
         player?.playWhenReady = false
         super.onPause()
     }
 
     override fun onStop() {
+        uiHandler.removeCallbacks(detectionUpdateRunnable)
         player?.release()
         player = null
         super.onStop()
@@ -148,6 +175,7 @@ class LocalSphericalPlayerActivity :
     private fun showPlaybackSettings() {
         val actions = mutableListOf(
             getString(R.string.pick_local_video),
+            getString(R.string.add_detection_json),
             if (player?.isPlaying == true) getString(R.string.pause) else getString(R.string.play),
             if (viewModel.sensorRotationEnabled) getString(R.string.disable_gyro_control) else getString(R.string.enable_gyro_control),
             getString(R.string.recenter_view)
@@ -161,6 +189,7 @@ class LocalSphericalPlayerActivity :
             .setItems(actions.toTypedArray()) { _, which ->
                 when (actions[which]) {
                     getString(R.string.pick_local_video) -> pickVideoLauncher.launch(arrayOf("video/*"))
+                    getString(R.string.add_detection_json) -> pickJsonLauncher.launch(JSON_MIME_TYPES)
                     getString(R.string.pause), getString(R.string.play) -> {
                         val newState = !(player?.isPlaying ?: false)
                         player?.playWhenReady = newState
@@ -181,6 +210,34 @@ class LocalSphericalPlayerActivity :
             .show()
     }
 
+    private fun loadDetectionJson(uri: Uri) {
+        lifecycleScope.launch {
+            val result = runCatching {
+                withContext(Dispatchers.IO) {
+                    val json = contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
+                        ?: error("Unable to open JSON file")
+                    VideoDetectionTimeline(detectionParser.parse(json))
+                }
+            }
+
+            result.onSuccess { timeline ->
+                viewModel.onJsonSelected(uri, timeline)
+                binding.tvSelectedJson.text = uri.toString()
+                toast(getString(R.string.detection_json_loaded, timeline.frameCount))
+                updateCurrentDetections()
+            }.onFailure { error ->
+                logger.e("Detection JSON load failed: ${error.message}")
+                toast(getString(R.string.detection_json_load_failed, error.message ?: "unknown"), true)
+            }
+        }
+    }
+
+    private fun persistReadPermission(uri: Uri) {
+        kotlin.runCatching {
+            contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+    }
+
     private fun startPlayback(uri: Uri) {
         val exo = player ?: return
         exo.setMediaItem(MediaItem.fromUri(uri))
@@ -192,6 +249,27 @@ class LocalSphericalPlayerActivity :
     private fun syncPlayPauseButton() {
         val playing = player?.isPlaying == true
         binding.btnPlayPause.text = if (playing) getString(R.string.pause) else getString(R.string.play)
+    }
+
+    private fun updateCurrentDetections() {
+        val positionMs = player?.currentPosition ?: 0L
+        val frame = viewModel.currentDetectionFrame(positionMs)
+
+        binding.tvDetectionDebug.text = if (frame == null) {
+            getString(R.string.no_detection_json_selected)
+        } else {
+            val detections = frame.objects
+            val trackIds = detections.joinToString { objectDetection ->
+                "#${objectDetection.trackId}"
+            }.ifEmpty { "—" }
+            getString(
+                R.string.current_detection_frame,
+                frame.frameIdx,
+                frame.timeSec,
+                detections.size,
+                trackIds
+            )
+        }
     }
 
     private fun tryApplyOrientation(yawDeg: Float, pitchDeg: Float) {
@@ -217,5 +295,10 @@ class LocalSphericalPlayerActivity :
         } catch (e: Exception) {
             logger.e("tryApplyOrientation failed: ${e.message}")
         }
+    }
+
+    companion object {
+        private val JSON_MIME_TYPES = arrayOf("application/json", "text/json", "text/plain", "application/octet-stream", "*/*")
+        private const val DETECTION_UPDATE_INTERVAL_MS = 200L
     }
 }

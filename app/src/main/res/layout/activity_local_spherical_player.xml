@@ -48,6 +48,23 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <TextView
+        android:id="@+id/tv_selected_json"
+        style="@style/TextStyle.Main.White"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="16dp"
+        android:background="#66000000"
+        android:ellipsize="middle"
+        android:maxLines="1"
+        android:padding="8dp"
+        android:text="@string/no_detection_json_selected"
+        app:layout_constraintEnd_toStartOf="@+id/btn_pick_json"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_selected_video" />
+
     <ImageView
         android:id="@+id/btn_pick_video"
         android:layout_width="32dp"
@@ -58,6 +75,34 @@
         android:src="@drawable/ic_capture_setting"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/btn_pick_json"
+        style="@style/TextStyle.Main.Button"
+        android:layout_width="wrap_content"
+        android:layout_height="32dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="16dp"
+        android:gravity="center"
+        android:minWidth="72dp"
+        android:text="@string/add_detection_json_short"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btn_pick_video" />
+
+    <TextView
+        android:id="@+id/tv_detection_debug"
+        style="@style/TextStyle.Main.White"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
+        android:background="#66000000"
+        android:padding="8dp"
+        android:text="@string/no_detection_json_selected"
+        app:layout_constraintBottom_toTopOf="@+id/btn_play_pause"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 
     <TextView
         android:id="@+id/btn_play_pause"
