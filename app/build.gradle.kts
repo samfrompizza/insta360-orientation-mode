@@ -110,6 +110,8 @@ dependencies {
 
     implementation(files("libs/glide_transformations.jar"))
 
+    testImplementation("junit:junit:4.13.2")
+
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 }
