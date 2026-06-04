@@ -23,6 +23,10 @@ import com.arashivision.sdk.demo.databinding.ActivityLocalSphericalPlayerBinding
 import com.arashivision.sdk.demo.ui.capture.GyroOrientationController
 import com.arashivision.sdk.demo.ui.player.detection.VideoDetectionSidecarParser
 import com.arashivision.sdk.demo.ui.player.detection.VideoDetectionTimeline
+import com.arashivision.sdk.demo.ui.player.detection.VideoDetectedObject
+import com.arashivision.sdk.demo.ui.player.panorama.EquirectangularProjection
+import com.arashivision.sdk.demo.ui.player.panorama.PanoramaDirection
+import com.arashivision.sdk.demo.ui.player.panorama.PanoramaFovMath
 import com.elvishew.xlog.XLog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -42,6 +46,7 @@ class LocalSphericalPlayerActivity :
 
     private val uiHandler = Handler(Looper.getMainLooper())
     private val detectionParser = VideoDetectionSidecarParser()
+    private var currentGazeDirection: PanoramaDirection = EquirectangularProjection.fromYawPitch(0.0, 0.0)
     private val detectionUpdateRunnable = object : Runnable {
         override fun run() {
             updateCurrentDetections()
@@ -256,12 +261,14 @@ class LocalSphericalPlayerActivity :
         val frame = viewModel.currentDetectionFrame(positionMs)
 
         binding.tvDetectionDebug.text = if (frame == null) {
+            binding.directionArrowOverlay.hideArrow()
             getString(R.string.no_detection_json_selected)
         } else {
             val detections = frame.objects
             val trackIds = detections.joinToString { objectDetection ->
                 "#${objectDetection.trackId}"
             }.ifEmpty { "—" }
+            updateDirectionArrow(detections)
             getString(
                 R.string.current_detection_frame,
                 frame.frameIdx,
@@ -272,8 +279,34 @@ class LocalSphericalPlayerActivity :
         }
     }
 
+    private fun updateDirectionArrow(detections: List<VideoDetectedObject>) {
+        val firstOutsideFov = detections.firstNotNullOfOrNull { detection ->
+            val targetDirection = EquirectangularProjection.fromNormalized(
+                x = detection.centerNorm.x.coerceIn(0.0, 1.0),
+                y = detection.centerNorm.y.coerceIn(0.0, 1.0)
+            )
+            PanoramaFovMath.resolveTarget(
+                gaze = currentGazeDirection,
+                target = targetDirection,
+                horizontalFovRad = HORIZONTAL_FOV_RAD,
+                verticalFovRad = VERTICAL_FOV_RAD
+            ).takeUnless { it.isInsideFov }
+        }
+
+        val arrowAngleRad = firstOutsideFov?.arrowAngleRad
+        if (arrowAngleRad == null) {
+            binding.directionArrowOverlay.hideArrow()
+        } else {
+            binding.directionArrowOverlay.showArrow(arrowAngleRad)
+        }
+    }
+
     private fun tryApplyOrientation(yawDeg: Float, pitchDeg: Float) {
         if (!viewModel.sensorRotationEnabled) return
+        currentGazeDirection = EquirectangularProjection.fromYawPitch(
+            yawRad = Math.toRadians(yawDeg.toDouble()),
+            pitchRad = Math.toRadians(pitchDeg.coerceIn(-MAX_PITCH_DEG, MAX_PITCH_DEG).toDouble())
+        )
 
         fun applyTo(obj: Any?, yaw: Float, pitch: Float) {
             if (obj == null) return
@@ -300,5 +333,8 @@ class LocalSphericalPlayerActivity :
     companion object {
         private val JSON_MIME_TYPES = arrayOf("application/json", "text/json", "text/plain", "application/octet-stream", "*/*")
         private const val DETECTION_UPDATE_INTERVAL_MS = 200L
+        private const val MAX_PITCH_DEG = 90f
+        private const val HORIZONTAL_FOV_RAD = 1.5707963267948966 // 90 degrees
+        private const val VERTICAL_FOV_RAD = 1.5707963267948966 // 90 degrees
     }
 }

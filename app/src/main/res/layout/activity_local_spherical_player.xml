@@ -31,6 +31,15 @@
             android:layout_weight="1" />
     </LinearLayout>
 
+    <com.arashivision.sdk.demo.ui.player.overlay.DirectionArrowOverlayView
+        android:id="@+id/direction_arrow_overlay"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <TextView
         android:id="@+id/tv_selected_video"
         style="@style/TextStyle.Main.White"
