@@ -100,12 +100,17 @@ dependencies {
     implementation(libs.xlog)
     implementation(libs.filepicker)
 
+    implementation("androidx.media3:media3-common:1.5.1")
+    implementation("androidx.media3:media3-exoplayer:1.5.1")
+
     implementation(libs.insta.camera)
     implementation(libs.insta.media)
 
 
 
     implementation(files("libs/glide_transformations.jar"))
+
+    testImplementation("junit:junit:4.13.2")
 
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

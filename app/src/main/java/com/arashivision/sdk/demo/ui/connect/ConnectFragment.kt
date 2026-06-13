@@ -18,6 +18,7 @@ import com.arashivision.sdk.demo.ext.isPrimaryConnect
 import com.arashivision.sdk.demo.ext.timeFormat
 import com.arashivision.sdk.demo.ui.capture.CaptureActivity
 import com.arashivision.sdk.demo.ui.connect.adapter.BleDeviceAdapter
+import com.arashivision.sdk.demo.ui.player.LocalSphericalPlayerActivity
 import com.arashivision.sdkcamera.camera.InstaCameraManager
 import com.elvishew.xlog.Logger
 import com.elvishew.xlog.XLog
@@ -73,6 +74,10 @@ class ConnectFragment : BaseFragment<FragmentConnectBinding, ConnectViewModel>()
 
         binding.tvEnterCapture.setOnClickListener {
             startActivity(Intent(activity, CaptureActivity::class.java))
+        }
+
+        binding.tvEnterLocalPlayer.setOnClickListener {
+            startActivity(Intent(activity, LocalSphericalPlayerActivity::class.java))
         }
 
         binding.tvRefreshMediaTime.setOnClickListener {

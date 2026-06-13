@@ -56,6 +56,23 @@
     <string name="button_enter_capture">Enter Capture Page</string>
     <string name="button_connect_only_ble">BLE Only</string>
     <string name="button_connect_wifi">Connect Wi-Fi</string>
+    <string name="button_enter_local_player">Open Local 360 Player</string>
+    <string name="pick_local_video">Pick video</string>
+    <string name="no_video_selected">No local video selected</string>
+    <string name="enable_gyro_control">Enable gyro</string>
+    <string name="disable_gyro_control">Disable gyro</string>
+    <string name="recenter_view">Recenter</string>
+    <string name="gyro_recentered">Gyro view recentered</string>
+    <string name="play">Play</string>
+    <string name="pause">Pause</string>
+    <string name="enter_vr_mode">Enter VR</string>
+    <string name="exit_vr_mode">Exit VR</string>
+    <string name="add_detection_json">добавить json</string>
+    <string name="add_detection_json_short">JSON</string>
+    <string name="no_detection_json_selected">No detection JSON selected</string>
+    <string name="detection_json_loaded">Detection JSON loaded: %1$d frames</string>
+    <string name="detection_json_load_failed">Detection JSON load failed: %1$s</string>
+    <string name="current_detection_frame">Frame %1$d at %2$.3f s: %3$d objects (%4$s)</string>
 
     <string name="camera_storage_full_soon">Camera storage almost full</string>
     <string name="camera_battery_charging">Camera is charging, current battery: %d</string>

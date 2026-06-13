@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/black">
+
+    <LinearLayout
+        android:id="@+id/spherical_container"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageView
+            android:id="@+id/vr_left_eye"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@android:color/black"
+            android:scaleType="fitCenter"
+            android:visibility="gone" />
+
+        <androidx.media3.exoplayer.video.spherical.SphericalGLSurfaceView
+            android:id="@+id/spherical_view"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1" />
+    </LinearLayout>
+
+    <com.arashivision.sdk.demo.ui.player.overlay.DirectionArrowOverlayView
+        android:id="@+id/direction_arrow_overlay"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/tv_selected_video"
+        style="@style/TextStyle.Main.White"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="18dp"
+        android:layout_marginEnd="16dp"
+        android:background="#66000000"
+        android:ellipsize="middle"
+        android:maxLines="1"
+        android:padding="8dp"
+        android:text="@string/no_video_selected"
+        app:layout_constraintEnd_toStartOf="@+id/btn_pick_video"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/tv_selected_json"
+        style="@style/TextStyle.Main.White"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="16dp"
+        android:background="#66000000"
+        android:ellipsize="middle"
+        android:maxLines="1"
+        android:padding="8dp"
+        android:text="@string/no_detection_json_selected"
+        app:layout_constraintEnd_toStartOf="@+id/btn_pick_json"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_selected_video" />
+
+    <ImageView
+        android:id="@+id/btn_pick_video"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_marginTop="18dp"
+        android:layout_marginEnd="16dp"
+        android:contentDescription="@string/pick_local_video"
+        android:src="@drawable/ic_capture_setting"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/btn_pick_json"
+        style="@style/TextStyle.Main.Button"
+        android:layout_width="wrap_content"
+        android:layout_height="32dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="16dp"
+        android:gravity="center"
+        android:minWidth="72dp"
+        android:text="@string/add_detection_json_short"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btn_pick_video" />
+
+    <TextView
+        android:id="@+id/tv_detection_debug"
+        style="@style/TextStyle.Main.White"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
+        android:background="#66000000"
+        android:padding="8dp"
+        android:text="@string/no_detection_json_selected"
+        app:layout_constraintBottom_toTopOf="@+id/btn_play_pause"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView
+        android:id="@+id/btn_play_pause"
+        style="@style/TextStyle.Main.Button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="24dp"
+        android:text="@string/play"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <ImageView
+        android:id="@+id/iv_capture_setting"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_marginEnd="24dp"
+        android:layout_marginBottom="24dp"
+        android:contentDescription="@string/capture_settings_button"
+        android:src="@drawable/ic_capture_setting"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <ImageView
+        android:id="@+id/btn_calibrate"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_marginEnd="24dp"
+        android:layout_marginBottom="24dp"
+        android:contentDescription="@string/desc_calibrate_button"
+        android:src="@drawable/ic_calibrate"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/iv_capture_setting" />
+
+    <ImageView
+        android:id="@+id/btn_vr_toggle"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_marginEnd="24dp"
+        android:layout_marginBottom="24dp"
+        android:contentDescription="@string/enter_vr_mode"
+        android:src="@drawable/ic_glasses"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/btn_calibrate" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

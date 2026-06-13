@@ -58,6 +58,19 @@
         app:layout_constraintStart_toEndOf="@+id/tv_connect_ble"
         app:layout_constraintTop_toBottomOf="@+id/tv_camera_connect_status" />
 
+
+
+    <TextView
+        android:id="@+id/tv_enter_local_player"
+        style="@style/TextStyle.Main.Button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:text="@string/button_enter_local_player"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tv_connect_ble" />
+
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/ll_camera_info"
         android:layout_width="match_parent"
@@ -65,7 +78,7 @@
         android:layout_marginTop="20dp"
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tv_connect_ble"
+        app:layout_constraintTop_toBottomOf="@+id/tv_enter_local_player"
         tools:visibility="visible">
 
         <TextView
@@ -326,6 +339,7 @@
             android:text="@string/button_enter_capture"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/tv_camera_sd_free" />
+
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
