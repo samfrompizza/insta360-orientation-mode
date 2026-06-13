@@ -90,7 +90,15 @@ class CaptureActivity : BaseActivity<ActivityCaptureBinding, CaptureViewModel>()
         binding.ivCaptureSetting.setOnClickListener { showCaptureSettingView() }
 
         try {
-            binding.btnVrToggle.setOnClickListener { vrManager.toggleVrMode() }
+            binding.btnVrToggle.setOnClickListener {
+                if (!vrManager.isVrMode) {
+                    vrManager.setOrientationSnapshot(
+                        yawDeg = gyroController.getSmoothedYaw(),
+                        pitchDeg = gyroController.getSmoothedPitch()
+                    )
+                }
+                vrManager.toggleVrMode()
+            }
         } catch (e: Exception) {
             logger.w("VR toggle button not found in layout: ${e.message}")
         }

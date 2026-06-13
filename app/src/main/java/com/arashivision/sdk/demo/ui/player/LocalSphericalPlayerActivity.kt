@@ -27,6 +27,7 @@ import com.arashivision.sdk.demo.ui.player.detection.VideoDetectedObject
 import com.arashivision.sdk.demo.ui.player.panorama.EquirectangularProjection
 import com.arashivision.sdk.demo.ui.player.panorama.PanoramaDirection
 import com.arashivision.sdk.demo.ui.player.panorama.PanoramaFovMath
+import com.arashivision.sdk.demo.ui.player.panorama.TargetFovState
 import com.elvishew.xlog.XLog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -76,7 +77,9 @@ class LocalSphericalPlayerActivity :
         super.initView()
 
         binding.sphericalView.setDefaultStereoMode(C.STEREO_MODE_MONO)
-        binding.sphericalView.setUseSensorRotation(viewModel.sensorRotationEnabled)
+        // Disable Media3's built-in sensor rotation — we take full control via
+        // GyroOrientationController so the view direction == our gaze direction exactly.
+        binding.sphericalView.setUseSensorRotation(false)
 
         gyroController = GyroOrientationController(
             context = this,
@@ -90,6 +93,9 @@ class LocalSphericalPlayerActivity :
             leftEyeImage = binding.vrLeftEye,
             overlaysToHide = listOf(binding.btnPlayPause, binding.ivCaptureSetting, binding.btnCalibrate)
         )
+        vrManager.onVrModeChanged = { isVrMode ->
+            binding.directionArrowOverlay.setVrMode(isVrMode)
+        }
         syncPlayPauseButton()
     }
 
@@ -202,7 +208,8 @@ class LocalSphericalPlayerActivity :
                     }
                     getString(R.string.disable_gyro_control), getString(R.string.enable_gyro_control) -> {
                         val enabled = viewModel.toggleSensorRotation()
-                        binding.sphericalView.setUseSensorRotation(enabled)
+                        // We keep Media3's built-in sensor OFF permanently — our
+                        // GyroOrientationController handles all rotation via setYaw/setPitch.
                         gyroController.setzOrientationEnabled(enabled)
                     }
                     getString(R.string.recenter_view) -> {
@@ -269,31 +276,42 @@ class LocalSphericalPlayerActivity :
                 "#${objectDetection.trackId}"
             }.ifEmpty { "—" }
             updateDirectionArrow(detections)
-            getString(
+            val baseInfo = getString(
                 R.string.current_detection_frame,
                 frame.frameIdx,
                 frame.timeSec,
                 detections.size,
                 trackIds
             )
+            // Append gaze angles and FOV for debugging
+            val gazeYaw = "%.1f".format(Math.toDegrees(currentGazeDirection.yawRad))
+            val gazePitch = "%.1f".format(Math.toDegrees(currentGazeDirection.pitchRad))
+            val hFov = "%.0f".format(Math.toDegrees(HORIZONTAL_FOV_RAD))
+            val vFov = "%.0f".format(Math.toDegrees(VERTICAL_FOV_RAD))
+            "$baseInfo\nGaze: yaw=$gazeYaw° pitch=$gazePitch° | FOV: H=${hFov}° V=${vFov}°"
         }
     }
 
     private fun updateDirectionArrow(detections: List<VideoDetectedObject>) {
-        val firstOutsideFov = detections.firstNotNullOfOrNull { detection ->
+        val firstResult = detections.firstNotNullOfOrNull { detection ->
             val targetDirection = EquirectangularProjection.fromNormalized(
                 x = detection.centerNorm.x.coerceIn(0.0, 1.0),
                 y = detection.centerNorm.y.coerceIn(0.0, 1.0)
             )
-            PanoramaFovMath.resolveTarget(
+            val result = PanoramaFovMath.resolveTargetQuat(
                 gaze = currentGazeDirection,
                 target = targetDirection,
                 horizontalFovRad = HORIZONTAL_FOV_RAD,
                 verticalFovRad = VERTICAL_FOV_RAD
-            ).takeUnless { it.isInsideFov }
+            )
+            // Log quaternion debug info for the FIRST detection each tick
+            if (detection === detections.first()) {
+                logQuaternionDebug(detection, targetDirection, result)
+            }
+            result.takeUnless { it.isInsideFov }
         }
 
-        val arrowAngleRad = firstOutsideFov?.arrowAngleRad
+        val arrowAngleRad = firstResult?.arrowAngleRad
         if (arrowAngleRad == null) {
             binding.directionArrowOverlay.hideArrow()
         } else {
@@ -301,11 +319,58 @@ class LocalSphericalPlayerActivity :
         }
     }
 
+    private var quatLogCounter = 0
+    private fun logQuaternionDebug(
+        detection: VideoDetectedObject,
+        targetDir: PanoramaDirection,
+        result: TargetFovState
+    ) {
+        // Log every 10th tick (~2 seconds) to avoid log spam
+        quatLogCounter++
+        if (quatLogCounter % 10 != 0) return
+
+        val gazeQ = currentGazeDirection.orientation
+        val targetQ = targetDir.orientation
+        val gazeYaw = Math.toDegrees(currentGazeDirection.yawRad)
+        val gazePitch = Math.toDegrees(currentGazeDirection.pitchRad)
+        val targetYaw = Math.toDegrees(targetDir.yawRad)
+        val targetPitch = Math.toDegrees(targetDir.pitchRad)
+
+        logger.d(
+            "ARROW_DEBUG | " +
+            "trackId=${detection.trackId} " +
+            "centerNorm=(${"%.4f".format(detection.centerNorm.x)},${"%.4f".format(detection.centerNorm.y)}) " +
+            "insideFov=${result.isInsideFov} " +
+            "yawDelta=${"%.1f".format(Math.toDegrees(result.yawDeltaRad))}° " +
+            "pitchDelta=${"%.1f".format(Math.toDegrees(result.pitchDeltaRad))}° " +
+            "arrowAngle=${if (result.arrowAngleRad != null) "%.1f".format(Math.toDegrees(result.arrowAngleRad)) + "°" else "HIDDEN"}"
+        )
+        logger.d(
+            "ARROW_QUAT | " +
+            "GAZE yaw=${"%.1f".format(gazeYaw)}° pitch=${"%.1f".format(gazePitch)}° " +
+            "q=(${"%.4f".format(gazeQ.x)},${"%.4f".format(gazeQ.y)},${"%.4f".format(gazeQ.z)},${"%.4f".format(gazeQ.w)})"
+        )
+        logger.d(
+            "ARROW_QUAT | " +
+            "TARGET yaw=${"%.1f".format(targetYaw)}° pitch=${"%.1f".format(targetPitch)}° " +
+            "q=(${"%.4f".format(targetQ.x)},${"%.4f".format(targetQ.y)},${"%.4f".format(targetQ.z)},${"%.4f".format(targetQ.w)}) " +
+            "FOV h=${"%.0f".format(Math.toDegrees(HORIZONTAL_FOV_RAD))}° v=${"%.0f".format(Math.toDegrees(VERTICAL_FOV_RAD))}°"
+        )
+    }
+
     private fun tryApplyOrientation(yawDeg: Float, pitchDeg: Float) {
         if (!viewModel.sensorRotationEnabled) return
+
+        // Use the RAW (unscaled) Euler angles from the gyro quaternion for BOTH
+        // the view control (setYaw/setPitch) and the gaze direction. Since we
+        // disabled Media3's built-in sensor, our setYaw/setPitch are the ONLY
+        // source of view rotation — so the view direction == gaze direction exactly.
+        val rawYawDeg = gyroController.getRawEulerYawDeg()
+        val rawPitchDeg = gyroController.getRawEulerPitchDeg()
+
         currentGazeDirection = EquirectangularProjection.fromYawPitch(
-            yawRad = Math.toRadians(yawDeg.toDouble()),
-            pitchRad = Math.toRadians(pitchDeg.coerceIn(-MAX_PITCH_DEG, MAX_PITCH_DEG).toDouble())
+            yawRad = Math.toRadians(rawYawDeg.toDouble()),
+            pitchRad = Math.toRadians(rawPitchDeg.coerceIn(-MAX_PITCH_DEG, MAX_PITCH_DEG).toDouble())
         )
 
         fun applyTo(obj: Any?, yaw: Float, pitch: Float) {
@@ -324,7 +389,10 @@ class LocalSphericalPlayerActivity :
         }
 
         try {
-            applyTo(binding.sphericalView, yawDeg, pitchDeg)
+            // Apply raw Euler angles directly — NOT the tiny sensitivity-scaled
+            // yawDeg/pitchDeg parameters. Since Media3's sensor is disabled, this
+            // is the ONLY rotation source, so view direction == gaze exactly.
+            applyTo(binding.sphericalView, rawYawDeg, rawPitchDeg)
         } catch (e: Exception) {
             logger.e("tryApplyOrientation failed: ${e.message}")
         }
@@ -334,7 +402,13 @@ class LocalSphericalPlayerActivity :
         private val JSON_MIME_TYPES = arrayOf("application/json", "text/json", "text/plain", "application/octet-stream", "*/*")
         private const val DETECTION_UPDATE_INTERVAL_MS = 200L
         private const val MAX_PITCH_DEG = 90f
-        private const val HORIZONTAL_FOV_RAD = 1.5707963267948966 // 90 degrees
-        private const val VERTICAL_FOV_RAD = 1.5707963267948966 // 90 degrees
+
+        // Adjustable FOV parameters (in radians). The arrow disappears when the target
+        // is within these half-angles from the gaze direction.
+        // Typical phone screen FOV: 30°–60° horizontal, 20°–50° vertical.
+        // VR headset FOV: 80°–110° per eye.
+        // Tune these to match your device — if the arrow never disappears, try larger values.
+        @JvmField var HORIZONTAL_FOV_RAD: Double = Math.toRadians(60.0)  // 60° total HFOV → ±30°
+        @JvmField var VERTICAL_FOV_RAD: Double = Math.toRadians(45.0)    // 45° total VFOV → ±22.5°
     }
 }

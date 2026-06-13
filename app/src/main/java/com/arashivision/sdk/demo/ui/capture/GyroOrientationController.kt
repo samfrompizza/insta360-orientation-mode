@@ -69,6 +69,13 @@ class GyroOrientationController(
 
     private var calibrationQuaternion = Quaternion(1f, 0f, 0f, 0f) // идентичный кватернион
     private var calibrated = false
+
+    // Raw orientation values captured at calibration time — used to produce
+    // calibration-relative gaze angles that always update (unlike lastEulerYaw
+    // which is frozen at 0 until calibrate() is called).
+    private var calibrationRawYawDeg = 0f
+    private var calibrationRawPitchDeg = 0f
+
     var enabled = true
 
     private val rotMat = FloatArray(9)
@@ -97,11 +104,13 @@ class GyroOrientationController(
 
     fun calibrate() {
         calibrationQuaternion = currentQuaternion.copy()
+        calibrationRawYawDeg = lastRawYawDeg
+        calibrationRawPitchDeg = lastRawPitchDeg
         lastEulerYaw = 0f
         lastEulerPitch = 0f
         lastEulerRoll = 0f
         calibrated = true
-        logger.d("Gyro calibrated at quaternion: w=${calibrationQuaternion.w}, x=${calibrationQuaternion.x}, y=${calibrationQuaternion.y}, z=${calibrationQuaternion.z}")
+        logger.d("Gyro calibrated: rawYaw=$lastRawYawDeg rawPitch=$lastRawPitchDeg q=(${calibrationQuaternion.w}, ${calibrationQuaternion.x}, ${calibrationQuaternion.y}, ${calibrationQuaternion.z})")
     }
 
     fun setzOrientationEnabled(enabled: Boolean) {
@@ -157,56 +166,78 @@ class GyroOrientationController(
 
         SensorManager.getOrientation(remapped, out)
         lastRawYawDeg = Math.toDegrees(out[0].toDouble()).toFloat()
-        lastRawPitchDeg = Math.toDegrees(out[1].toDouble()).toFloat()
+        // In landscape (ROTATION_90/270), getOrientation values[1] (rotation around -X)
+        // is actually ROLL after remap, and values[2] (rotation around Y) is the true PITCH.
+        // In portrait, values[1] is the correct pitch component.
+        // We store the correct pitch in lastRawPitchDeg regardless of orientation.
+        val displayRot = getDisplayRotation()
+        val rawPitchComponent = if (displayRot == Surface.ROTATION_90 || displayRot == Surface.ROTATION_270) {
+            out[2]  // landscape: actual pitch is in values[2]
+        } else {
+            out[1]  // portrait: pitch is in values[1]
+        }
+        lastRawPitchDeg = Math.toDegrees(rawPitchComponent.toDouble()).toFloat()
         lastRawRollDeg = Math.toDegrees(out[2].toDouble()).toFloat()
 
-        if (!calibrated) {
-            return
-        }
+        // Always extract Euler angles for gaze tracking, even before calibration.
+        // When calibrated: use the relative (calibration-offset) quaternion.
+        // When not calibrated: use the raw currentQuaternion directly so the angles
+        // still update with device motion instead of being frozen at 0.
+        if (calibrated) {
+            // q_relative = q_current * inverse(q_calibration)
+            val calibrationInverse = calibrationQuaternion.conjugate()
+            val relativeQuaternion = currentQuaternion.multiply(calibrationInverse)
 
-        // q_relative = q_current * inverse(q_calibration)
-        // inverse(q) = conjugate(q) / |q|^2
-        val calibrationInverse = calibrationQuaternion.conjugate()
-        val relativeQuaternion = currentQuaternion.multiply(calibrationInverse)
+            smoothedQuaternion = Quaternion.slerp(smoothedQuaternion, relativeQuaternion, smoothingAlpha)
 
-        smoothedQuaternion = Quaternion.slerp(smoothedQuaternion, relativeQuaternion, smoothingAlpha)
-
-        val (yaw, pitch, roll) = smoothedQuaternion.toEulerAngles(
-            previousYaw = lastEulerYaw,
-            previousPitch = lastEulerPitch,
-            previousRoll = lastEulerRoll
-        )
-
-        lastEulerYaw = yaw
-        lastEulerPitch = pitch
-        lastEulerRoll = roll
-
-        val targetYaw = yaw * yawSensitivity * if (invertYaw) -1f else 1f
-        val targetPitch = pitch * pitchSensitivity * if (invertPitch) -1f else 1f
-
-        val maxYaw = 360f
-        val maxPitch = 270f
-
-        val clampedYaw = targetYaw.coerceIn(-maxYaw, maxYaw)
-        val clampedPitch = targetPitch.coerceIn(-maxPitch, maxPitch)
-
-        smoothedYaw = clampedYaw
-        smoothedPitch = clampedPitch
-
-        val thisMoment = SystemClock.elapsedRealtime()
-        if (thisMoment - lastLogTime >= 500L) {
-            lastLogTime = thisMoment
-            logger.d(
-                "yaw=$smoothedYaw pitch=$smoothedPitch " +
-                        "rawYaw=$lastRawYawDeg rawPitch=$lastRawPitchDeg rawRoll=$lastRawRollDeg " +
-                        "q=${smoothedQuaternion}"
+            val (yaw, pitch, roll) = smoothedQuaternion.toEulerAngles(
+                previousYaw = lastEulerYaw,
+                previousPitch = lastEulerPitch,
+                previousRoll = lastEulerRoll
             )
-            logger.d(
-                "yawRawFromQuat=$yaw pitchRawFromQuat=$pitch rollRawFromQuat=$roll " +
-                        "targetYaw=${yaw * yawSensitivity} targetPitch=${pitch * pitchSensitivity}"
+
+            lastEulerYaw = yaw
+            lastEulerPitch = pitch
+            lastEulerRoll = roll
+
+            val targetYaw = yaw * yawSensitivity * if (invertYaw) -1f else 1f
+            val targetPitch = pitch * pitchSensitivity * if (invertPitch) -1f else 1f
+
+            val maxYaw = 360f
+            val maxPitch = 270f
+
+            val clampedYaw = targetYaw.coerceIn(-maxYaw, maxYaw)
+            val clampedPitch = targetPitch.coerceIn(-maxPitch, maxPitch)
+
+            smoothedYaw = clampedYaw
+            smoothedPitch = clampedPitch
+
+            val thisMoment = SystemClock.elapsedRealtime()
+            if (thisMoment - lastLogTime >= 500L) {
+                lastLogTime = thisMoment
+                logger.d(
+                    "yaw=$smoothedYaw pitch=$smoothedPitch " +
+                            "rawYaw=$lastRawYawDeg rawPitch=$lastRawPitchDeg rawRoll=$lastRawRollDeg " +
+                            "q=${smoothedQuaternion}"
+                )
+                logger.d(
+                    "yawRawFromQuat=$yaw pitchRawFromQuat=$pitch rollRawFromQuat=$roll " +
+                            "targetYaw=${yaw * yawSensitivity} targetPitch=${pitch * pitchSensitivity}"
+                )
+            }
+            applyOrientation(smoothedYaw, smoothedPitch)
+        } else {
+            // Not calibrated yet — still extract Euler angles from the raw quaternion
+            // so the gaze tracking works even before the user presses calibrate.
+            val (yaw, pitch, roll) = currentQuaternion.toEulerAngles(
+                previousYaw = lastEulerYaw,
+                previousPitch = lastEulerPitch,
+                previousRoll = lastEulerRoll
             )
+            lastEulerYaw = yaw
+            lastEulerPitch = pitch
+            lastEulerRoll = roll
         }
-        applyOrientation(smoothedYaw, smoothedPitch)
     }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
@@ -227,8 +258,45 @@ class GyroOrientationController(
     fun getSmoothedYaw(): Float = smoothedYaw
     fun getSmoothedPitch(): Float = smoothedPitch
 
+    /** Raw (unscaled) Euler yaw from the smoothed relative quaternion. Only updated after calibration. */
+    fun getRawEulerYawDeg(): Float = lastEulerYaw
+
+    /** Raw (unscaled) Euler pitch from the smoothed relative quaternion. Only updated after calibration. */
+    fun getRawEulerPitchDeg(): Float = lastEulerPitch
+
+    /**
+     * Calibration-relative gaze yaw from the raw sensor orientation.
+     * ALWAYS updates (unlike [getRawEulerYawDeg] which requires calibration).
+     * Positive = turn right from calibration pose.
+     */
+    fun getGazeYawDeg(): Float {
+        val raw = lastRawYawDeg
+        val offset = calibrationRawYawDeg
+        var relative = raw - offset
+        // Wrap to [-180, 180]
+        while (relative > 180f) relative -= 360f
+        while (relative <= -180f) relative += 360f
+        return relative
+    }
+
+    /**
+     * Calibration-relative gaze pitch from the raw sensor orientation.
+     * ALWAYS updates (unlike [getRawEulerPitchDeg] which requires calibration).
+     *
+     * Note: getOrientation pitch is positive when the device tilts forward (top-down),
+     * but equirectangular pitch is positive when looking UP. We negate to match.
+     */
+    fun getGazePitchDeg(): Float {
+        val raw = lastRawPitchDeg
+        val offset = calibrationRawPitchDeg
+        return -(raw - offset)  // negate: getOrientation pitch convention is opposite to equirectangular
+    }
+
     fun getCurrentQuaternion(): Quaternion = currentQuaternion.copy()
     fun getSmoothedQuaternion(): Quaternion = smoothedQuaternion.copy()
+
+    /** The full current quaternion (before calibration offset), suitable for debug logging. */
+    fun getRawCurrentQuaternion(): Quaternion = currentQuaternion.copy()
 
     /**
      * Внутренний класс для работы с кватернионами (w, x, y, z)

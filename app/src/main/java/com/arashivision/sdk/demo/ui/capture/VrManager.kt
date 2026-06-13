@@ -58,6 +58,8 @@ class VrManager(
     private val vrIpdYawDeg: Float = 3.0f
     private var eyeScale: Float = 0.7f
     private var eyeSpacingPx: Int = -400
+    private var lastYawDeg: Float = 0f
+    private var lastPitchDeg: Float = 0f
 
     init {
         applyVrAdjustments()
@@ -200,7 +202,6 @@ class VrManager(
         } catch (e: Exception) {
             logger.e("Failed to hide UI elements: ${e.message}")
         }
-        calibrateGyro()
         applyVrAdjustments()
         logger.i("enableVrMode: finished")
     }
@@ -254,7 +255,23 @@ class VrManager(
         }
         try {
             capturePlayerView.visibility = View.VISIBLE
+            val currentPipeline = capturePlayerView.pipeline
+            if (currentPipeline == null) {
+                runCatching {
+                    val params = (activity as? CaptureActivity)?.viewModel?.getCaptureParams()
+                    if (params != null) {
+                        capturePlayerView.prepare(params)
+                    }
+                }.onFailure {
+                    logger.w("Failed to re-prepare main capturePlayerView: ${it.message}")
+                }
+            }
             capturePlayerView.play()
+            runCatching {
+                instaCameraManager.setPipeline(capturePlayerView.pipeline)
+            }.onFailure {
+                logger.w("Failed to restore camera pipeline to main player: ${it.message}")
+            }
             logger.d("Main capturePlayerView shown and play() called")
         } catch (e: Exception) {
             logger.e("Failed to restore main capturePlayerView: ${e.message}")
@@ -263,6 +280,8 @@ class VrManager(
     }
 
     fun applyOrientation(yawDeg: Float, pitchDeg: Float) {
+        lastYawDeg = yawDeg
+        lastPitchDeg = pitchDeg
         try {
             rightVrPlayer?.let { obj ->
                 val cls = obj.javaClass
@@ -280,6 +299,11 @@ class VrManager(
         } catch (e: Exception) {
             logger.e("applyOrientation -> right player error: ${e.message}")
         }
+    }
+
+    fun setOrientationSnapshot(yawDeg: Float, pitchDeg: Float) {
+        lastYawDeg = yawDeg
+        lastPitchDeg = pitchDeg
     }
 
     fun onResume() {

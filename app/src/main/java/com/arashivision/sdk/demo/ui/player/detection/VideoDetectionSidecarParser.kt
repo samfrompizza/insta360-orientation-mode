@@ -5,6 +5,40 @@ import org.json.JSONObject
 import org.json.JSONException
 
 /** Parses detection sidecar JSON files produced for offline panoramic videos. */
+/*JSON example (coordinates are in pixels):
+{
+  "video": {
+    "path": "data/raw/red.mp4",
+    "width": 1280,
+    "height": 640,
+    "fps": 29.97002997002997,
+    "frame_count": 2378,
+    "duration_sec": 79.34593333333333
+  },
+  {
+      "frame_idx": 198,
+      "objects": [
+        {
+          "track_id": 2,
+          "bbox_xyxy": [
+            1204.0,
+            270.0,
+            1243.0,
+            283.0
+          ],
+          "center_xy": [
+            1223.5,
+            276.5
+          ],
+          "center_norm": [
+            0.955859,
+            0.432031
+          ]
+        }
+      ],
+      "time_sec": 6.6066
+    },
+ */
 class VideoDetectionSidecarParser {
 
     fun parse(json: String): VideoDetectionSidecar {

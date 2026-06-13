@@ -13,6 +13,7 @@ import android.view.SurfaceView
 import android.view.TextureView
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.SeekBar
@@ -31,8 +32,16 @@ class LocalVrManager(
 ) {
     private val logger = XLog.tag("LocalVrManager").build()
 
+    /** Called when VR mode is enabled or disabled, with the new state. */
+    var onVrModeChanged: ((Boolean) -> Unit)? = null
+
     var isVrMode: Boolean = false
-        private set
+        private set(value) {
+            if (field != value) {
+                field = value
+                onVrModeChanged?.invoke(value)
+            }
+        }
 
     private var copying = false
     private var copyRunnable: Runnable? = null
@@ -45,6 +54,7 @@ class LocalVrManager(
 
     private var eyeScale: Float = 0.70f
     private var eyeSpacingPx: Int = -400
+    private var vrSettingsButton: ImageButton? = null
 
     fun toggleVrMode() {
         if (isVrMode) disableVrMode() else enableVrMode()
@@ -55,6 +65,9 @@ class LocalVrManager(
         isVrMode = true
         leftEyeImage.visibility = View.VISIBLE
         overlaysToHide.forEach { it.visibility = View.GONE }
+        ensureVrSettingsButton()
+        vrSettingsButton?.visibility = View.VISIBLE
+        updateVrSettingsButtonPosition()
         sourceView.post {
             if (!isVrMode) return@post
             applyVrAdjustments()
@@ -66,6 +79,7 @@ class LocalVrManager(
         if (!isVrMode) return
         isVrMode = false
         overlaysToHide.forEach { it.visibility = View.VISIBLE }
+        vrSettingsButton?.visibility = View.GONE
         leftEyeImage.visibility = View.GONE
         stopCopyLoop()
         leftEyeImage.setImageBitmap(null)
@@ -77,6 +91,40 @@ class LocalVrManager(
 
     fun onPause() {
         stopCopyLoop()
+    }
+
+    private fun ensureVrSettingsButton() {
+        if (vrSettingsButton != null) return
+        val sourceParent = sourceView.parent as? View ?: return
+        val parent = (sourceParent.parent as? ViewGroup) ?: (sourceParent as? ViewGroup) ?: return
+        val sizeDp = 44
+        val marginDp = 12
+        val sizePx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, sizeDp.toFloat(), activity.resources.displayMetrics).toInt()
+        val marginPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, marginDp.toFloat(), activity.resources.displayMetrics).toInt()
+
+        val btn = ImageButton(activity).apply {
+            setImageResource(android.R.drawable.ic_menu_manage)
+            setBackgroundResource(android.R.color.transparent)
+            scaleType = ImageView.ScaleType.CENTER_INSIDE
+            alpha = 0.85f
+            layoutParams = ViewGroup.MarginLayoutParams(sizePx, sizePx)
+            x = (parent.width - sizePx - marginPx).coerceAtLeast(0).toFloat()
+            y = marginPx.toFloat()
+            visibility = View.GONE
+            setOnClickListener { showVrSettingsDialog() }
+        }
+        parent.addView(btn)
+        vrSettingsButton = btn
+    }
+
+    private fun updateVrSettingsButtonPosition() {
+        val btn = vrSettingsButton ?: return
+        val parent = btn.parent as? View ?: return
+        val marginPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 12f, activity.resources.displayMetrics).toInt()
+        parent.post {
+            btn.x = (parent.width - btn.width - marginPx).coerceAtLeast(0).toFloat()
+            btn.y = marginPx.toFloat()
+        }
     }
 
     fun showVrSettingsDialog() {
