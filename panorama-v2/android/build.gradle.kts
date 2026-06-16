@@ -38,6 +38,9 @@ dependencies {
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.media3.exoplayer)
     implementation(libs.media3.common)
+    // Insta360 camera SDK: InstaCameraManager + connection/preview callbacks wrapped by
+    // com.panorama.android.camera.CameraConnection.
+    implementation(libs.insta.camera)
     // Cardboard SDK Java layer (prebuilt from the cardboard-spike :sdk module). The native
     // libGfxPluginCardboard.so calls into these classes via JNI; without them VR aborts with
     // NoClassDefFoundError on protobuf parsing. QR scanning (play-services-vision) is intentionally

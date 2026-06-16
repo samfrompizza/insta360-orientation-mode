@@ -10,14 +10,12 @@ import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.exoplayer.video.VideoFrameMetadataListener
-import androidx.media3.exoplayer.video.spherical.CameraMotionListener
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /** Thin wrapper over a media3 [Player] that decodes video into a [Surface] (the OES texture handed
- *  in by [com.panorama.android.gl.PanoramaGlView.onVideoSurfaceReady]) and exposes playback state
+ *  in by [com.panorama.android.gl.CardboardVrView.onVideoSurfaceReady]) and exposes playback state
  *  as coroutine flows for the Phase-3 ViewModel.
  *
  *  The constructor takes the [Player] interface, not a concrete ExoPlayer, so unit tests can mock
@@ -67,18 +65,6 @@ class ExoVideoPlayer(private val player: Player) {
      *  its application looper — calling it from any other thread throws "Player is accessed on the
      *  wrong thread". So we hop onto the player's own looper before touching it. */
     fun setVideoSurface(surface: Surface?) = onPlayerThread { player.setVideoSurface(surface) }
-
-    /** Routes decoded-frame metadata to [listener] for SphericalGLSurfaceView's equirect projection.
-     *  Hops onto the player looper. These two sinks are declared on [ExoPlayer], not the [Player]
-     *  interface this wrapper holds; the cast is safe because the only production player is the
-     *  ExoPlayer built by [create], and the spherical view fundamentally requires the ExoPlayer API. */
-    fun setVideoFrameMetadataListener(listener: VideoFrameMetadataListener) =
-        onPlayerThread { (player as ExoPlayer).setVideoFrameMetadataListener(listener) }
-
-    /** Routes camera-motion (projection) data to [listener], required by SphericalGLSurfaceView.
-     *  Hops onto the player looper. Same ExoPlayer-cast rationale as above. */
-    fun setCameraMotionListener(listener: CameraMotionListener) =
-        onPlayerThread { (player as ExoPlayer).setCameraMotionListener(listener) }
 
     /** Pulls the current playback position and duration from the player into [positionMs] /
      *  [durationMs]. Called by the ViewModel's poller (off the main thread), so it hops onto the

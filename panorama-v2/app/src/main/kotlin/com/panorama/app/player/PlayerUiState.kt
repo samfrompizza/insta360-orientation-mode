@@ -14,6 +14,8 @@ data class PlayerUiState(
     val durationMs: Long = 0L,
     val isPlaying: Boolean = false,
     val vrEnabled: Boolean = false,
+    /** Mono screen orientation chosen by the user (toggled by a button; no auto-rotate). */
+    val monoPortrait: Boolean = true,
     val arrow: ArrowState = ArrowState(visible = false, angleRad = null),
     val calibrationNonce: Int = 0,
 )

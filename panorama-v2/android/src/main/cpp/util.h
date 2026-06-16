@@ -29,6 +29,8 @@ struct Matrix4x4 {
 
   static Matrix4x4 Identity();
   static Matrix4x4 Translation(float x, float y, float z);
+  // Standard GL perspective projection (column-major). fov_y in radians.
+  static Matrix4x4 Perspective(float fov_y, float aspect, float near, float far);
 };
 
 // Reads a column-major 16-float GL array (e.g. from the Cardboard SDK) into a
@@ -41,6 +43,12 @@ struct Quatf {
   float x, y, z, w;
   static Quatf FromXYZW(const float* q);
   Matrix4x4 ToMatrix() const;
+
+  Quatf Normalized() const;
+  Quatf Conjugate() const;                 // inverse for a unit quaternion
+  Quatf operator*(const Quatf& r) const;   // Hamilton product (this then r? see .cc)
+  // Scales the rotation angle by `s` about the same axis (s>1 amplifies, s<1 damps).
+  Quatf ScaledAngle(float s) const;
 };
 
 // CLOCK_BOOTTIME in nanoseconds, for the head-pose prediction timestamp.

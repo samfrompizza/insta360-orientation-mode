@@ -15,6 +15,8 @@ android {
         ndk { abiFilters += "arm64-v8a" }
     }
     buildFeatures { compose = true }
+    // libc++_shared.so ships in both the Insta360 SDK and the Cardboard llvm_stl transform; keep one.
+    packaging { jniLibs { pickFirsts += "lib/arm64-v8a/libc++_shared.so" } }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -45,6 +47,8 @@ dependencies {
     implementation(libs.androidx.hilt.navigation.compose)
     ksp(libs.hilt.compiler)
     implementation(libs.media3.exoplayer)
+    implementation(libs.insta.camera)
+    implementation(libs.insta.media)
     // unit tests: JUnit4 + Robolectric + MockK + Turbine + coroutines-test (same stack as :android).
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)

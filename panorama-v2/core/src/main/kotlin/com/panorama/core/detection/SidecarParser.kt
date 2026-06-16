@@ -1,20 +1,24 @@
 package com.panorama.core.detection
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
-/** Wire object inside a sidecar frame: centre as a plain [x,y] list, optional bbox + label. */
+/** Wire object inside a sidecar frame, matching the offline-360-cv output: a normalised [0,1]
+ *  centre (center_norm) plus optional pixel bbox / label / track id. The runtime consumes the
+ *  centre directly — no normalisation needed. */
 @Serializable
 data class SidecarObject(
-    val centerNorm: List<Float> = emptyList(),
-    val bboxNorm: List<Float>? = null,
+    @SerialName("center_norm") val centerNorm: List<Float> = emptyList(),
+    @SerialName("bbox_xyxy") val bboxXyxy: List<Float> = emptyList(),
     val label: String? = null,
+    @SerialName("track_id") val trackId: Int? = null,
 )
 
-/** Wire frame: a video timestamp (ms) and the objects detected at that time. */
+/** Wire frame: the playback time (seconds) and the objects detected at that time. */
 @Serializable
 data class SidecarFrame(
-    val timeMs: Long = 0L,
+    @SerialName("time_sec") val timeSec: Float = 0f,
     val objects: List<SidecarObject> = emptyList(),
 )
 

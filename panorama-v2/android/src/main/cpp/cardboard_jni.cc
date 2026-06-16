@@ -67,6 +67,28 @@ JNI_METHOD(void, nativeOnResume)(JNIEnv* /*env*/, jobject /*obj*/, jlong ptr) {
   Native(ptr)->OnResume();
 }
 
-JNI_METHOD(void, nativeScanQrCode)(JNIEnv* /*env*/, jobject /*obj*/, jlong ptr) {
-  Native(ptr)->ScanQrCode();
+JNI_METHOD(void, nativeGetPose)(JNIEnv* env, jobject /*obj*/, jlong ptr, jfloatArray out) {
+  float quat[4];
+  Native(ptr)->PoseQuat(quat);
+  env->SetFloatArrayRegion(out, 0, 4, quat);
+}
+
+JNI_METHOD(void, nativeSetVrParams)
+(JNIEnv* /*env*/, jobject /*obj*/, jlong ptr, jfloat eye_scale, jfloat eye_gap) {
+  Native(ptr)->SetVrParams(eye_scale, eye_gap);
+}
+
+JNI_METHOD(void, nativeSetSensitivity)
+(JNIEnv* /*env*/, jobject /*obj*/, jlong ptr, jfloat s) {
+  Native(ptr)->SetSensitivity(s);
+}
+
+JNI_METHOD(void, nativeSetMonoMode)
+(JNIEnv* /*env*/, jobject /*obj*/, jlong ptr, jboolean mono) {
+  Native(ptr)->SetMonoMode(mono);
+}
+
+JNI_METHOD(void, nativeSetMonoPortrait)
+(JNIEnv* /*env*/, jobject /*obj*/, jlong ptr, jboolean portrait) {
+  Native(ptr)->SetMonoPortrait(portrait);
 }

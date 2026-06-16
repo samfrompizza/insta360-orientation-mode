@@ -33,12 +33,31 @@ class CardboardRenderer {
   void OnPause();
   void OnResume();
   void ScanQrCode();
+  // Writes the current head-tracker orientation as a quaternion (x,y,z,w) into out4. This is the
+  // same pose that drives the rendered view, so the off-screen arrow can stay in lock-step with it.
+  void PoseQuat(float* out4);
+  // Per-eye viewport tuning. eye_scale in (0,1] shrinks each eye within its half (1 = full half);
+  // eye_gap in [0,1) pushes the two halves apart from the centre as a fraction of half-width.
+  void SetVrParams(float eye_scale, float eye_gap);
+  // Head-turn gain about the entry pose: >1 amplifies, <1 damps. 1 = raw Cardboard tracking.
+  void SetSensitivity(float s) { sensitivity_ = s; }
+  // When true, render one full-screen view (no stereo split, no lens distortion). Switching modes
+  // re-anchors the sensitivity pivot so "forward" is wherever the head is on entering the new mode.
+  void SetMonoMode(bool mono) {
+    if (mono != mono_) ref_pose_set_ = false;
+    mono_ = mono;
+  }
+  // Mono screen orientation chosen by the user (true = portrait, false = landscape). VR ignores it.
+  void SetMonoPortrait(bool portrait) { mono_portrait_ = portrait; }
 
  private:
   bool UpdateDeviceParams();
   void GlSetup();
   void GlTeardown();
   Matrix4x4 GetPose();
+  // Screen orientation to query the head pose in: VR is locked landscape; mono follows the live
+  // aspect ratio (portrait when taller than wide) so the view never sits 90° off.
+  CardboardViewportOrientation PoseOrientation() const;
 
   CardboardHeadTracker* head_tracker_ = nullptr;
   CardboardLensDistortion* lens_distortion_ = nullptr;
@@ -57,6 +76,15 @@ class CardboardRenderer {
   float eye_matrices_[2][16];
   float projection_matrices_[2][16];
   float st_matrix_[16];
+
+  float eye_scale_ = 1.0f;  // per-eye viewport size within its half (1 = full)
+  float eye_gap_ = 0.0f;    // extra split between the two halves, fraction of half-width
+
+  float sensitivity_ = 1.0f;       // head-turn gain about the entry pose
+  Quatf ref_pose_{0.f, 0.f, 0.f, 1.f};  // entry orientation (sensitivity pivot)
+  bool ref_pose_set_ = false;
+  bool mono_ = false;          // full-screen single view vs split-screen stereo
+  bool mono_portrait_ = true;  // mono screen orientation (portrait vs landscape)
 
   GLuint oes_texture_id_ = 0;
   int screen_width_ = 0;

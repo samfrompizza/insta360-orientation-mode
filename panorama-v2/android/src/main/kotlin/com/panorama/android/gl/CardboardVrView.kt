@@ -9,10 +9,15 @@ import android.opengl.GLES20
 import android.opengl.GLSurfaceView
 import android.util.AttributeSet
 import android.view.Surface
+import com.panorama.core.math.GazeState
+import dev.romainguy.kotlin.math.Quaternion
+import java.util.concurrent.atomic.AtomicReference
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
-/** Split-screen stereo VR viewer backed by the Google Cardboard SDK.
+/** 360 viewer backed by the Google Cardboard SDK native renderer. Renders either a full-screen mono
+ *  view or split-screen stereo VR ([setMonoMode]); both share the same head tracker, so gyro
+ *  sensitivity and the head pose ([gazeRef]) are consistent across modes.
  *
  *  This view owns a [GLSurfaceView] context and, on its GL thread, creates the OES
  *  [SurfaceTexture] the video decodes into and hands its [Surface] to the player via
@@ -41,6 +46,13 @@ class CardboardVrView @JvmOverloads constructor(
     private var nativeApp: Long = 0L
     private var surfaceTexture: SurfaceTexture? = null
     private val stMatrix = FloatArray(16)
+    private val poseQuat = FloatArray(4)
+
+    /** The Cardboard head-tracker orientation, refreshed every drawn frame on the GL thread. The
+     *  arrow overlay reads this so its FOV test runs against the exact pose the view renders with
+     *  (only the quaternion is meaningful; yaw/pitch/velocity are unused by the FOV math). */
+    val gazeRef: AtomicReference<GazeState> =
+        AtomicReference(GazeState(Quaternion(), 0f, 0f, 0f))
 
     init {
         // Cardboard needs an Activity context (its QR/profile UI launches an Activity).
@@ -76,6 +88,16 @@ class CardboardVrView @JvmOverloads constructor(
                 st.getTransformMatrix(stMatrix)
                 nativeSetStMatrix(nativeApp, stMatrix)
             }
+            // Publish the same head pose the frame was rendered with so the arrow stays in sync.
+            nativeGetPose(nativeApp, poseQuat)
+            gazeRef.set(
+                GazeState(
+                    Quaternion(poseQuat[0], poseQuat[1], poseQuat[2], poseQuat[3]),
+                    yawDeg = 0f,
+                    pitchDeg = 0f,
+                    angularVelocityDegPerSec = 0f,
+                ),
+            )
             nativeOnDrawFrame(nativeApp)
         }
     }
@@ -105,9 +127,25 @@ class CardboardVrView @JvmOverloads constructor(
         }
     }
 
-    /** Launch the Cardboard QR viewer-profile scan flow (saves device params for lens distortion). */
-    fun scanQrCode() {
-        if (nativeApp != 0L) nativeScanQrCode(nativeApp)
+    /** Tune the per-eye viewport: [eyeScale] in (0,1] sizes each eye within its half, [eyeGap] in
+     *  [0,1) pushes the two halves apart. Applied on the GL thread. */
+    fun setVrParams(eyeScale: Float, eyeGap: Float) {
+        if (nativeApp != 0L) queueEvent { if (nativeApp != 0L) nativeSetVrParams(nativeApp, eyeScale, eyeGap) }
+    }
+
+    /** Head-turn gain about the VR entry pose ([s] > 1 amplifies, < 1 damps). Applied on GL thread. */
+    fun setSensitivity(s: Float) {
+        if (nativeApp != 0L) queueEvent { if (nativeApp != 0L) nativeSetSensitivity(nativeApp, s) }
+    }
+
+    /** Switch between full-screen mono (true) and split-screen stereo VR (false). GL thread. */
+    fun setMonoMode(mono: Boolean) {
+        if (nativeApp != 0L) queueEvent { if (nativeApp != 0L) nativeSetMonoMode(nativeApp, mono) }
+    }
+
+    /** Mono screen orientation (true = portrait, false = landscape). Match the locked screen. */
+    fun setMonoPortrait(portrait: Boolean) {
+        if (nativeApp != 0L) queueEvent { if (nativeApp != 0L) nativeSetMonoPortrait(nativeApp, portrait) }
     }
 
     private fun createOesTexture(): Int {
@@ -140,7 +178,11 @@ class CardboardVrView @JvmOverloads constructor(
     private external fun nativeOnDrawFrame(nativeApp: Long)
     private external fun nativeOnPause(nativeApp: Long)
     private external fun nativeOnResume(nativeApp: Long)
-    private external fun nativeScanQrCode(nativeApp: Long)
+    private external fun nativeGetPose(nativeApp: Long, out: FloatArray)
+    private external fun nativeSetVrParams(nativeApp: Long, eyeScale: Float, eyeGap: Float)
+    private external fun nativeSetSensitivity(nativeApp: Long, s: Float)
+    private external fun nativeSetMonoMode(nativeApp: Long, mono: Boolean)
+    private external fun nativeSetMonoPortrait(nativeApp: Long, portrait: Boolean)
 
     private companion object {
         init {

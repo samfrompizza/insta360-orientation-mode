@@ -45,6 +45,11 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideCameraConnection(): com.panorama.android.camera.CameraConnection =
+        com.panorama.android.camera.CameraConnection()
+
+    @Provides
+    @Singleton
     fun provideExoVideoPlayer(@ApplicationContext context: Context): ExoVideoPlayer =
         ExoVideoPlayer.create(context)
 

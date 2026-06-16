@@ -150,18 +150,6 @@ class PlayerViewModelTest {
         verify { exo.seekTo(5000) }
     }
 
-    @Test
-    fun `attach listeners delegate to exo`() = runTest(testDispatcher) {
-        val vm = viewModel(backgroundScope)
-        val frame = mockk<androidx.media3.exoplayer.video.VideoFrameMetadataListener>(relaxed = true)
-        val motion = mockk<androidx.media3.exoplayer.video.spherical.CameraMotionListener>(relaxed = true)
-
-        vm.attachFrameMetadataListener(frame)
-        vm.attachCameraMotionListener(motion)
-
-        verify { exo.setVideoFrameMetadataListener(frame) }
-        verify { exo.setCameraMotionListener(motion) }
-    }
 
     /** Builds a [SidecarDetectionSource]'s timeline over a one-frame sidecar with the given detections. */
     private fun timelineFor(detections: List<Detection>): com.panorama.core.detection.DetectionTimeline {
@@ -171,7 +159,7 @@ class PlayerViewModelTest {
             )
         }
         val sidecar = com.panorama.core.detection.Sidecar(
-            frames = listOf(com.panorama.core.detection.SidecarFrame(timeMs = 0L, objects = objects)),
+            frames = listOf(com.panorama.core.detection.SidecarFrame(timeSec = 0f, objects = objects)),
         )
         return com.panorama.core.detection.DetectionTimeline(sidecar)
     }

@@ -1,47 +1,43 @@
 package com.panorama.core.detection
 
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.floats.plusOrMinus
 import io.kotest.matchers.shouldBe
 
-/** Pins the nearest-frame lookup: positions before the first / after the last frame clamp to the
- *  ends, an in-between position snaps to the nearest timeMs, and an empty timeline yields no
- *  detections (the runtime asks the timeline every frame; it must answer for any position). */
+/** Pins the nearest-frame lookup and the wire->domain conversion. time_sec is compared against the
+ *  ms query; positions before the first / after the last frame clamp to the ends; an in-between
+ *  position snaps to the nearest frame time; center_norm is carried straight into the domain
+ *  detection. An empty timeline yields no detections. */
 class DetectionTimelineTest : FunSpec({
 
-    fun frame(timeMs: Long, label: String) =
-        SidecarFrame(timeMs, listOf(SidecarObject(listOf(0.5f, 0.5f), null, label)))
+    fun frame(timeSec: Float, cx: Float, cy: Float, label: String) =
+        SidecarFrame(timeSec, listOf(SidecarObject(centerNorm = listOf(cx, cy), label = label)))
 
-    val timeline = DetectionTimeline(Sidecar(listOf(frame(100, "a"), frame(200, "b"))))
+    // 1.0 s = 1000 ms, 2.0 s = 2000 ms.
+    val timeline = DetectionTimeline(
+        Sidecar(listOf(frame(1.0f, 0.5f, 0.5f, "a"), frame(2.0f, 0.6f, 0.6f, "b"))),
+    )
 
     test("position before first frame clamps to first") {
-        timeline.frameAt(0).timeMs shouldBe 100L
         timeline.detectionsAt(0)[0].label shouldBe "a"
     }
 
     test("position after last frame clamps to last") {
-        timeline.frameAt(9999).timeMs shouldBe 200L
-        timeline.detectionsAt(9999)[0].label shouldBe "b"
+        timeline.detectionsAt(99999)[0].label shouldBe "b"
     }
 
-    test("in-between position snaps to nearest frame") {
-        // 120 is closer to 100 than to 200.
-        timeline.frameAt(120).timeMs shouldBe 100L
-        // 160 is closer to 200.
-        timeline.frameAt(160).timeMs shouldBe 200L
+    test("in-between position snaps to nearest frame time") {
+        timeline.detectionsAt(1100)[0].label shouldBe "a"  // ~1000 ms
+        timeline.detectionsAt(1900)[0].label shouldBe "b"  // ~2000 ms
+    }
+
+    test("center_norm is carried into the domain detection") {
+        val a = timeline.detectionsAt(1000)[0]
+        a.centerNorm.x shouldBe 0.5f.plusOrMinus(1e-4f)
+        a.centerNorm.y shouldBe 0.5f.plusOrMinus(1e-4f)
     }
 
     test("empty timeline yields no detections") {
-        val empty = DetectionTimeline(Sidecar(emptyList()))
-        empty.detectionsAt(50) shouldBe emptyList()
-    }
-
-    test("wire bbox is carried into the domain Rect, absent bbox stays null") {
-        val withBox = SidecarObject(listOf(0.5f, 0.5f), listOf(0.1f, 0.2f, 0.3f, 0.4f), "drone")
-        val withoutBox = SidecarObject(listOf(0.5f, 0.5f), null, "drone")
-        val tl = DetectionTimeline(
-            Sidecar(listOf(SidecarFrame(0, listOf(withBox)), SidecarFrame(100, listOf(withoutBox)))),
-        )
-        tl.detectionsAt(0)[0].bboxNorm shouldBe Rect(0.1f, 0.2f, 0.3f, 0.4f)
-        tl.detectionsAt(100)[0].bboxNorm shouldBe null
+        DetectionTimeline(Sidecar(emptyList())).detectionsAt(50) shouldBe emptyList()
     }
 })

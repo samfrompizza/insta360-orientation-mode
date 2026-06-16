@@ -8,43 +8,40 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
-/** Tuning knobs for the viewer. For v2 these are local UI state only — they are NOT yet wired into
- *  the live pipeline.
- *
- *  TODO(Phase 4+): thread these through to the live collaborators:
- *   - sensitivity -> a gain on the gaze delta in OrientationEngine,
- *   - IPD yaw    -> PanoramaRenderer.ipdYawDeg (StereoEyeLayout straddle),
- *   - FOV        -> the h/v FOV radians used by ArrowResolver / PanoramaFov.
- *  They are surfaced now so the screen + nav graph are complete and the controls exist for the
- *  on-device tuning pass; the binding is intentionally deferred (see plan Phase 4). */
+/** VR viewer tuning, shown as a translucent overlay on the player (hence the explicit light
+ *  [contentColor] for readability over the dimmed camera). All values are hoisted: the current
+ *  values come in, edits go out through the callbacks, and the owner applies them to the live VR
+ *  view. These knobs only affect the split-screen VR render. */
 @Composable
-fun SettingsScreen(onBack: () -> Unit) {
-    var sensitivity by remember { mutableFloatStateOf(1.0f) }
-    var ipdYawDeg by remember { mutableFloatStateOf(2.5f) }
-    var fovDeg by remember { mutableFloatStateOf(90f) }
-
+fun SettingsScreen(
+    sensitivity: Float,
+    onSensitivityChange: (Float) -> Unit,
+    eyeScale: Float,
+    onEyeScaleChange: (Float) -> Unit,
+    eyeGap: Float,
+    onEyeGapChange: (Float) -> Unit,
+    onBack: () -> Unit,
+    contentColor: Color = Color.White,
+) {
     Column(
         modifier = Modifier.fillMaxWidth().padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Text("Settings")
+        Text("VR settings", color = contentColor)
 
-        Text("Gyro sensitivity: ${"%.2f".format(sensitivity)}")
-        Slider(value = sensitivity, onValueChange = { sensitivity = it }, valueRange = 0.25f..3f)
+        Text("Gyro sensitivity: ${"%.2f".format(sensitivity)}×", color = contentColor)
+        Slider(value = sensitivity, onValueChange = onSensitivityChange, valueRange = 0.5f..2f)
 
-        Text("IPD yaw straddle: ${"%.1f".format(ipdYawDeg)}°")
-        Slider(value = ipdYawDeg, onValueChange = { ipdYawDeg = it }, valueRange = 0f..8f)
+        Text("Screen size: ${"%.0f".format(eyeScale * 100)}%", color = contentColor)
+        Slider(value = eyeScale, onValueChange = onEyeScaleChange, valueRange = 0.5f..1f)
 
-        Text("Horizontal FOV: ${"%.0f".format(fovDeg)}°")
-        Slider(value = fovDeg, onValueChange = { fovDeg = it }, valueRange = 60f..120f)
+        Text("Screen distance: ${"%.0f".format(eyeGap * 100)}%", color = contentColor)
+        Slider(value = eyeGap, onValueChange = onEyeGapChange, valueRange = 0f..0.3f)
 
-        TextButton(onClick = onBack) { Text("Back") }
+        TextButton(onClick = onBack) { Text("Back", color = contentColor) }
     }
 }

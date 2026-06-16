@@ -96,9 +96,11 @@ bool SphereMesh::Init() {
       positions.push_back(kRadius * sin_phi * sin_theta);  // x
       positions.push_back(kRadius * cos_phi);              // y
       positions.push_back(-kRadius * sin_phi * cos_theta); // z
-      // Equirect UV: u = longitude, v = latitude (top of image at phi=0).
+      // Equirect UV: u = longitude, v = latitude. The OES video frame arrives V-flipped (texture
+      // origin at the bottom), so the top of the sphere (phi=0) samples from 1-v to render the
+      // panorama right-side-up instead of upside down.
       uvs.push_back(u);
-      uvs.push_back(v);
+      uvs.push_back(1.0f - v);
     }
   }
 

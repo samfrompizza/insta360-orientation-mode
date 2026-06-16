@@ -18,7 +18,6 @@ import androidx.compose.ui.platform.LocalContext
 import com.panorama.app.library.LibraryScreen
 import com.panorama.app.library.copyToCache
 import com.panorama.app.player.PlayerScreen
-import com.panorama.app.settings.SettingsScreen
 import dagger.hilt.android.AndroidEntryPoint
 
 /** The single launcher Activity. It hosts a tiny hand-rolled screen switch instead of
@@ -49,11 +48,12 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-/** The viewer's three destinations. [Player] carries the chosen video and optional sidecar URIs. */
+/** The viewer's destinations. [Player] carries the chosen video and optional sidecar URIs; settings
+ *  are a translucent overlay inside the player, not a destination of their own. */
 private sealed interface Screen {
     data object Library : Screen
+    data object Live : Screen
     data class Player(val videoUri: Uri, val sidecarUri: Uri?) : Screen
-    data object Settings : Screen
 }
 
 @Composable
@@ -74,13 +74,18 @@ private fun AppRoot(viewUri: Uri?) {
     when (val s = screen) {
         Screen.Library -> LibraryScreen(
             onPlay = { videoUri, sidecarUri -> screen = Screen.Player(videoUri, sidecarUri) },
-            onOpenSettings = { screen = Screen.Settings },
+            onOpenLive = { screen = Screen.Live },
         )
+        Screen.Live -> com.panorama.app.live.LiveScreen(onBack = { screen = Screen.Library })
         // key(videoUri) so picking a different clip rebuilds PlayerScreen (fresh LaunchedEffect ->
-        // selectMedia) instead of reusing the previous composition.
+        // selectMedia) instead of reusing the previous composition. Settings are an in-place
+        // translucent overlay PlayerScreen owns, so there is no separate settings destination.
         is Screen.Player -> key(s.videoUri) {
-            PlayerScreen(videoUri = s.videoUri, sidecarUri = s.sidecarUri)
+            PlayerScreen(
+                videoUri = s.videoUri,
+                sidecarUri = s.sidecarUri,
+                onBack = { screen = Screen.Library },
+            )
         }
-        Screen.Settings -> SettingsScreen(onBack = { screen = Screen.Library })
     }
 }

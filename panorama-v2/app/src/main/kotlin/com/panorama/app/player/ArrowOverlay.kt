@@ -76,16 +76,28 @@ private fun DrawScope.drawArrowAt(center: Offset, edgeRadius: Float, angleRad: F
     )
     translate(tip.x, tip.y) {
         rotateRad(angleRad, pivot = Offset.Zero) {
-            // A simple filled triangle pointing along +X (then rotated into place).
-            val len = 48f
-            val half = 30f
-            val path = Path().apply {
-                moveTo(0f, 0f)
-                lineTo(-len, -half)
-                lineTo(-len, half)
+            // A full arrow pointing along +X: a wide arrowhead at the tip (0,0) plus a shaft
+            // trailing back along -X, so the pointing direction is unambiguous. Built backward from
+            // the tip; the surrounding rotateRad orients it toward the target.
+            val color = Color(0xFFFF5252)
+            val headLen = 46f      // arrowhead depth
+            val headHalf = 34f     // arrowhead half-width (wider than the shaft)
+            val shaftLen = 60f     // how far the shaft trails behind the head
+            val shaftHalf = 12f    // shaft half-thickness
+
+            val head = Path().apply {
+                moveTo(0f, 0f)                 // tip
+                lineTo(-headLen, -headHalf)    // back-left barb
+                lineTo(-headLen, headHalf)     // back-right barb
                 close()
             }
-            drawPath(path, color = Color(0xFFFF5252))
+            drawPath(head, color = color)
+
+            drawRect(
+                color = color,
+                topLeft = Offset(-headLen - shaftLen, -shaftHalf),
+                size = androidx.compose.ui.geometry.Size(shaftLen, shaftHalf * 2f),
+            )
         }
     }
 }

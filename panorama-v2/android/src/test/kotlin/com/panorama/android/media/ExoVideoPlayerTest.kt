@@ -88,26 +88,6 @@ class ExoVideoPlayerTest {
     }
 
     @Test
-    fun `setVideoFrameMetadataListener delegates on the player looper`() {
-        val player = mockk<androidx.media3.exoplayer.ExoPlayer>(relaxed = true)
-        every { player.applicationLooper } returns android.os.Looper.getMainLooper()
-        val wrapper = ExoVideoPlayer(player)
-        val listener = mockk<androidx.media3.exoplayer.video.VideoFrameMetadataListener>(relaxed = true)
-        wrapper.setVideoFrameMetadataListener(listener)
-        verify { player.setVideoFrameMetadataListener(listener) }
-    }
-
-    @Test
-    fun `setCameraMotionListener delegates on the player looper`() {
-        val player = mockk<androidx.media3.exoplayer.ExoPlayer>(relaxed = true)
-        every { player.applicationLooper } returns android.os.Looper.getMainLooper()
-        val wrapper = ExoVideoPlayer(player)
-        val listener = mockk<androidx.media3.exoplayer.video.spherical.CameraMotionListener>(relaxed = true)
-        wrapper.setCameraMotionListener(listener)
-        verify { player.setCameraMotionListener(listener) }
-    }
-
-    @Test
     fun `release releases player`() {
         val (player, _) = mockPlayerWithListener()
         val wrapper = ExoVideoPlayer(player)

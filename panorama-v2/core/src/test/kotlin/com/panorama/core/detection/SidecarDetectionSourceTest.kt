@@ -8,15 +8,15 @@ import io.kotest.matchers.shouldBe
  *  nothing, so the runtime can fall back to no-arrow with a single boolean check. */
 class SidecarDetectionSourceTest : FunSpec({
 
-    fun frame(timeMs: Long, label: String) =
-        SidecarFrame(timeMs, listOf(SidecarObject(listOf(0.5f, 0.5f), null, label)))
+    fun frame(timeSec: Float, label: String) =
+        SidecarFrame(timeSec, listOf(SidecarObject(centerNorm = listOf(0.5f, 0.5f), label = label)))
 
     test("populated timeline is available and returns nearest detections") {
-        val timeline = DetectionTimeline(Sidecar(listOf(frame(100, "a"), frame(200, "b"))))
+        val timeline = DetectionTimeline(Sidecar(listOf(frame(1.0f, "a"), frame(2.0f, "b"))))
         val source: DetectionSource = SidecarDetectionSource(timeline)
         source.available shouldBe true
-        source.detectionsAt(120)[0].label shouldBe "a"
-        source.detectionsAt(180)[0].label shouldBe "b"
+        source.detectionsAt(1100)[0].label shouldBe "a"
+        source.detectionsAt(1900)[0].label shouldBe "b"
     }
 
     test("empty sidecar is unavailable and returns no detections") {

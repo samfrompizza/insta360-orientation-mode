@@ -36,7 +36,7 @@ import java.io.File
 @Composable
 fun LibraryScreen(
     onPlay: (videoUri: Uri, sidecarUri: Uri?) -> Unit,
-    onOpenSettings: () -> Unit,
+    onOpenLive: () -> Unit,
 ) {
     val context = LocalContext.current
     var pickedSidecar by remember { mutableStateOf<Uri?>(null) }
@@ -70,11 +70,11 @@ fun LibraryScreen(
         Button(onClick = { videoLauncher.launch(arrayOf("video/*")) }) {
             Text("Open 360 video")
         }
-        OutlinedButton(onClick = { sidecarLauncher.launch(arrayOf("application/json", "*/*")) }) {
+        OutlinedButton(onClick = { sidecarLauncher.launch(arrayOf("application/json")) }) {
             Text(if (pickedSidecar != null) "Sidecar selected (optional)" else "Pick detections sidecar (optional)")
         }
-        OutlinedButton(onClick = onOpenSettings) {
-            Text("Settings")
+        Button(onClick = onOpenLive) {
+            Text("Live camera")
         }
     }
 }

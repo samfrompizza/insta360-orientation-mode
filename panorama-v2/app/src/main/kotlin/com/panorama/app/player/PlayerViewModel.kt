@@ -4,8 +4,6 @@ import android.net.Uri
 import android.view.Surface
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.media3.exoplayer.video.VideoFrameMetadataListener
-import androidx.media3.exoplayer.video.spherical.CameraMotionListener
 import com.panorama.android.detection.SidecarLoader
 import com.panorama.android.media.ExoVideoPlayer
 import com.panorama.android.sensor.OrientationEngine
@@ -79,6 +77,34 @@ class PlayerViewModel(
     @Volatile
     private var detectionSource: DetectionSource? = null
 
+    /** Where the arrow takes the current head orientation from. Mono uses the sensor engine; VR
+     *  swaps in the Cardboard head-tracker (via [useGazeSource]) so the arrow matches what the VR
+     *  view actually renders. Defaults to the engine. */
+    @Volatile
+    private var gazeSource: () -> GazeState = { orientationEngine.currentGaze() }
+
+    /** Point the arrow at a specific gaze source (VR: the Cardboard pose), or pass null to fall back
+     *  to the sensor engine (mono). */
+    fun useGazeSource(source: (() -> GazeState)?) {
+        gazeSource = source ?: { orientationEngine.currentGaze() }
+    }
+
+    /** VR per-eye viewport tuning, persisted across opening/closing the settings overlay. eyeScale
+     *  in (0,1] sizes each eye; eyeGap in [0,1) is the split between the two halves. The screen
+     *  applies these to the live CardboardVrView. */
+    var vrEyeScale: Float = DEFAULT_EYE_SCALE
+        private set
+    var vrEyeGap: Float = DEFAULT_EYE_GAP
+        private set
+    var vrSensitivity: Float = DEFAULT_SENSITIVITY
+        private set
+
+    fun setVrEyeScale(v: Float) { vrEyeScale = v }
+
+    fun setVrEyeGap(v: Float) { vrEyeGap = v }
+
+    fun setVrSensitivity(v: Float) { vrSensitivity = v }
+
     init {
         // Endless flows/loop live in the injectable scope (default viewModelScope); a test passes a
         // scope it auto-cancels so runTest never joins on these never-completing coroutines.
@@ -105,9 +131,8 @@ class PlayerViewModel(
         }
     }
 
-    /** The sensor engine's own gaze snapshot, exposed so the UI can hand it straight to
-     *  [com.panorama.android.gl.PanoramaGlView.bindGazeRef] without the UI touching :android sensors
-     *  directly. The GL thread then reads exactly what the engine writes — one shared reference. */
+    /** The sensor engine's own gaze snapshot, used as the arrow's gaze source in mono mode
+     *  (in VR the Cardboard head pose is swapped in via [useGazeSource]). */
     val gazeRef: AtomicReference<GazeState> get() = orientationEngine.gazeRef
 
     /** Sensor lifecycle proxies driven from the screen's DisposableEffect (onResume/onPause). */
@@ -118,22 +143,18 @@ class PlayerViewModel(
     /** Wire the GL view's output Surface into the player once the renderer has created it. */
     fun attachVideoSurface(surface: Surface?) = exo.setVideoSurface(surface)
 
-    /** Wire the spherical view's frame-metadata sink into the player (mono mode). */
-    fun attachFrameMetadataListener(listener: VideoFrameMetadataListener) =
-        exo.setVideoFrameMetadataListener(listener)
-
-    /** Wire the spherical view's camera-motion sink into the player (mono mode). */
-    fun attachCameraMotionListener(listener: CameraMotionListener) =
-        exo.setCameraMotionListener(listener)
-
     fun play() = exo.play()
 
     fun pause() = exo.pause()
 
     fun seek(ms: Long) = exo.seekTo(ms)
 
-    /** VM only holds the flag; the Activity reads it to drive PanoramaGlView.setVrEnabled. */
+    /** Flips the VR flag; PlayerScreen observes it and toggles CardboardVrView mono/stereo. */
     fun toggleVr() = _state.update { it.copy(vrEnabled = !it.vrEnabled) }
+
+    /** Toggles the mono screen orientation (portrait/landscape); PlayerScreen locks the screen and
+     *  the renderer's pose frame to match. */
+    fun toggleMonoOrientation() = _state.update { it.copy(monoPortrait = !it.monoPortrait) }
 
     /** Re-zero the gaze and bump the nonce so the UI can react even though gaze is read off-band. */
     fun recalibrate() {
@@ -154,7 +175,7 @@ class PlayerViewModel(
         val arrow = if (source == null) {
             HIDDEN_ARROW
         } else {
-            val gaze = orientationEngine.currentGaze()
+            val gaze = gazeSource()
             val detections = source.detectionsAt(exo.positionMs.value)
             ArrowResolver.resolve(detections, gaze, H_FOV_RAD, V_FOV_RAD, axisConvention)
         }
@@ -163,6 +184,9 @@ class PlayerViewModel(
 
     private companion object {
         const val DEFAULT_TICKER_INTERVAL_MS = 33L          // ~30 Hz
+        const val DEFAULT_EYE_SCALE = 1.0f
+        const val DEFAULT_EYE_GAP = 0.0f
+        const val DEFAULT_SENSITIVITY = 1.0f
         val H_FOV_RAD = (90.0 * PI / 180.0).toFloat()
         val V_FOV_RAD = (60.0 * PI / 180.0).toFloat()
         val HIDDEN_ARROW = com.panorama.core.fov.ArrowState(visible = false, angleRad = null)

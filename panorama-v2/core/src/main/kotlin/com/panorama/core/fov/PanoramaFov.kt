@@ -31,11 +31,13 @@ object PanoramaFov {
             kotlin.math.abs(vAngle) <= vFovRad / 2f
     }
 
-    /** Screen-space angle (radians) of the direction toward an off-FOV [targetDir], measured in
-     *  the viewer's local frame: atan2(localY, localX), so 0 points screen-right and +pi/2 up.
+    /** Screen-space angle (radians, Compose canvas convention: +X right, +Y DOWN) of the direction
+     *  toward an off-FOV [targetDir]. The local frame is world basis (+X right, +Y up) where, per
+     *  [ViewCalibration.detectionDirToWorld], a target to the viewer's right maps to local.x < 0;
+     *  both axes are therefore negated to land in screen space: 0 points right, +pi/2 down, -pi/2 up.
      *  Defined for targets outside the FOV; the value still points toward the target when behind. */
     fun arrowAngle(gaze: GazeState, targetDir: Float3): Float {
         val local = toLocal(gaze, targetDir)
-        return atan2(local.y, local.x)
+        return atan2(-local.y, -local.x)
     }
 }

@@ -26,6 +26,8 @@ class PanoramaApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        com.arashivision.sdkcamera.InstaCameraSDK.init(this)
+        com.arashivision.sdkmedia.InstaMediaSDK.init(this)
         thread(name = "ExoPlayer-prewarm", isDaemon = true) { exoVideoPlayer.get() }
     }
 }
