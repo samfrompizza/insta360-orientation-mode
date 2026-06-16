@@ -1,8 +1,8 @@
-name: v2 CI
+name: CI
 on:
-  push: { paths: ['panorama-v2/**'] }
-  pull_request: { paths: ['panorama-v2/**'] }
-defaults: { run: { working-directory: panorama-v2 } }
+  pull_request:
+  push:
+    branches: [master]
 jobs:
   core-tests:
     runs-on: ubuntu-latest
