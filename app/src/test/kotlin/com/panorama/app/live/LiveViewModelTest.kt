@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -21,6 +22,7 @@ class LiveViewModelTest {
     private fun fakeConnection(state: MutableStateFlow<ConnectionState>): CameraConnection {
         val conn = mockk<CameraConnection>(relaxed = true)
         every { conn.state } returns state
+        every { conn.captureState } returns MutableStateFlow(com.panorama.android.camera.CaptureState.IDLE)
         return conn
     }
 
@@ -40,5 +42,28 @@ class LiveViewModelTest {
         val vm = LiveViewModel(conn, engine, backgroundScope = backgroundScope)
         vm.connect(ConnectTransport.WIFI)
         verify { conn.connect(ConnectTransport.WIFI) }
+    }
+
+    @Test
+    fun `onShutter takes a photo in photo mode`() = runTest {
+        val flow = MutableStateFlow(ConnectionState.STREAMING)
+        val conn = fakeConnection(flow)
+        every { conn.captureState } returns MutableStateFlow(com.panorama.android.camera.CaptureState.IDLE)
+        val vm = LiveViewModel(conn, engine, backgroundScope = backgroundScope)
+        vm.onShutter()
+        verify { conn.capturePhoto() }
+    }
+
+    @Test
+    fun `onShutter without sd card in video mode sets sdMissing and does not record`() = runTest {
+        val flow = MutableStateFlow(ConnectionState.STREAMING)
+        val conn = fakeConnection(flow)
+        every { conn.captureState } returns MutableStateFlow(com.panorama.android.camera.CaptureState.IDLE)
+        every { conn.isSdCardEnabled() } returns false
+        val vm = LiveViewModel(conn, engine, backgroundScope = backgroundScope)
+        vm.setPhotoMode(false)
+        vm.onShutter()
+        verify(exactly = 0) { conn.startRecord() }
+        assertTrue(vm.state.value.sdMissing)
     }
 }

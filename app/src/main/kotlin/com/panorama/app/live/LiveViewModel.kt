@@ -37,6 +37,9 @@ class LiveViewModel(
         scope.launch {
             connection.state.collect { c -> _state.update { it.copy(connection = c) } }
         }
+        scope.launch {
+            connection.captureState.collect { c -> _state.update { it.copy(capture = c) } }
+        }
     }
 
     fun register() = connection.register()
@@ -47,4 +50,27 @@ class LiveViewModel(
     fun startSensor() = orientationEngine.start()
     fun stopSensor() = orientationEngine.stop()
     fun currentGaze() = orientationEngine.currentGaze()
+
+    fun setPhotoMode(photo: Boolean) = _state.update { it.copy(photoMode = photo, sdMissing = false) }
+
+    fun onShutter() {
+        if (_state.value.photoMode) {
+            connection.capturePhoto()
+            return
+        }
+        when (_state.value.capture) {
+            com.panorama.android.camera.CaptureState.RECORDING -> connection.stopRecord()
+            else ->
+                if (!connection.isSdCardEnabled()) _state.update { it.copy(sdMissing = true) }
+                else connection.startRecord()
+        }
+    }
+
+    fun settingsFor(): List<com.panorama.android.camera.SettingState> =
+        com.panorama.android.camera.CameraSetting.entries.map {
+            connection.readSetting(it, _state.value.photoMode)
+        }
+
+    fun applySetting(setting: com.panorama.android.camera.CameraSetting, token: String) =
+        connection.applySetting(setting, token, _state.value.photoMode)
 }
