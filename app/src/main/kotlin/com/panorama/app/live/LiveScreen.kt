@@ -33,6 +33,8 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.arashivision.sdkmedia.player.capture.CaptureParamsBuilderV2
 import com.arashivision.sdkmedia.player.capture.InstaCapturePlayerView
+import com.arashivision.sdkmedia.player.config.InstaStabType
+import com.arashivision.sdkmedia.player.listener.PlayerViewListener
 import com.panorama.android.camera.ConnectTransport
 import com.panorama.android.camera.ConnectionState
 
@@ -82,7 +84,26 @@ fun LiveScreen(
         val view = playerRef
         if (state.connection == ConnectionState.CONNECTED && view != null) {
             viewModel.startPreview()
-            view.prepare(CaptureParamsBuilderV2())
+            // The player loads asynchronously: calling play() right after prepare() runs it against
+            // a not-yet-ready pipeline, so only a few buffered frames render and the stream stalls.
+            // play() must be deferred to onLoadingFinish. onFail/onFirstFrameRender are logged for
+            // diagnostics. Stabilization is disabled because ONE RS feeds no usable gyro data here;
+            // we drive the view direction ourselves via setYawPitchRoll.
+            view.setPlayerViewListener(object : PlayerViewListener {
+                override fun onLoadingStatusChanged(loading: Boolean) {
+                    android.util.Log.i("LiveScreen", "player onLoadingStatusChanged loading=$loading")
+                }
+                override fun onLoadingFinish() {
+                    android.util.Log.i("LiveScreen", "player onLoadingFinish")
+                }
+                override fun onFirstFrameRender() {
+                    android.util.Log.i("LiveScreen", "player onFirstFrameRender")
+                }
+                override fun onFail(errorCode: Int, message: String?) {
+                    android.util.Log.e("LiveScreen", "player onFail code=$errorCode msg=$message")
+                }
+            })
+            view.prepare(CaptureParamsBuilderV2().setStabType(InstaStabType.STAB_TYPE_OFF))
             view.play()
         }
         onDispose { }

@@ -11,6 +11,7 @@ import com.arashivision.sdkcamera.camera.model.EV
 import com.arashivision.sdkcamera.camera.model.WB
 import com.arashivision.sdkcamera.camera.model.RecordResolution
 import com.arashivision.sdkcamera.camera.model.PhotoResolution
+import android.util.Log
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -35,6 +36,8 @@ enum class ConnectTransport(val sdkType: Int) {
 class CameraConnection(
     private val manager: InstaCameraManager = InstaCameraManager.getInstance(),
 ) {
+    private companion object { const val TAG = "CameraConnection" }
+
     private val _state = MutableStateFlow(ConnectionState.DISCONNECTED)
     val state: StateFlow<ConnectionState> = _state.asStateFlow()
 
@@ -65,22 +68,25 @@ class CameraConnection(
 
     private val cameraCallback = object : ICameraChangedCallback {
         override fun onCameraStatusChanged(enabled: Boolean, connectType: Int) {
+            Log.i(TAG, "onCameraStatusChanged enabled=$enabled connectType=$connectType")
             _state.value = if (enabled) ConnectionState.CONNECTED else ConnectionState.DISCONNECTED
         }
         override fun onCameraConnectError(errorCode: Int) {
+            Log.e(TAG, "onCameraConnectError errorCode=$errorCode")
             _state.value = ConnectionState.ERROR
         }
     }
 
     private val previewListener = object : IPreviewStatusListener {
-        override fun onOpening() { _state.value = ConnectionState.CONNECTING }
-        override fun onOpened() { _state.value = ConnectionState.STREAMING }
-        override fun onIdle() { _state.value = ConnectionState.CONNECTED }
-        override fun onError() { _state.value = ConnectionState.ERROR }
+        override fun onOpening() { Log.i(TAG, "preview onOpening"); _state.value = ConnectionState.CONNECTING }
+        override fun onOpened() { Log.i(TAG, "preview onOpened"); _state.value = ConnectionState.STREAMING }
+        override fun onIdle() { Log.i(TAG, "preview onIdle"); _state.value = ConnectionState.CONNECTED }
+        override fun onError() { Log.e(TAG, "preview onError"); _state.value = ConnectionState.ERROR }
     }
 
     /** Register callbacks. Call once when the live screen starts. */
     fun register() {
+        Log.i(TAG, "register: already connected=${manager.cameraConnectedType}")
         manager.registerCameraChangedCallback(cameraCallback)
         manager.setPreviewStatusChangedListener(previewListener)
         manager.setCaptureStatusListener(captureListener)
@@ -88,13 +94,24 @@ class CameraConnection(
 
     /** Open a connection over the given transport. State advances via the camera callback. */
     fun connect(transport: ConnectTransport) {
+        Log.i(TAG, "connect transport=$transport sdkType=${transport.sdkType}")
         _state.value = ConnectionState.CONNECTING
         manager.openCamera(transport.sdkType)
     }
 
-    /** Begin the live preview stream (after CONNECTED). */
+    /** Begin the live preview stream (after CONNECTED). Some ONE RS mods do not expose a usable
+     *  default preview resolution, leaving the SDK unable to resolve the stream codec
+     *  (main_video_encode_type error) so no frames decode. Query the camera's supported resolutions
+     *  and start with the first one when available; fall back to the default normal stream. */
     fun startPreview() {
-        manager.startPreviewStream(InstaCameraManager.PREVIEW_TYPE_NORMAL)
+        val supported = manager.getSupportedPreviewStreamResolution(InstaCameraManager.PREVIEW_TYPE_NORMAL)
+        Log.i(TAG, "startPreview supported=$supported h265=${manager.isH265StreamEncode()}")
+        val res = supported.firstOrNull()
+        if (res != null) {
+            manager.startPreviewStream(res, InstaCameraManager.PREVIEW_TYPE_NORMAL)
+        } else {
+            manager.startPreviewStream(InstaCameraManager.PREVIEW_TYPE_NORMAL)
+        }
     }
 
     /** Whether the camera has a usable SD card (recording requires it). */
