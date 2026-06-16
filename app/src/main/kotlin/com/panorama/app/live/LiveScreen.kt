@@ -3,12 +3,16 @@ package com.panorama.app.live
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.material3.Button
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -21,6 +25,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -43,6 +48,7 @@ fun LiveScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val lifecycleOwner = LocalLifecycleOwner.current
     var playerRef by remember { mutableStateOf<InstaCapturePlayerView?>(null) }
+    var showSettings by remember { mutableStateOf(false) }
 
     var pendingTransport by remember { mutableStateOf<ConnectTransport?>(null) }
     val permLauncher = rememberLauncherForActivityResult(
@@ -128,5 +134,64 @@ fun LiveScreen(
             onClick = onBack,
             modifier = Modifier.align(Alignment.TopStart).systemBarsPadding().padding(8.dp),
         ) { Text("‹ Back") }
+
+        if (state.connection == ConnectionState.STREAMING) {
+            Column(
+                modifier = Modifier.align(Alignment.BottomCenter).systemBarsPadding().padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilledTonalButton(onClick = { viewModel.setPhotoMode(true) }) {
+                        Text(if (state.photoMode) "[Photo]" else "Photo")
+                    }
+                    FilledTonalButton(onClick = { viewModel.setPhotoMode(false) }) {
+                        Text(if (!state.photoMode) "[Video]" else "Video")
+                    }
+                }
+                Button(onClick = { viewModel.onShutter() }) {
+                    Text(
+                        when {
+                            state.photoMode -> "Shoot"
+                            state.capture == com.panorama.android.camera.CaptureState.RECORDING -> "Stop ●"
+                            else -> "Record"
+                        },
+                    )
+                }
+                if (state.sdMissing) Text("Insert an SD card to record")
+            }
+        }
+
+        if (state.connection == ConnectionState.STREAMING) {
+            FilledTonalButton(
+                onClick = { showSettings = true },
+                modifier = Modifier.align(Alignment.TopEnd).systemBarsPadding().padding(8.dp),
+            ) { Text("Settings") }
+        }
+        if (showSettings) {
+            val settings = remember(state.photoMode, showSettings) { viewModel.settingsFor() }
+            Box(
+                modifier = Modifier.fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.45f))
+                    .clickable { showSettings = false },
+            ) {
+                Column(
+                    modifier = Modifier.align(Alignment.Center).systemBarsPadding().padding(24.dp)
+                        .background(Color.Black.copy(alpha = 0.55f)).padding(16.dp)
+                        .clickable(enabled = false) {},
+                ) {
+                    settings.forEach { s ->
+                        Text("${s.setting.name}: ${s.current?.label ?: "-"}", color = Color.White)
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            s.options.take(8).forEach { opt ->
+                                FilledTonalButton(onClick = { viewModel.applySetting(s.setting, opt.token) }) {
+                                    Text(opt.label)
+                                }
+                            }
+                        }
+                    }
+                    Button(onClick = { showSettings = false }) { Text("Close") }
+                }
+            }
+        }
     }
 }
