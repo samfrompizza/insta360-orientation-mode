@@ -5,7 +5,6 @@ import android.opengl.GLES11Ext
 import android.opengl.GLES20
 import android.opengl.GLSurfaceView
 import android.opengl.Matrix
-import android.util.Log
 import com.panorama.core.calibration.AxisConvention
 import com.panorama.core.calibration.ViewCalibration
 import com.panorama.core.math.GazeState
@@ -99,10 +98,6 @@ class PanoramaRenderer(
     private val stMatrix = FloatArray(16)
     private val stMatrixSrc = FloatArray(16)
 
-    /** Diagnostic counter: number of decoded frames pulled into the OES texture. Logged sparsely so
-     *  logcat shows frames are actually flowing (or not) without flooding. */
-    private var framesPulled = 0L
-
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
         program = buildProgram(Shaders.VERTEX, Shaders.FRAGMENT)
         aPositionLoc = GLES20.glGetAttribLocation(program, "aPosition")
@@ -147,12 +142,6 @@ class PanoramaRenderer(
             if (flipV) {
                 System.arraycopy(stMatrix, 0, stMatrixSrc, 0, 16)
                 Matrix.multiplyMM(stMatrix, 0, V_FLIP_MATRIX, 0, stMatrixSrc, 0)
-            }
-            framesPulled++
-            if (framesPulled % FRAME_LOG_INTERVAL == 1L) {
-                val g = gazeRef.get()
-                Log.i(TAG, "frame #$framesPulled flipV=$flipV vr=$vrEnabled " +
-                    "gaze yaw=${g.yawDeg} pitch=${g.pitchDeg} velDeg/s=${g.angularVelocityDegPerSec}")
             }
         }
 
@@ -324,8 +313,6 @@ class PanoramaRenderer(
             .also { it.put(this).position(0) }
 
     companion object {
-        private const val TAG = "PanoramaRenderer"
-        private const val FRAME_LOG_INTERVAL = 60L
         private const val MESH_STACKS = 64
         private const val MESH_SLICES = 128
         private const val FOV_Y_DEG = 90f

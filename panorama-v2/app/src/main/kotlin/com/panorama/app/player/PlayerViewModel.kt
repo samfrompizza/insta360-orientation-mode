@@ -4,6 +4,8 @@ import android.net.Uri
 import android.view.Surface
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.media3.exoplayer.video.VideoFrameMetadataListener
+import androidx.media3.exoplayer.video.spherical.CameraMotionListener
 import com.panorama.android.detection.SidecarLoader
 import com.panorama.android.media.ExoVideoPlayer
 import com.panorama.android.sensor.OrientationEngine
@@ -116,6 +118,14 @@ class PlayerViewModel(
     /** Wire the GL view's output Surface into the player once the renderer has created it. */
     fun attachVideoSurface(surface: Surface?) = exo.setVideoSurface(surface)
 
+    /** Wire the spherical view's frame-metadata sink into the player (mono mode). */
+    fun attachFrameMetadataListener(listener: VideoFrameMetadataListener) =
+        exo.setVideoFrameMetadataListener(listener)
+
+    /** Wire the spherical view's camera-motion sink into the player (mono mode). */
+    fun attachCameraMotionListener(listener: CameraMotionListener) =
+        exo.setCameraMotionListener(listener)
+
     fun play() = exo.play()
 
     fun pause() = exo.pause()
@@ -132,9 +142,7 @@ class PlayerViewModel(
     }
 
     /** Open [videoUri] in the player and start playback; if a [sidecarUri] is given, load its
-     *  detections for arrows. This is a 360 player, so opening a clip auto-plays it: starting
-     *  playback also spins up the GL render loop (via isPlaying -> onPlaybackStateChanged), which a
-     *  prepare-only open would leave halted on the first frame. */
+     *  detections for arrows. This is a 360 player, so opening a clip auto-plays it. */
     fun selectMedia(videoUri: Uri, sidecarUri: Uri? = null) {
         exo.open(videoUri)
         exo.play()

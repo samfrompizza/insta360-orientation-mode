@@ -14,15 +14,18 @@ import com.panorama.core.projection.ProjectionModel
 import dev.romainguy.kotlin.math.Quaternion
 import java.util.concurrent.atomic.AtomicReference
 
-/** [GLSurfaceView] that renders the panorama via [PanoramaRenderer] and paces redraws through a
- *  [ChoreographerDriver]. Render mode is WHEN_DIRTY: a frame is only drawn when the driver (during
- *  playback) or a seek-repaint asks for it via [GLSurfaceView.requestRender], so a paused, still
- *  player costs no GPU work.
+/** [GLSurfaceView] that renders the panorama via [PanoramaRenderer].
  *
- *  Frame-availability vs. cadence are decoupled (spec section 5.2): the decoder's
- *  [SurfaceTexture.OnFrameAvailableListener] only flips [PanoramaRenderer.pendingFrame]; it does
- *  NOT request a render. The Choreographer driver owns the redraw cadence, so we render on the
- *  display clock instead of the (jittery, possibly faster-than-display) decoder clock.
+ *  In VR the gaze must follow the head every VSYNC even while the video is paused, so the redraw
+ *  loop is tied to view *visibility*, not playback: [onResume] (and surface-ready) switch the view
+ *  to [RENDERMODE_CONTINUOUSLY] so the GL thread repaints every VSYNC on its own, and [onPause]
+ *  switches back to [RENDERMODE_WHEN_DIRTY] to stop burning GPU off-screen. Each continuous frame
+ *  re-reads the gaze, so a paused panorama still tracks the head. Video play/pause is irrelevant —
+ *  a paused decoder simply stops delivering new frames and the last frame stays in the OES texture.
+ *
+ *  Continuous mode is used (rather than a Choreographer-driven WHEN_DIRTY nudge) because a
+ *  requestRender() that races an in-flight draw is coalesced, halving the effective rate to ~30 fps;
+ *  letting GLSurfaceView pace itself gives a steady display-clock 60.
  *
  *  @param projectionModel sphere mesh provider (defaults to equirect).
  *  @param axisConvention Site-A signs threaded to the renderer. */
@@ -41,7 +44,6 @@ class PanoramaGlView @JvmOverloads constructor(
     var onVideoSurfaceReady: ((Surface) -> Unit)? = null
 
     private val renderer: PanoramaRenderer
-    private val driver: ChoreographerDriver
     private var surfaceTexture: SurfaceTexture? = null
 
     init {
@@ -53,9 +55,8 @@ class PanoramaGlView @JvmOverloads constructor(
             onSurfaceTextureReady = ::onSurfaceTextureReady,
         )
         setRenderer(renderer)
+        // WHEN_DIRTY until the view is resumed/visible; onResume flips to CONTINUOUSLY (see class doc).
         renderMode = RENDERMODE_WHEN_DIRTY
-        // Driver tick just nudges the WHEN_DIRTY surface; onDrawFrame does the real work.
-        driver = ChoreographerDriver(ChoreographerFrameScheduler()) { requestRender() }
     }
 
     /** Point the renderer at an external orientation snapshot — typically the sensor engine's own
@@ -72,38 +73,27 @@ class PanoramaGlView @JvmOverloads constructor(
         requestRender()
     }
 
-    /** Playback transitions drive the render loop: playing -> continuous redraw on the display
-     *  clock; paused -> halt the loop (the last frame stays on screen). */
-    fun onPlaybackStateChanged(isPlaying: Boolean) {
-        if (isPlaying) driver.start() else driver.stop()
-    }
-
-    /** Repaint exactly one frame without starting the loop — for a seek while paused. */
-    fun renderNow() {
-        driver.renderOnce()
+    /** Resume continuous VSYNC rendering so the gaze keeps tracking the head while the view is on
+     *  screen. Safe to call before the surface exists — the GL thread only draws once it has one. */
+    override fun onResume() {
+        super.onResume()
+        renderMode = RENDERMODE_CONTINUOUSLY
     }
 
     override fun onPause() {
-        driver.stop()
+        renderMode = RENDERMODE_WHEN_DIRTY
         super.onPause()
     }
 
     private fun onSurfaceTextureReady(st: SurfaceTexture) {
         surfaceTexture = st
+        // If onResume() ran before the surface existed, re-assert continuous mode now that there is
+        // content to draw (onResume's switch happened with no surface attached).
+        renderMode = RENDERMODE_CONTINUOUSLY
         Log.i(TAG, "onSurfaceTextureReady: video surface ready, wiring frame listener")
-        // The Choreographer driver owns the playback cadence (for gaze smoothness), but a decoded
-        // frame must always be pulled even when the driver is stopped or out of sync with the
-        // decoder clock. So a new frame both marks pendingFrame AND requests a render: belt and
-        // braces against the first-frame/freeze classes of bugs.
-        st.setOnFrameAvailableListener {
-            renderer.pendingFrame = true
-            requestRender()
-            // WHEN_DIRTY coalesces a requestRender() that races the one auto-draw fired right after
-            // onSurfaceCreated: the draw can consume the tick before pendingFrame is set, stranding
-            // the first decoded frame until an unrelated UI event redraws. Re-arm on the next
-            // main-loop pass (after that auto-draw has run) so the still-pending frame always paints.
-            post { requestRender() }
-        }
+        // Continuous mode already redraws every VSYNC, so a new decoded frame only needs to mark
+        // itself pending; onDrawFrame will pick it up on the next tick.
+        st.setOnFrameAvailableListener { renderer.pendingFrame = true }
         onVideoSurfaceReady?.invoke(Surface(st))
     }
 

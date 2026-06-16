@@ -8,6 +8,7 @@ plugins {
 android {
     namespace = "com.panorama.app"
     compileSdk = 36          // androidx.core 1.19 + media3 1.10 require compileSdk >= 36
+    ndkVersion = "29.0.14206865"   // matches :android (Cardboard native build)
     defaultConfig {
         applicationId = "com.panorama.app"
         minSdk = 29; targetSdk = 35; versionCode = 1; versionName = "2.0.0"
@@ -27,13 +28,17 @@ kotlin { jvmToolchain(17) }   // built-in Kotlin: top-level kotlin {} block
 dependencies {
     implementation(project(":core"))
     implementation(project(":android"))
+    // Cardboard SDK (prebuilt AAR, vendored — see android/src/main/cpp/README.md). Provides the QR
+    // viewer-profile Java layer + libGfxPluginCardboard.so packaged into the APK.
+    implementation(files("../android/libs/cardboard/sdk-release.aar"))
+    // Required by the Cardboard AAR's QrCodeCaptureActivity (Theme.AppCompat); not used elsewhere.
+    implementation(libs.androidx.appcompat)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.ui.tooling.preview)
     debugImplementation(libs.androidx.compose.ui.tooling)
     implementation(libs.androidx.activity.compose)
-    implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.hilt.android)

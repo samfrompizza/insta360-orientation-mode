@@ -7,7 +7,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
@@ -16,7 +18,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.panorama.android.gl.PanoramaGlView
+import com.panorama.android.gl.CardboardVrView
+import com.panorama.android.gl.SphericalPanoramaView
 
 /** The 360 player screen: a full-bleed [PanoramaGlView] with the off-screen [ArrowOverlay] and the
  *  [PlayerControls] stacked on top.
@@ -27,11 +30,12 @@ import com.panorama.android.gl.PanoramaGlView
  *     the GL thread reads exactly the gaze the sensor engine writes (no copy, one reference).
  *   - video: when the renderer's output [android.view.Surface] is ready it is handed to the player
  *     through [PlayerViewModel.attachVideoSurface].
- *   - sensor lifecycle: started/stopped from a [DisposableEffect] keyed to the screen's lifecycle.
- *   - VR / playback: state transitions drive [PanoramaGlView.setVrEnabled] /
- *     [PanoramaGlView.onPlaybackStateChanged].
+ *   - sensor lifecycle: started/stopped from a [DisposableEffect] keyed to the screen's lifecycle;
+ *     the same effect forwards onResume/onPause to whichever GL view is live so its render loop runs
+ *     while the screen is on screen.
+ *   - VR: [PanoramaGlView.setVrEnabled] selects split-screen stereo.
  *
- *  [videoUri]/[sidecarUri] arrive as nav arguments; a [LaunchedEffect] opens them once. */
+ *  [videoUri]/[sidecarUri] arrive as screen arguments; a [LaunchedEffect] opens them once. */
 @Composable
 fun PlayerScreen(
     videoUri: Uri?,
@@ -47,34 +51,79 @@ fun PlayerScreen(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // The GL view is created once and remembered; subsequent recompositions only re-run update.
-        val glView = remember {
-            { ctx: android.content.Context ->
-                PanoramaGlView(ctx).apply {
-                    // Read the gaze the engine writes; the renderer picks it up on the next frame.
-                    bindGazeRef(viewModel.gazeRef)
-                    // Renderer -> player: hand the OES-backed Surface to ExoPlayer when it exists.
-                    onVideoSurfaceReady = { surface -> viewModel.attachVideoSurface(surface) }
+        // Handles to the live GL views so onResume/onPause can be forwarded — both register their
+        // sensor / GL render thread only in those callbacks (SphericalGLSurfaceView for mono; the
+        // Cardboard-backed CardboardVrView for VR, where the VSYNC loop is tied to visibility).
+        var sphericalRef by remember { mutableStateOf<SphericalPanoramaView?>(null) }
+        var cardboardRef by remember { mutableStateOf<CardboardVrView?>(null) }
+
+        if (state.vrEnabled) {
+            // VR: Google Cardboard SDK split-screen stereo + lens distortion. Head tracking is owned
+            // by Cardboard (its own IMU fusion), not OrientationEngine; the arrow still reads gazeRef.
+            val cardboardView = remember {
+                { ctx: android.content.Context ->
+                    CardboardVrView(ctx).apply {
+                        cardboardRef = this
+                        onVideoSurfaceReady = { surface -> viewModel.attachVideoSurface(surface) }
+                        onVideoSurfaceDestroyed = { viewModel.attachVideoSurface(null) }
+                    }
                 }
             }
+            AndroidView(
+                factory = cardboardView,
+                modifier = Modifier.fillMaxSize(),
+                // Resume here too (idempotent): if ON_RESUME arrived before this factory ran, the
+                // observer's cardboardRef?.onResume() was a no-op, leaving the VSYNC loop halted.
+                update = { view -> view.onResume() },
+                onRelease = { view ->
+                    view.onDestroy()
+                    cardboardRef = null
+                },
+            )
+        } else {
+            // Mono: media3's SphericalGLSurfaceView (wrapped by SphericalPanoramaView) owns the
+            // surface, gyro->view, and render loop. It also drives the player's projection via the
+            // frame-metadata + camera-motion sinks. The arrow still uses OrientationEngine.gazeRef.
+            val sphericalView = remember {
+                { ctx: android.content.Context ->
+                    SphericalPanoramaView(ctx).apply {
+                        sphericalRef = this
+                        onVideoSurfaceReady = { surface ->
+                            viewModel.attachVideoSurface(surface)
+                            viewModel.attachFrameMetadataListener(getVideoFrameMetadataListener())
+                            viewModel.attachCameraMotionListener(getCameraMotionListener())
+                        }
+                        onVideoSurfaceDestroyed = { viewModel.attachVideoSurface(null) }
+                    }
+                }
+            }
+            AndroidView(
+                factory = sphericalView,
+                modifier = Modifier.fillMaxSize(),
+                // Resume here too (idempotent): if ON_RESUME was delivered before this factory ran,
+                // the lifecycle observer's sphericalRef?.onResume() was a no-op and the inner
+                // SphericalGLSurfaceView's render thread would stay paused (black first frame on cold
+                // start). update runs right after the factory, so this guarantees it is resumed.
+                update = { view -> view.onResume() },
+                onRelease = { sphericalRef = null },
+            )
         }
-
-        AndroidView(
-            factory = glView,
-            modifier = Modifier.fillMaxSize(),
-            update = { view ->
-                view.setVrEnabled(state.vrEnabled)
-                view.onPlaybackStateChanged(state.isPlaying)
-            },
-        )
 
         // Sensor lifecycle: start on RESUME, stop on PAUSE; also stop on dispose. The GLSurfaceView's
         // own onPause/onResume are driven by AndroidView's lifecycle hooks.
         DisposableEffect(lifecycleOwner) {
             val observer = LifecycleEventObserver { _, event ->
                 when (event) {
-                    Lifecycle.Event.ON_RESUME -> viewModel.startSensor()
-                    Lifecycle.Event.ON_PAUSE -> viewModel.stopSensor()
+                    Lifecycle.Event.ON_RESUME -> {
+                        viewModel.startSensor()
+                        sphericalRef?.onResume()
+                        cardboardRef?.onResume()
+                    }
+                    Lifecycle.Event.ON_PAUSE -> {
+                        sphericalRef?.onPause()
+                        cardboardRef?.onPause()
+                        viewModel.stopSensor()
+                    }
                     else -> Unit
                 }
             }
@@ -101,6 +150,7 @@ fun PlayerScreen(
             onSeek = viewModel::seek,
             onRecalibrate = viewModel::recalibrate,
             onToggleVr = viewModel::toggleVr,
+            onScanQrCode = { cardboardRef?.scanQrCode() },
             modifier = Modifier.align(Alignment.BottomCenter),
         )
     }

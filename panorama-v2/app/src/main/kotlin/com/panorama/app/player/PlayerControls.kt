@@ -27,6 +27,7 @@ fun PlayerControls(
     onSeek: (Long) -> Unit,
     onRecalibrate: () -> Unit,
     onToggleVr: () -> Unit,
+    onScanQrCode: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -55,6 +56,12 @@ fun PlayerControls(
             }
             FilledTonalButton(onClick = onToggleVr) {
                 Text(if (vrEnabled) "VR On" else "VR Off")
+            }
+            if (vrEnabled) {
+                // Cardboard viewer-profile QR scan — needed once per headset for lens distortion.
+                FilledTonalButton(onClick = onScanQrCode) {
+                    Text("Headset")
+                }
             }
         }
     }
