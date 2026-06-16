@@ -54,6 +54,9 @@ class CardboardRenderer {
   bool UpdateDeviceParams();
   void GlSetup();
   void GlTeardown();
+  // The current head orientation WITH sensitivity applied — the single source both the rendered
+  // view (GetPose) and the arrow pose export (PoseQuat) use, so they never diverge.
+  Quatf CurrentPoseQuat();
   Matrix4x4 GetPose();
   // Screen orientation to query the head pose in: VR is locked landscape; mono follows the live
   // aspect ratio (portrait when taller than wide) so the view never sits 90° off.

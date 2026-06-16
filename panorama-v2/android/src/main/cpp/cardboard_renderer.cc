@@ -202,7 +202,7 @@ CardboardViewportOrientation CardboardRenderer::PoseOrientation() const {
   return mono_portrait_ ? kPortrait : kLandscapeLeft;
 }
 
-Matrix4x4 CardboardRenderer::GetPose() {
+Quatf CardboardRenderer::CurrentPoseQuat() {
   std::array<float, 4> out_orientation{};
   std::array<float, 3> out_position{};
   CardboardHeadTracker_getPose(
@@ -216,19 +216,21 @@ Matrix4x4 CardboardRenderer::GetPose() {
     ref_pose_ = current;
     ref_pose_set_ = true;
   }
-  if (sensitivity_ == 1.0f) return current.ToMatrix();
+  if (sensitivity_ == 1.0f) return current;
   const Quatf delta = ref_pose_.Conjugate() * current;
-  const Quatf scaled = (ref_pose_ * delta.ScaledAngle(sensitivity_)).Normalized();
-  return scaled.ToMatrix();
+  return (ref_pose_ * delta.ScaledAngle(sensitivity_)).Normalized();
 }
 
+Matrix4x4 CardboardRenderer::GetPose() { return CurrentPoseQuat().ToMatrix(); }
+
 void CardboardRenderer::PoseQuat(float* out4) {
-  std::array<float, 3> out_position{};
-  // Same query as GetPose, but hand back the raw quaternion (x,y,z,w) so the Kotlin side can drive
-  // the arrow from the exact orientation the view uses, with no lossy matrix round-trip.
-  CardboardHeadTracker_getPose(
-      head_tracker_, GetBootTimeNano() + kPredictionTimeNanos, PoseOrientation(),
-      out_position.data(), out4);
+  // Export the SAME sensitivity-adjusted pose the view renders with, so the arrow (which reads this
+  // via gazeRef) is computed from the exact orientation on screen.
+  const Quatf q = CurrentPoseQuat();
+  out4[0] = q.x;
+  out4[1] = q.y;
+  out4[2] = q.z;
+  out4[3] = q.w;
 }
 
 void CardboardRenderer::SetVrParams(float eye_scale, float eye_gap) {
