@@ -5,6 +5,12 @@ import com.arashivision.sdkcamera.camera.callback.ICameraChangedCallback
 import com.arashivision.sdkcamera.camera.callback.ICaptureStatusListener
 import com.arashivision.sdkcamera.camera.callback.IPreviewStatusListener
 import com.arashivision.sdkcamera.camera.model.CaptureMode
+import com.arashivision.sdkcamera.camera.model.ISO
+import com.arashivision.sdkcamera.camera.model.Shutter
+import com.arashivision.sdkcamera.camera.model.EV
+import com.arashivision.sdkcamera.camera.model.WB
+import com.arashivision.sdkcamera.camera.model.RecordResolution
+import com.arashivision.sdkcamera.camera.model.PhotoResolution
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -110,6 +116,63 @@ class CameraConnection(
     fun stopRecord() {
         manager.stopNormalRecord()
     }
+
+    /** Read a setting's current value + options. RECORD_RESOLUTION always reads the video mode and
+     *  PHOTO_RESOLUTION the photo mode; the rest read against the active mode chosen by [photo]. */
+    fun readSetting(setting: CameraSetting, photo: Boolean): SettingState {
+        val mode = if (photo) CaptureMode.CAPTURE_NORMAL else CaptureMode.RECORD_NORMAL
+        fun opt(e: Enum<*>?) = e?.let { SettingOption(it.name, it.name) }
+        fun opts(list: List<Enum<*>>) = list.map { SettingOption(it.name, it.name) }
+        return when (setting) {
+            CameraSetting.ISO ->
+                SettingState(setting, opt(manager.getISO(mode)), opts(manager.getSupportISOList(mode)))
+            CameraSetting.SHUTTER ->
+                SettingState(setting, opt(manager.getShutter(mode)), opts(manager.getSupportShutterList(mode)))
+            // EV and WB are plain SDK classes (constant fields), not Kotlin/Java enums, so we identify
+            // each value by the name of its declaring static field via [constantOpt]/[constantOpts].
+            CameraSetting.EV ->
+                SettingState(setting, constantOpt(manager.getEv(mode)), constantOpts(manager.getSupportEVList(mode)))
+            CameraSetting.WB ->
+                SettingState(setting, constantOpt(manager.getWB(mode)), constantOpts(manager.getSupportWBList(mode)))
+            CameraSetting.RECORD_RESOLUTION ->
+                SettingState(setting, opt(manager.getRecordResolution(CaptureMode.RECORD_NORMAL)),
+                    opts(manager.getSupportRecordResolutionList(CaptureMode.RECORD_NORMAL)))
+            CameraSetting.PHOTO_RESOLUTION ->
+                SettingState(setting, opt(manager.getPhotoResolution(CaptureMode.CAPTURE_NORMAL)),
+                    opts(manager.getSupportPhotoResolutionList(CaptureMode.CAPTURE_NORMAL)))
+        }
+    }
+
+    /** Apply a setting value (token = SDK enum/constant name) for the active mode. STREAMING only. */
+    fun applySetting(setting: CameraSetting, token: String, photo: Boolean) {
+        val mode = if (photo) CaptureMode.CAPTURE_NORMAL else CaptureMode.RECORD_NORMAL
+        when (setting) {
+            CameraSetting.ISO -> manager.setISO(mode, enumValueOf<ISO>(token))
+            CameraSetting.SHUTTER -> manager.setShutter(mode, enumValueOf<Shutter>(token))
+            CameraSetting.EV -> manager.setEv(mode, constantValueOf(EV::class.java, token))
+            CameraSetting.WB -> manager.setWB(mode, constantValueOf(WB::class.java, token))
+            CameraSetting.RECORD_RESOLUTION ->
+                manager.setRecordResolution(CaptureMode.RECORD_NORMAL, enumValueOf<RecordResolution>(token))
+            CameraSetting.PHOTO_RESOLUTION ->
+                manager.setPhotoResolution(CaptureMode.CAPTURE_NORMAL, enumValueOf<PhotoResolution>(token))
+        }
+    }
+
+    /** Name of the public static field on [value]'s class that holds [value] (its constant name),
+     *  for SDK model classes that are not enums (EV, WB). Returns null if no such field is found. */
+    private fun constantName(value: Any): String? =
+        value.javaClass.fields.firstOrNull { java.lang.reflect.Modifier.isStatic(it.modifiers) && it.get(null) === value }?.name
+
+    private fun <T : Any> constantOpt(value: T?): SettingOption? =
+        value?.let { constantName(it)?.let { name -> SettingOption(name, name) } }
+
+    private fun <T : Any> constantOpts(list: List<T>): List<SettingOption> =
+        list.mapNotNull { constantOpt(it) }
+
+    /** Resolve a constant by its static field [name] on the non-enum SDK class [type]. */
+    @Suppress("UNCHECKED_CAST")
+    private fun <T> constantValueOf(type: Class<T>, name: String): T =
+        type.getField(name).get(null) as T
 
     /** Stop preview + close the camera + unregister. Call from the screen's teardown. */
     fun disconnect() {
