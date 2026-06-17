@@ -45,6 +45,7 @@ class LiveViewModel(
     fun register() = connection.register()
     fun connect(transport: ConnectTransport) = connection.connect(transport)
     fun startPreview() = connection.startPreview()
+    fun setPipeline(pipeline: Any?) = connection.setPipeline(pipeline)
     fun disconnect() = connection.disconnect()
 
     fun startSensor() = orientationEngine.start()

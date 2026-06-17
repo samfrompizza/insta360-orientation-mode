@@ -11,6 +11,7 @@ import com.arashivision.sdkcamera.camera.model.EV
 import com.arashivision.sdkcamera.camera.model.WB
 import com.arashivision.sdkcamera.camera.model.RecordResolution
 import com.arashivision.sdkcamera.camera.model.PhotoResolution
+import com.arashivision.sdkcamera.camera.resolution.PreviewStreamResolution
 import android.util.Log
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -36,7 +37,12 @@ enum class ConnectTransport(val sdkType: Int) {
 class CameraConnection(
     private val manager: InstaCameraManager = InstaCameraManager.getInstance(),
 ) {
-    private companion object { const val TAG = "CameraConnection" }
+    private companion object {
+        const val TAG = "CameraConnection"
+        // Explicit panoramic (2:1) preview resolution used when the camera reports no supported
+        // list; a direct protocol probe got frames at this size on the ONE RS 1-Inch 360 mod.
+        val PREVIEW_FALLBACK_RESOLUTION = PreviewStreamResolution.STREAM_3840_1920_30FPS
+    }
 
     private val _state = MutableStateFlow(ConnectionState.DISCONNECTED)
     val state: StateFlow<ConnectionState> = _state.asStateFlow()
@@ -99,19 +105,26 @@ class CameraConnection(
         manager.openCamera(transport.sdkType)
     }
 
-    /** Begin the live preview stream (after CONNECTED). Some ONE RS mods do not expose a usable
-     *  default preview resolution, leaving the SDK unable to resolve the stream codec
-     *  (main_video_encode_type error) so no frames decode. Query the camera's supported resolutions
-     *  and start with the first one when available; fall back to the default normal stream. */
+    /** Begin the live preview stream (after CONNECTED). The ONE RS 1-Inch 360 mod returns an empty
+     *  supported-resolution list and the default normal stream leaves the SDK unable to resolve the
+     *  codec (main_video_encode_type error), so no frames decode. A direct protocol probe confirmed
+     *  the camera does deliver frames when asked with an explicit resolution, so we start with the
+     *  first one the camera reports and, when that list is empty, fall back to an explicit panoramic
+     *  resolution (2:1) instead of the default. */
     fun startPreview() {
         val supported = manager.getSupportedPreviewStreamResolution(InstaCameraManager.PREVIEW_TYPE_NORMAL)
         Log.i(TAG, "startPreview supported=$supported h265=${manager.isH265StreamEncode()}")
-        val res = supported.firstOrNull()
-        if (res != null) {
-            manager.startPreviewStream(res, InstaCameraManager.PREVIEW_TYPE_NORMAL)
-        } else {
-            manager.startPreviewStream(InstaCameraManager.PREVIEW_TYPE_NORMAL)
-        }
+        val res = supported.firstOrNull() ?: PREVIEW_FALLBACK_RESOLUTION
+        Log.i(TAG, "startPreview using=$res")
+        manager.startPreviewStream(res, InstaCameraManager.PREVIEW_TYPE_NORMAL)
+    }
+
+    /** Bind the player's render pipeline to the camera so the preview stream is fed into it (or
+     *  unbind with null). Without this the player decodes nothing and the preview stays black; this
+     *  is the step the legacy demo performed in the player's onLoadingFinish callback. */
+    fun setPipeline(pipeline: Any?) {
+        Log.i(TAG, "setPipeline ${if (pipeline != null) "bind" else "unbind"}")
+        manager.setPipeline(pipeline)
     }
 
     /** Whether the camera has a usable SD card (recording requires it). */

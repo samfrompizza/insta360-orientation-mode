@@ -90,11 +90,15 @@ fun LiveScreen(
             // diagnostics. Stabilization is disabled because ONE RS feeds no usable gyro data here;
             // we drive the view direction ourselves via setYawPitchRoll.
             view.setPlayerViewListener(object : PlayerViewListener {
-                override fun onLoadingStatusChanged(loading: Boolean) {
-                    android.util.Log.i("LiveScreen", "player onLoadingStatusChanged loading=$loading")
-                }
                 override fun onLoadingFinish() {
-                    android.util.Log.i("LiveScreen", "player onLoadingFinish")
+                    // Bind the camera's preview stream into this player's pipeline. This is the
+                    // missing link: without it the player decodes nothing and stays black.
+                    android.util.Log.i("LiveScreen", "player onLoadingFinish -> setPipeline")
+                    viewModel.setPipeline(view.pipeline)
+                }
+                override fun onReleaseCameraPipeline() {
+                    android.util.Log.i("LiveScreen", "player onReleaseCameraPipeline -> unbind")
+                    viewModel.setPipeline(null)
                 }
                 override fun onFirstFrameRender() {
                     android.util.Log.i("LiveScreen", "player onFirstFrameRender")
