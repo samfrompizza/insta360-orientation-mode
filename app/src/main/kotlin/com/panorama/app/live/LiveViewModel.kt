@@ -44,9 +44,21 @@ class LiveViewModel(
 
     fun register() = connection.register()
     fun connect(transport: ConnectTransport) = connection.connect(transport)
-    fun startPreview() = connection.startPreview()
     fun setPipeline(pipeline: Any?) = connection.setPipeline(pipeline)
     fun disconnect() = connection.disconnect()
+
+    /** After CONNECTED: fetch the camera's support config (over its Wi-Fi) so the SDK knows the
+     *  preview codec, then start the preview stream, then run [onStreamStarted] (the player
+     *  prepare/play). Without the config step the codec stays unresolved and the preview is black.
+     *  [onStreamStarted] runs on the main thread. Runs in [viewModelScope]. */
+    fun preparePreview(onStreamStarted: () -> Unit) {
+        viewModelScope.launch {
+            connection.ensurePanoramaMode()
+            connection.initSupportConfig()
+            connection.startPreview()
+            onStreamStarted()
+        }
+    }
 
     fun startSensor() = orientationEngine.start()
     fun stopSensor() = orientationEngine.stop()

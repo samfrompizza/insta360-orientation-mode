@@ -45,8 +45,8 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideCameraConnection(): com.panorama.android.camera.CameraConnection =
-        com.panorama.android.camera.CameraConnection()
+    fun provideCameraConnection(@ApplicationContext context: Context): com.panorama.android.camera.CameraConnection =
+        com.panorama.android.camera.CameraConnection(context)
 
     @Provides
     @Singleton

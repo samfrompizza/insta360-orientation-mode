@@ -83,16 +83,12 @@ fun LiveScreen(
     DisposableEffect(state.connection, playerRef) {
         val view = playerRef
         if (state.connection == ConnectionState.CONNECTED && view != null) {
-            viewModel.startPreview()
-            // The player loads asynchronously: calling play() right after prepare() runs it against
-            // a not-yet-ready pipeline, so only a few buffered frames render and the stream stalls.
-            // play() must be deferred to onLoadingFinish. onFail/onFirstFrameRender are logged for
-            // diagnostics. Stabilization is disabled because ONE RS feeds no usable gyro data here;
-            // we drive the view direction ourselves via setYawPitchRoll.
+            // The player loads asynchronously: play() must be deferred to onLoadingFinish, and the
+            // camera pipeline bound there (without it the player decodes nothing and stays black).
+            // onFail/onFirstFrameRender are logged for diagnostics. Stabilization is disabled
+            // because ONE RS feeds no usable gyro data here; we drive direction via setYawPitchRoll.
             view.setPlayerViewListener(object : PlayerViewListener {
                 override fun onLoadingFinish() {
-                    // Bind the camera's preview stream into this player's pipeline. This is the
-                    // missing link: without it the player decodes nothing and stays black.
                     android.util.Log.i("LiveScreen", "player onLoadingFinish -> setPipeline")
                     viewModel.setPipeline(view.pipeline)
                 }
@@ -107,8 +103,12 @@ fun LiveScreen(
                     android.util.Log.e("LiveScreen", "player onFail code=$errorCode msg=$message")
                 }
             })
-            view.prepare(CaptureParamsBuilderV2().setStabType(InstaStabType.STAB_TYPE_OFF))
-            view.play()
+            // Fetch the camera support config (over its Wi-Fi) and start the stream, THEN prepare +
+            // play the player. The config step is what lets the SDK resolve the preview codec.
+            viewModel.preparePreview {
+                view.prepare(CaptureParamsBuilderV2().setStabType(InstaStabType.STAB_TYPE_OFF))
+                view.play()
+            }
         }
         onDispose { }
     }

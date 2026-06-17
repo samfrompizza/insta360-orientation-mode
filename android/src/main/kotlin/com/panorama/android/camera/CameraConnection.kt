@@ -12,10 +12,21 @@ import com.arashivision.sdkcamera.camera.model.WB
 import com.arashivision.sdkcamera.camera.model.RecordResolution
 import com.arashivision.sdkcamera.camera.model.PhotoResolution
 import com.arashivision.sdkcamera.camera.resolution.PreviewStreamResolution
+import com.arashivision.sdkcamera.camera.callback.ICaptureSupportConfigCallback
+import com.arashivision.sdkcamera.camera.callback.ICameraOperateCallback
+import com.arashivision.sdkcamera.camera.model.SensorMode
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
+import android.net.wifi.WifiInfo
+import android.net.wifi.WifiManager
 import android.util.Log
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
 
 /** Connection lifecycle of the Insta360 camera, derived from the SDK callbacks. */
 enum class ConnectionState { DISCONNECTED, CONNECTING, CONNECTED, STREAMING, ERROR }
@@ -35,6 +46,7 @@ enum class ConnectTransport(val sdkType: Int) {
  *  into an [com.arashivision.sdkmedia.player.capture.InstaCapturePlayerView] separately; this class
  *  only manages connection + preview-stream lifecycle and reports state. */
 class CameraConnection(
+    private val appContext: Context,
     private val manager: InstaCameraManager = InstaCameraManager.getInstance(),
 ) {
     private companion object {
@@ -85,7 +97,16 @@ class CameraConnection(
 
     private val previewListener = object : IPreviewStatusListener {
         override fun onOpening() { Log.i(TAG, "preview onOpening"); _state.value = ConnectionState.CONNECTING }
-        override fun onOpened() { Log.i(TAG, "preview onOpened"); _state.value = ConnectionState.STREAMING }
+        override fun onOpened() {
+            Log.i(TAG, "preview onOpened")
+            // Resolve the stream encoder now that the preview stream is open. The legacy demo did
+            // this in its open-stream callback; calling it before the stream exists crashes the SDK
+            // (StartStreamingParam is null). This is what lets the SDK read the preview codec.
+            runCatching { manager.setStreamEncode() }
+                .onFailure { Log.e(TAG, "setStreamEncode failed: $it") }
+            Log.i(TAG, "after setStreamEncode h265=${manager.isH265StreamEncode()} encodeType=${manager.videoEncodeType}")
+            _state.value = ConnectionState.STREAMING
+        }
         override fun onIdle() { Log.i(TAG, "preview onIdle"); _state.value = ConnectionState.CONNECTED }
         override fun onError() { Log.e(TAG, "preview onError"); _state.value = ConnectionState.ERROR }
     }
@@ -103,6 +124,70 @@ class CameraConnection(
         Log.i(TAG, "connect transport=$transport sdkType=${transport.sdkType}")
         _state.value = ConnectionState.CONNECTING
         manager.openCamera(transport.sdkType)
+    }
+
+    /** Ensure the camera is in panorama sensor mode before preview; the legacy demo did this and a
+     *  non-panorama mode can leave the preview formats/codec unresolved. No-op if already panorama. */
+    suspend fun ensurePanoramaMode(): Boolean {
+        if (manager.currentSensorMode == SensorMode.PANORAMA) {
+            Log.i(TAG, "ensurePanoramaMode: already panorama")
+            return true
+        }
+        Log.i(TAG, "ensurePanoramaMode: switching from ${manager.currentSensorMode}")
+        return suspendCancellableCoroutine { cont ->
+            manager.switchPanoramaSensorMode(object : ICameraOperateCallback {
+                override fun onSuccessful() { if (cont.isActive) cont.resume(true) }
+                override fun onFailed() { Log.e(TAG, "switchPanorama onFailed"); if (cont.isActive) cont.resume(false) }
+                override fun onCameraConnectError() { Log.e(TAG, "switchPanorama connectError"); if (cont.isActive) cont.resume(false) }
+            })
+        }
+    }
+
+    /** Fetch the camera's capability/config over HTTP, which is what tells the SDK the preview
+     *  formats and codec. The HTTP request must go over the camera's own Wi-Fi network, so the
+     *  process is temporarily bound to it (the camera AP has no internet, so Android otherwise
+     *  routes the request to the default network and the config never arrives — leaving the codec
+     *  unresolved and the preview black). Mirrors the legacy demo's initSupportConfig(). Call once
+     *  after CONNECTED, before startPreview. Returns true on success. */
+    suspend fun initSupportConfig(): Boolean {
+        val cm = appContext.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val net = cameraNetwork(cm)
+        if (net == null) {
+            Log.e(TAG, "initSupportConfig: camera network not found")
+            return false
+        }
+        cm.bindProcessToNetwork(net)
+        return try {
+            suspendCancellableCoroutine { cont ->
+                manager.initCameraSupportConfig(object : ICaptureSupportConfigCallback {
+                    override fun onComplete() {
+                        Log.i(TAG, "initSupportConfig onComplete")
+                        if (cont.isActive) cont.resume(true)
+                    }
+                    override fun onFailed(msg: String?) {
+                        Log.e(TAG, "initSupportConfig onFailed: $msg")
+                        if (cont.isActive) cont.resume(false)
+                    }
+                })
+            }
+        } finally {
+            cm.bindProcessToNetwork(null)
+        }
+    }
+
+    /** Find the [Network] that is the camera's Wi-Fi AP: the connected Wi-Fi network whose IP
+     *  matches the active Wi-Fi connection. Ported from the legacy demo's NetworkManager. */
+    private fun cameraNetwork(cm: ConnectivityManager): Network? {
+        val wifi = appContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+        @Suppress("DEPRECATION")
+        val activeIp = wifi.connectionInfo.ipAddress
+        for (network in cm.allNetworks) {
+            val caps = cm.getNetworkCapabilities(network) ?: continue
+            if (!caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) continue
+            val info = caps.transportInfo
+            if (info is WifiInfo && info.ipAddress == activeIp) return network
+        }
+        return null
     }
 
     /** Begin the live preview stream (after CONNECTED). The ONE RS 1-Inch 360 mod returns an empty
