@@ -1,112 +1,58 @@
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
-    kotlin("kapt")
+    // No kotlin.android: AGP 9.0+ built-in Kotlin.
+    alias(libs.plugins.kotlin.compose)   // version == Kotlin version (2.3.21)
+    alias(libs.plugins.hilt)
+    alias(libs.plugins.ksp)
 }
-
 android {
-    namespace = "com.arashivision.sdk.demo"
-    compileSdk = 35
-
+    namespace = "com.panorama.app"
+    compileSdk = 36          // androidx.core 1.19 + media3 1.10 require compileSdk >= 36
+    ndkVersion = "29.0.14206865"   // matches :android (Cardboard native build)
     defaultConfig {
-        applicationId = "com.arashivision.sdk.demo"
-        minSdk = 29
-        targetSdk = 35
-        versionCode = 58
-        versionName = libs.versions.insta.get()
-        multiDexEnabled = true
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        ndk {
-            //noinspection ChromeOsAbiSupport
-            abiFilters += listOf("arm64-v8a")
-        }
+        applicationId = "com.panorama.app"
+        minSdk = 29; targetSdk = 35; versionCode = 1; versionName = "2.0.0"
+        ndk { abiFilters += "arm64-v8a" }
     }
-
-    packaging {
-        resources {
-            excludes += listOf(
-                "META-INF/rxjava.properties"
-            )
-
-            pickFirsts += listOf(
-                "lib/arm64-v8a/libc++_shared.so"
-            )
-        }
-    }
-
-    signingConfigs {
-        create("release") {
-            storeFile = file("G:\\camerasdk\\sdkdemo2\\app\\sdk.jks")
-            storePassword = "insta360"
-            keyAlias = "insta360"
-            keyPassword = "insta360"
-        }
-    }
-
-    buildTypes {
-        release {
-            isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName("release")
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
-            )
-        }
-    }
-
-    applicationVariants.configureEach {
-        outputs.all {
-            if (this is com.android.build.gradle.internal.api.BaseVariantOutputImpl) {
-                outputFileName = "insta_sdk_demo_${buildType.name}_${versionName}.apk"
-            }
-        }
-    }
-
+    buildFeatures { compose = true }
+    // libc++_shared.so ships in both the Insta360 SDK and the Cardboard llvm_stl transform; keep one.
+    packaging { jniLibs { pickFirsts += "lib/arm64-v8a/libc++_shared.so" } }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions {
-        jvmTarget = "17"
+    testOptions {
+        unitTests.isIncludeAndroidResources = true   // Robolectric
+        unitTests.all { it.maxHeapSize = "1g" }      // Robolectric headroom over the 512m default
     }
-    buildFeatures {
-        viewBinding = true
-    }
-
-    ndkVersion = "25.2.9519653"
 }
-
+kotlin { jvmToolchain(17) }   // built-in Kotlin: top-level kotlin {} block
 dependencies {
-
-    implementation(libs.androidx.core.ktx)
+    implementation(project(":core"))
+    implementation(project(":android"))
+    // Cardboard SDK (prebuilt AAR, vendored — see android/src/main/cpp/README.md). Provides the QR
+    // viewer-profile Java layer + libGfxPluginCardboard.so packaged into the APK.
+    implementation(files("../android/libs/cardboard/sdk-release.aar"))
+    // Required by the Cardboard AAR's QrCodeCaptureActivity (Theme.AppCompat); not used elsewhere.
     implementation(libs.androidx.appcompat)
-    implementation(libs.constraintlayout)
-    implementation(libs.recyclerview)
-    implementation(libs.preference)
-    implementation(libs.preference.ktx)
-    implementation(libs.material)
-    implementation(libs.androidx.viewbinding)
-    implementation(libs.kotlinx.coroutines.core)
-    implementation(libs.kotlinx.coroutines.android)
-    implementation(libs.lifecycle.viewmodel.ktx)
-    implementation(libs.lifecycle.runtime.ktx)
-    implementation(libs.swiperefreshlayout)
-
-    implementation(libs.xx.permissions)
-    implementation(libs.flowlayout)
-    implementation(libs.lottie)
-    implementation(libs.glide)
-    kapt(libs.glide.compiler)
-    implementation(libs.immersionbar)
-    implementation(libs.xlog)
-    implementation(libs.filepicker)
-
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.compose.ui)
+    implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.compose.ui.tooling.preview)
+    debugImplementation(libs.androidx.compose.ui.tooling)
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.hilt.android)
+    implementation(libs.androidx.hilt.navigation.compose)
+    ksp(libs.hilt.compiler)
+    implementation(libs.media3.exoplayer)
     implementation(libs.insta.camera)
     implementation(libs.insta.media)
-
-
-
-    implementation(files("libs/glide_transformations.jar"))
-
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
+    // unit tests: JUnit4 + Robolectric + MockK + Turbine + coroutines-test (same stack as :android).
+    testImplementation(libs.junit)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.mockk)
+    testImplementation(libs.turbine)
+    testImplementation(libs.kotlinx.coroutines.test)
 }
