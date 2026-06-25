@@ -60,7 +60,8 @@ class LocalSphericalPlayerActivity :
             uri ?: return@registerForActivityResult
             persistReadPermission(uri)
             viewModel.onVideoSelected(uri)
-            binding.tvSelectedVideo.text = uri.toString()
+            // TODO: restore when text overlay is needed
+            // binding.tvSelectedVideo.text = uri.toString()
             startPlayback(uri)
         }
 
@@ -77,14 +78,14 @@ class LocalSphericalPlayerActivity :
         super.initView()
 
         binding.sphericalView.setDefaultStereoMode(C.STEREO_MODE_MONO)
-        // Disable Media3's built-in sensor rotation — we take full control via
-        // GyroOrientationController so the view direction == our gaze direction exactly.
-        binding.sphericalView.setUseSensorRotation(false)
+        // Media3 handles view rotation via its built-in sensor (TYPE_ROTATION_VECTOR).
+        // Our GyroOrientationController is used only for gaze tracking (arrow direction).
+        binding.sphericalView.setUseSensorRotation(true)
 
         gyroController = GyroOrientationController(
             context = this,
             getDisplayRotation = { display?.rotation ?: Surface.ROTATION_0 },
-            applyOrientation = { yaw, pitch -> tryApplyOrientation(yaw, pitch) }
+            applyOrientation = { _, _ -> tryApplyOrientation() }
         )
 
         vrManager = LocalVrManager(
@@ -151,6 +152,7 @@ class LocalSphericalPlayerActivity :
         super.onResume()
         binding.sphericalView.onResume()
         gyroController.start()
+        // Auto-calibration happens on first sensor event inside GyroOrientationController.
         vrManager.onResume()
         player?.playWhenReady = true
         syncPlayPauseButton()
@@ -208,8 +210,7 @@ class LocalSphericalPlayerActivity :
                     }
                     getString(R.string.disable_gyro_control), getString(R.string.enable_gyro_control) -> {
                         val enabled = viewModel.toggleSensorRotation()
-                        // We keep Media3's built-in sensor OFF permanently — our
-                        // GyroOrientationController handles all rotation via setYaw/setPitch.
+                        binding.sphericalView.setUseSensorRotation(enabled)
                         gyroController.setzOrientationEnabled(enabled)
                     }
                     getString(R.string.recenter_view) -> {
@@ -234,7 +235,8 @@ class LocalSphericalPlayerActivity :
 
             result.onSuccess { timeline ->
                 viewModel.onJsonSelected(uri, timeline)
-                binding.tvSelectedJson.text = uri.toString()
+                // TODO: restore when text overlay is needed
+                // binding.tvSelectedJson.text = uri.toString()
                 toast(getString(R.string.detection_json_loaded, timeline.frameCount))
                 updateCurrentDetections()
             }.onFailure { error ->
@@ -267,28 +269,11 @@ class LocalSphericalPlayerActivity :
         val positionMs = player?.currentPosition ?: 0L
         val frame = viewModel.currentDetectionFrame(positionMs)
 
-        binding.tvDetectionDebug.text = if (frame == null) {
+        // TODO: restore tv_detection_debug overlay when needed
+        if (frame == null) {
             binding.directionArrowOverlay.hideArrow()
-            getString(R.string.no_detection_json_selected)
         } else {
-            val detections = frame.objects
-            val trackIds = detections.joinToString { objectDetection ->
-                "#${objectDetection.trackId}"
-            }.ifEmpty { "—" }
-            updateDirectionArrow(detections)
-            val baseInfo = getString(
-                R.string.current_detection_frame,
-                frame.frameIdx,
-                frame.timeSec,
-                detections.size,
-                trackIds
-            )
-            // Append gaze angles and FOV for debugging
-            val gazeYaw = "%.1f".format(Math.toDegrees(currentGazeDirection.yawRad))
-            val gazePitch = "%.1f".format(Math.toDegrees(currentGazeDirection.pitchRad))
-            val hFov = "%.0f".format(Math.toDegrees(HORIZONTAL_FOV_RAD))
-            val vFov = "%.0f".format(Math.toDegrees(VERTICAL_FOV_RAD))
-            "$baseInfo\nGaze: yaw=$gazeYaw° pitch=$gazePitch° | FOV: H=${hFov}° V=${vFov}°"
+            updateDirectionArrow(frame.objects)
         }
     }
 
@@ -358,44 +343,23 @@ class LocalSphericalPlayerActivity :
         )
     }
 
-    private fun tryApplyOrientation(yawDeg: Float, pitchDeg: Float) {
+    private fun tryApplyOrientation() {
         if (!viewModel.sensorRotationEnabled) return
 
-        // Use the RAW (unscaled) Euler angles from the gyro quaternion for BOTH
-        // the view control (setYaw/setPitch) and the gaze direction. Since we
-        // disabled Media3's built-in sensor, our setYaw/setPitch are the ONLY
-        // source of view rotation — so the view direction == gaze direction exactly.
-        val rawYawDeg = gyroController.getRawEulerYawDeg()
-        val rawPitchDeg = gyroController.getRawEulerPitchDeg()
+        val rawYaw = gyroController.getGazeYawDeg()
+        val rawPitch = gyroController.getGazePitchDeg()
+
+        // Elevation sign relative to "looking up" differs between
+        // portrait (raw goes negative when looking up) and
+        // landscape (raw goes positive when looking up).
+        val displayRot = display?.rotation ?: Surface.ROTATION_0
+        val isLandscape = displayRot == Surface.ROTATION_90 || displayRot == Surface.ROTATION_270
+        val eqPitchDeg = if (isLandscape) rawPitch else -rawPitch
 
         currentGazeDirection = EquirectangularProjection.fromYawPitch(
-            yawRad = Math.toRadians(rawYawDeg.toDouble()),
-            pitchRad = Math.toRadians(rawPitchDeg.coerceIn(-MAX_PITCH_DEG, MAX_PITCH_DEG).toDouble())
+            yawRad = Math.toRadians(rawYaw.toDouble()),
+            pitchRad = Math.toRadians(eqPitchDeg.coerceIn(-MAX_PITCH_DEG, MAX_PITCH_DEG).toDouble())
         )
-
-        fun applyTo(obj: Any?, yaw: Float, pitch: Float) {
-            if (obj == null) return
-            try {
-                val cls = obj.javaClass
-                runCatching {
-                    cls.getMethod("setYaw", Float::class.javaPrimitiveType).invoke(obj, yaw)
-                }
-                runCatching {
-                    cls.getMethod("setPitch", Float::class.javaPrimitiveType).invoke(obj, pitch)
-                }
-            } catch (e: Exception) {
-                logger.e("Orientation apply failed: ${e.message}")
-            }
-        }
-
-        try {
-            // Apply raw Euler angles directly — NOT the tiny sensitivity-scaled
-            // yawDeg/pitchDeg parameters. Since Media3's sensor is disabled, this
-            // is the ONLY rotation source, so view direction == gaze exactly.
-            applyTo(binding.sphericalView, rawYawDeg, rawPitchDeg)
-        } catch (e: Exception) {
-            logger.e("tryApplyOrientation failed: ${e.message}")
-        }
     }
 
     companion object {
