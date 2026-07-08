@@ -1,31 +1,24 @@
 package com.arashivision.sdk.demo.base
 
 interface BaseEvent {
-    object CameraBatteryLowEvent : BaseEvent
+    data object CameraBatteryLowEvent : BaseEvent
 
-    class CameraSDCardStateChangedEvent(
-        var enabled: Boolean,
+    data class CameraSDCardStateChangedEvent(
+        val enabled: Boolean,
     ) : BaseEvent
 
-    class CameraBatteryUpdateEvent(
-        var batteryLevel: Int,
-        var isCharging: Boolean,
+    data class CameraBatteryUpdateEvent(
+        val batteryLevel: Int,
+        val isCharging: Boolean,
     ) : BaseEvent
 
-    class CameraStorageChangedEvent(
-        var freeSpace: Long,
-        var totalSpace: Long,
+    data class CameraStorageChangedEvent(
+        val freeSpace: Long,
+        val totalSpace: Long,
     ) : BaseEvent
 
-    class CameraStatusChangedEvent(
-        var enable: Boolean,
-        var connectType: Int,
+    data class CameraStatusChangedEvent(
+        val enabled: Boolean,
+        val connectType: Int,
     ) : BaseEvent
-}
-
-enum class EventStatus {
-    START,
-    SUCCESS,
-    PROGRESS,
-    FAILED,
 }

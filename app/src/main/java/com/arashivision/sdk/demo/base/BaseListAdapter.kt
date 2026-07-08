@@ -7,10 +7,11 @@ import android.view.ViewGroup
 import android.widget.BaseAdapter
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
-import com.arashivision.sdk.demo.util.ViewBindingUtils.createBinding
 
 @SuppressLint("NotifyDataSetChanged")
-abstract class BaseListAdapter<T : ViewBinding, K> : BaseAdapter() {
+abstract class BaseListAdapter<T : ViewBinding, K>(
+    private val bindingFactory: (LayoutInflater, ViewGroup) -> T,
+) : BaseAdapter() {
     private var itemClickListener: ((view: View, data: K, position: Int) -> Unit)? = null
 
     private var itemLongClickListener: ((view: View, data: K, position: Int) -> Unit)? = null
@@ -64,7 +65,7 @@ abstract class BaseListAdapter<T : ViewBinding, K> : BaseAdapter() {
     ): View {
         val viewHolder: ViewHolder<T> =
             convertView?.tag as? ViewHolder<T> ?: run {
-                val binding = createBinding<T>(this.javaClass, LayoutInflater.from(parent.context), 0, parent)
+                val binding = bindingFactory(LayoutInflater.from(parent.context), parent)
                 val holder = ViewHolder(binding)
                 binding.root.tag = holder
                 holder

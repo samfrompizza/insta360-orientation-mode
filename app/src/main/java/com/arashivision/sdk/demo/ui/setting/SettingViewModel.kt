@@ -3,8 +3,8 @@ package com.arashivision.sdk.demo.ui.setting
 import android.content.Context
 import androidx.lifecycle.viewModelScope
 import com.arashivision.sdk.demo.base.BaseViewModel
-import com.arashivision.sdk.demo.base.EventStatus
 import com.arashivision.sdk.demo.ext.dateFormat
+import com.arashivision.sdk.demo.ui.capture.EventStatus
 import com.arashivision.sdk.demo.util.StorageUtils
 import com.arashivision.sdk.demo.util.ZipUtils
 import kotlinx.coroutines.Dispatchers

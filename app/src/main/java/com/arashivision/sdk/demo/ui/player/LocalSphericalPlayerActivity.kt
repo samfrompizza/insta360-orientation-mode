@@ -35,7 +35,11 @@ import kotlinx.coroutines.withContext
 
 @UnstableApi
 @OptIn(UnstableApi::class)
-class LocalSphericalPlayerActivity : BaseActivity<ActivityLocalSphericalPlayerBinding, LocalSphericalPlayerViewModel>() {
+class LocalSphericalPlayerActivity :
+    BaseActivity<ActivityLocalSphericalPlayerBinding, LocalSphericalPlayerViewModel>(
+        bindingFactory = { ActivityLocalSphericalPlayerBinding.inflate(it) },
+        viewModelClass = LocalSphericalPlayerViewModel::class.java,
+    ) {
     private val logger = XLog.tag(LocalSphericalPlayerActivity::class.java.simpleName).build()
 
     private var player: ExoPlayer? = null

@@ -4,7 +4,7 @@ import com.arashivision.insta360.basecamera.camera.setting.StreamResolution
 import com.arashivision.insta360.basemedia.asset.WindowCropInfo
 import com.arashivision.insta360.basemedia.model.offset.OffsetData
 import com.arashivision.sdk.demo.base.BaseEvent
-import com.arashivision.sdk.demo.base.EventStatus
+import com.arashivision.sdk.demo.ui.capture.EventStatus
 import com.arashivision.sdkcamera.camera.model.CaptureMode
 
 interface CaptureEvent : BaseEvent {

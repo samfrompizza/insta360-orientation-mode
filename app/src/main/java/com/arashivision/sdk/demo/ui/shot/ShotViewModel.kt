@@ -3,9 +3,9 @@ package com.arashivision.sdk.demo.ui.shot
 import androidx.lifecycle.viewModelScope
 import com.arashivision.insta360.basemedia.model.gps.GpsData
 import com.arashivision.sdk.demo.base.BaseViewModel
-import com.arashivision.sdk.demo.base.EventStatus
 import com.arashivision.sdk.demo.ext.durationFormat
 import com.arashivision.sdk.demo.ext.instaCameraManager
+import com.arashivision.sdk.demo.ui.capture.EventStatus
 import com.arashivision.sdk.demo.util.LocationManager
 import com.arashivision.sdkcamera.camera.InstaCameraManager
 import com.arashivision.sdkcamera.camera.callback.ICameraOperateCallback

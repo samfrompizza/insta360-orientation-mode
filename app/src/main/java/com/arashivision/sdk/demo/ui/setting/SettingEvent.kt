@@ -1,7 +1,7 @@
 package com.arashivision.sdk.demo.ui.setting
 
 import com.arashivision.sdk.demo.base.BaseEvent
-import com.arashivision.sdk.demo.base.EventStatus
+import com.arashivision.sdk.demo.ui.capture.EventStatus
 import java.io.File
 
 interface SettingEvent : BaseEvent {

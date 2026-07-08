@@ -42,18 +42,21 @@ class GyroOrientationController(
     private val sensorManager: SensorManager =
         context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
     private val rotationVectorSensor: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
-    var rateLimitMs = 8L // ~90Hz
+    var rateLimitMs = SENSOR_RATE_LIMIT_MS
     private var lastSensorUpdate = 0L
-    var smoothingAlpha = 0.12f // коэффициент интерполяции
+    var smoothingAlpha = SLERP_SMOOTHING_ALPHA
 
     companion object {
-        var sensivity: Float = 1.2f
-        private val yawFactor = 0.04f
-        private val pitchFactor = 0.02f
+        private const val SENSOR_RATE_LIMIT_MS = 8L
+        private const val SLERP_SMOOTHING_ALPHA = 0.12f
+        var sensivity: Float = DEFAULT_SENSITIVITY
+        private const val DEFAULT_SENSITIVITY = 1.2f
+        private const val YAW_SENSITIVITY_FACTOR = 0.04f
+        private const val PITCH_SENSITIVITY_FACTOR = 0.02f
         private val yawSensitivity: Float
-            get() = yawFactor * sensivity
+            get() = YAW_SENSITIVITY_FACTOR * sensivity
         private val pitchSensitivity: Float
-            get() = pitchFactor * sensivity
+            get() = PITCH_SENSITIVITY_FACTOR * sensivity
         var invertYaw = false
         var invertPitch = true
     }

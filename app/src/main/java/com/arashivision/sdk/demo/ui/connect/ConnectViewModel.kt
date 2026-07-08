@@ -12,12 +12,12 @@ import com.arashivision.insta360.basecamera.camera.CameraType
 import com.arashivision.insta360.basecamera.camera.CameraWifiPrefix
 import com.arashivision.sdk.demo.InstaApp
 import com.arashivision.sdk.demo.base.BaseViewModel
-import com.arashivision.sdk.demo.base.EventStatus
 import com.arashivision.sdk.demo.ext.connectedWiFiSsid
 import com.arashivision.sdk.demo.ext.connectivityManager
 import com.arashivision.sdk.demo.ext.instaCameraManager
 import com.arashivision.sdk.demo.ext.wifiManager
 import com.arashivision.sdk.demo.service.ConnectService
+import com.arashivision.sdk.demo.ui.capture.EventStatus
 import com.arashivision.sdk.demo.util.NetworkManager
 import com.arashivision.sdk.demo.util.SPUtils
 import com.arashivision.sdkcamera.camera.InstaCameraManager

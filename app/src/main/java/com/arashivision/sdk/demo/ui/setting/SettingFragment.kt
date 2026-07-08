@@ -9,12 +9,15 @@ import androidx.preference.SwitchPreference
 import com.arashivision.sdk.demo.R
 import com.arashivision.sdk.demo.base.BaseEvent
 import com.arashivision.sdk.demo.base.BasePreferenceFragment
-import com.arashivision.sdk.demo.base.EventStatus
 import com.arashivision.sdk.demo.pref.Pref
+import com.arashivision.sdk.demo.ui.capture.EventStatus
 import com.arashivision.sdk.demo.util.ShareUtils.shareFile
 import com.arashivision.sdkcamera.log.LogManager
 
-class SettingFragment : BasePreferenceFragment<SettingViewModel>() {
+class SettingFragment :
+    BasePreferenceFragment<SettingViewModel>(
+        viewModelClass = SettingViewModel::class.java,
+    ) {
     override fun onCreatePreferences(
         savedInstanceState: Bundle?,
         rootKey: String?,

@@ -4,13 +4,13 @@ import androidx.lifecycle.viewModelScope
 import com.arashivision.graphicpath.render.source.AssetInfo
 import com.arashivision.insta360.basemedia.asset.WindowCropInfo
 import com.arashivision.sdk.demo.base.BaseViewModel
-import com.arashivision.sdk.demo.base.EventStatus
 import com.arashivision.sdk.demo.capture.CameraOfflineData
 import com.arashivision.sdk.demo.ext.connectivityManager
 import com.arashivision.sdk.demo.ext.instaCameraManager
 import com.arashivision.sdk.demo.ext.setCaptureSettingValue
 import com.arashivision.sdk.demo.pref.Pref
 import com.arashivision.sdk.demo.ui.capture.CaptureEvent.CameraWiFiDisconnectEvent
+import com.arashivision.sdk.demo.ui.capture.EventStatus
 import com.arashivision.sdk.demo.util.NetworkManager
 import com.arashivision.sdkcamera.camera.InstaCameraManager
 import com.arashivision.sdkcamera.camera.callback.ICameraOperateCallback
@@ -41,8 +41,9 @@ class CaptureViewModel :
     private var isFetchingOptions: Boolean = false
     private var isStreamOpened: Boolean = false
 
-    lateinit var cameraOfflineData: CameraOfflineData
-        private set
+    private var _cameraOfflineData: CameraOfflineData? = null
+    val cameraOfflineData: CameraOfflineData
+        get() = _cameraOfflineData ?: error("Camera not initialized. Call initCapture() first.")
 
     val isSingleClickAction: Boolean
         get() =
@@ -237,7 +238,7 @@ class CaptureViewModel :
             }
 
             logger.d("initCapture create CameraOfflineData object")
-            cameraOfflineData = CameraOfflineData()
+            _cameraOfflineData = CameraOfflineData()
 
             // 开启预览流
             emitEvent(CaptureEvent.InitCaptureEvent(EventStatus.PROGRESS, CaptureEvent.InitStep.OPEN_PREVIEW_STREAM))

@@ -6,22 +6,22 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.StringRes
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceFragmentCompat
 import com.arashivision.sdk.demo.databinding.FragmentSettingBinding
-import com.arashivision.sdk.demo.util.ViewBindingUtils.createViewModel
 import com.elvishew.xlog.Logger
 import com.elvishew.xlog.XLog
 import com.gyf.immersionbar.ImmersionBar
-import io.reactivex.disposables.Disposable
 import kotlinx.coroutines.launch
 
-abstract class BasePreferenceFragment<V : BaseViewModel> : PreferenceFragmentCompat() {
+abstract class BasePreferenceFragment<V : BaseViewModel>(
+    private val viewModelClass: Class<V>,
+) : PreferenceFragmentCompat() {
     private val logger: Logger = XLog.tag(BasePreferenceFragment::class.java.simpleName).build()
 
-    protected open lateinit var binding: FragmentSettingBinding
-    protected open lateinit var viewModel: V
-    protected open var disposable: Disposable? = null
+    protected lateinit var binding: FragmentSettingBinding
+    protected val viewModel: V by lazy { ViewModelProvider(this)[viewModelClass] }
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -43,7 +43,6 @@ abstract class BasePreferenceFragment<V : BaseViewModel> : PreferenceFragmentCom
         val view = super.onCreateView(inflater, container, savedInstanceState)
         binding = FragmentSettingBinding.inflate(inflater, container, false)
         binding.prefContainer.addView(view)
-        this.viewModel = createViewModel(this, 0)
         return binding.root
     }
 
@@ -55,7 +54,6 @@ abstract class BasePreferenceFragment<V : BaseViewModel> : PreferenceFragmentCom
         logger.d("[lifecycle] " + javaClass.simpleName + " onViewCreated")
         initView()
         initListener()
-        // 绑定生命周期（避免内存泄漏）
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.event.collect { onEvent(it) }
         }
@@ -96,9 +94,6 @@ abstract class BasePreferenceFragment<V : BaseViewModel> : PreferenceFragmentCom
     }
 
     override fun onDestroyView() {
-        if (this.disposable != null && !disposable!!.isDisposed) {
-            disposable!!.dispose()
-        }
         super.onDestroyView()
         logger.d("[lifecycle] " + javaClass.simpleName + " onDestroyView")
     }

@@ -7,14 +7,14 @@ import androidx.recyclerview.widget.RecyclerView
 import com.arashivision.sdk.demo.R
 import com.arashivision.sdk.demo.base.BaseActivity
 import com.arashivision.sdk.demo.base.BaseEvent
-import com.arashivision.sdk.demo.base.EventStatus.FAILED
-import com.arashivision.sdk.demo.base.EventStatus.PROGRESS
-import com.arashivision.sdk.demo.base.EventStatus.START
-import com.arashivision.sdk.demo.base.EventStatus.SUCCESS
 import com.arashivision.sdk.demo.databinding.ActivityCaptureBinding
 import com.arashivision.sdk.demo.ext.durationFormat
 import com.arashivision.sdk.demo.ext.instaCameraManager
 import com.arashivision.sdk.demo.ext.vibrate
+import com.arashivision.sdk.demo.ui.capture.EventStatus.FAILED
+import com.arashivision.sdk.demo.ui.capture.EventStatus.PROGRESS
+import com.arashivision.sdk.demo.ui.capture.EventStatus.START
+import com.arashivision.sdk.demo.ui.capture.EventStatus.SUCCESS
 import com.arashivision.sdk.demo.ui.capture.adapter.CaptureModeAdapter
 import com.arashivision.sdk.demo.view.CaptureShutterButton
 import com.arashivision.sdk.demo.view.discretescrollview.DSVOrientation
@@ -27,13 +27,43 @@ import com.arashivision.sdkmedia.player.listener.PlayerViewListener
 import com.elvishew.xlog.Logger
 import com.elvishew.xlog.XLog
 
-class CaptureActivity : BaseActivity<ActivityCaptureBinding, CaptureViewModel>() {
+class CaptureActivity :
+    BaseActivity<ActivityCaptureBinding, CaptureViewModel>(
+        bindingFactory = { ActivityCaptureBinding.inflate(it) },
+        viewModelClass = CaptureViewModel::class.java,
+    ) {
     private val logger: Logger = XLog.tag(CaptureActivity::class.java.simpleName).build()
     private var captureModeAdapter: CaptureModeAdapter? = null
 
-    private lateinit var gyroController: GyroOrientationController
+    private val gyroController: GyroOrientationController by lazy {
+        GyroOrientationController(
+            context = this,
+            getDisplayRotation = { windowManager.defaultDisplay.rotation },
+            applyOrientation = { yaw, pitch -> tryApplyOrientationToPlayer(yaw, pitch) },
+        )
+    }
 
-    private lateinit var vrManager: VrManager
+    private val vrManager: VrManager by lazy {
+        VrManager(
+            activity = this,
+            rootContainer = binding.root,
+            capturePlayerView = binding.capturePlayerView,
+            svCaptureMode = binding.svCaptureMode,
+            ivCaptureSetting = binding.ivCaptureSetting,
+            btnCalibrate = binding.btnCalibrate,
+            calibrateGyro = {
+                try {
+                    gyroController.calibrate()
+                } catch (_: Exception) {
+                }
+            },
+        )
+    }
+
+    companion object {
+        private const val FLING_THRESHOLD = 1300
+        private const val ITEM_TRANSITION_TIME_MS = 180
+    }
 
     override fun onStop() {
         super.onStop()
@@ -45,22 +75,14 @@ class CaptureActivity : BaseActivity<ActivityCaptureBinding, CaptureViewModel>()
         super.initView()
         binding.capturePlayerView.setLifecycle(this.lifecycle)
 
-        // init gyro controller
-        gyroController =
-            GyroOrientationController(
-                context = this,
-                getDisplayRotation = { windowManager.defaultDisplay.rotation },
-                applyOrientation = { yaw, pitch -> tryApplyOrientationToPlayer(yaw, pitch) },
-            )
-
         binding.svCaptureMode.setSlideOnFling(true)
         captureModeAdapter = CaptureModeAdapter()
         binding.svCaptureMode.setAdapter(captureModeAdapter)
         binding.svCaptureMode.setOrientation(DSVOrientation.HORIZONTAL)
         binding.svCaptureMode.setOverScrollEnabled(true)
         binding.svCaptureMode.setSlideOnFling(true)
-        binding.svCaptureMode.setSlideOnFlingThreshold(1300)
-        binding.svCaptureMode.setItemTransitionTimeMillis(180)
+        binding.svCaptureMode.setSlideOnFlingThreshold(FLING_THRESHOLD)
+        binding.svCaptureMode.setItemTransitionTimeMillis(ITEM_TRANSITION_TIME_MS)
 
         binding.svCaptureMode.setItemTransformer(
             ScaleTransformer.Builder().setMinScale(0.8f).build(),
@@ -69,22 +91,6 @@ class CaptureActivity : BaseActivity<ActivityCaptureBinding, CaptureViewModel>()
         binding.svCaptureMode.addItemDecoration(FadingEdgeDecoration())
 
         binding.pickCaptureSetting.setTitleText(getString(R.string.capture_settings))
-
-        vrManager =
-            VrManager(
-                activity = this,
-                rootContainer = binding.root,
-                capturePlayerView = binding.capturePlayerView,
-                svCaptureMode = binding.svCaptureMode,
-                ivCaptureSetting = binding.ivCaptureSetting,
-                btnCalibrate = binding.btnCalibrate,
-                calibrateGyro = {
-                    try {
-                        gyroController.calibrate()
-                    } catch (_: Exception) {
-                    }
-                },
-            )
     }
 
     override fun initListener() {
@@ -134,7 +140,7 @@ class CaptureActivity : BaseActivity<ActivityCaptureBinding, CaptureViewModel>()
                     instaCameraManager.getSupportCaptureSettingList(it.currentCaptureMode)
                 }
 
-            if (this::vrManager.isInitialized && vrManager.isVrMode && position >= supportCaptureSettingList.size) {
+            if (vrManager.isVrMode && position >= supportCaptureSettingList.size) {
                 try {
                     binding.pickCaptureSetting.hide()
                     vrManager.showVrSettingsDialog()
@@ -162,7 +168,7 @@ class CaptureActivity : BaseActivity<ActivityCaptureBinding, CaptureViewModel>()
             val list = supportCaptureSettingList.map { getCaptureSettingData(it) }.toMutableList()
 
             try {
-                if (this::vrManager.isInitialized && vrManager.isVrMode) {
+                if (vrManager.isVrMode) {
                     val vrPick =
                         PickData(
                             true,

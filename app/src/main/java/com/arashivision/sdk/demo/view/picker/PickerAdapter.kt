@@ -9,7 +9,10 @@ import com.zhy.view.flowlayout.FlowLayout
 import com.zhy.view.flowlayout.TagAdapter
 import com.zhy.view.flowlayout.TagFlowLayout
 
-class PickerAdapter : BaseAdapter<ItemSettingSelectBinding, PickData>() {
+class PickerAdapter :
+    BaseAdapter<ItemSettingSelectBinding, PickData>(
+        bindingFactory = { inflater, parent -> ItemSettingSelectBinding.inflate(inflater, parent, false) },
+    ) {
     private var mOnItemSelectListener: ((position: Int, data: Any) -> Unit)? = null
 
     fun setOnItemSelectListener(onSecondItemSelectListener: (position: Int, data: Any) -> Unit) {

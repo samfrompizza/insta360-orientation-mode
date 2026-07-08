@@ -5,9 +5,11 @@ import android.os.Handler
 import android.os.Looper
 import android.os.Message
 import android.view.Gravity
+import android.view.LayoutInflater
 import android.widget.Toast
 import androidx.annotation.StringRes
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.viewbinding.ViewBinding
 import com.arashivision.sdk.demo.InstaApp
@@ -15,8 +17,6 @@ import com.arashivision.sdk.demo.R
 import com.arashivision.sdk.demo.base.BaseEvent.CameraBatteryUpdateEvent
 import com.arashivision.sdk.demo.base.BaseEvent.CameraSDCardStateChangedEvent
 import com.arashivision.sdk.demo.base.BaseEvent.CameraStorageChangedEvent
-import com.arashivision.sdk.demo.util.ViewBindingUtils
-import com.arashivision.sdk.demo.util.ViewBindingUtils.createViewModel
 import com.arashivision.sdk.demo.view.LoadingView
 import com.elvishew.xlog.Logger
 import com.elvishew.xlog.XLog
@@ -26,17 +26,23 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import java.util.LinkedList
 
-open class BaseActivity<T : ViewBinding, V : BaseViewModel> : AppCompatActivity() {
+open class BaseActivity<T : ViewBinding, V : BaseViewModel>(
+    private val bindingFactory: (LayoutInflater) -> T,
+    private val viewModelClass: Class<V>,
+) : AppCompatActivity() {
     companion object {
         private var isCharging: Boolean = false
         private const val MIN_LOADING_TIME = 100L
+        private const val STORAGE_WARNING_THRESHOLD = 0.8f
+        private const val LOADING_HIDE_WHAT = 1000
+        private const val LOADING_SHOW_WHAT = 1001
     }
 
     private val logger: Logger = XLog.tag(BaseActivity::class.java.simpleName).build()
 
-    protected lateinit var binding: T
+    protected val binding: T by lazy { bindingFactory(layoutInflater) }
 
-    lateinit var viewModel: V
+    val viewModel: V by lazy { ViewModelProvider(this)[viewModelClass] }
 
     private var loading: LoadingView? = null
 
@@ -46,14 +52,14 @@ open class BaseActivity<T : ViewBinding, V : BaseViewModel> : AppCompatActivity(
     protected open val handler by lazy {
         object : Handler(Looper.getMainLooper()) {
             override fun handleMessage(msg: Message) {
-                if (msg.what == 1000) {
+                if (msg.what == LOADING_HIDE_WHAT) {
                     hideLoading()
-                } else if (msg.what == 1001) {
+                } else if (msg.what == LOADING_SHOW_WHAT) {
                     val poll = loadingTask.poll()
                     if (poll != null) {
                         show(poll)
                     }
-                    sendEmptyMessageDelayed(1001, MIN_LOADING_TIME)
+                    sendEmptyMessageDelayed(LOADING_SHOW_WHAT, MIN_LOADING_TIME)
                 }
                 onMessage(msg)
             }
@@ -64,9 +70,7 @@ open class BaseActivity<T : ViewBinding, V : BaseViewModel> : AppCompatActivity(
         logger.d("[lifecycle] " + javaClass.simpleName + " onCreate")
         super.onCreate(savedInstanceState)
         ImmersionBar.with(this).hideBar(BarHide.FLAG_HIDE_BAR).init()
-        this.binding = ViewBindingUtils.createBinding(javaClass, layoutInflater, 0, null)
-        setContentView(this.binding.root)
-        this.viewModel = createViewModel(this, 1)
+        setContentView(binding.root)
         initView()
         initListener()
         lifecycleScope.launch {
@@ -91,7 +95,7 @@ open class BaseActivity<T : ViewBinding, V : BaseViewModel> : AppCompatActivity(
             }
 
             is CameraStorageChangedEvent -> {
-                if (event.freeSpace.toFloat() / event.totalSpace < 0.8f) {
+                if (event.freeSpace.toFloat() / event.totalSpace < STORAGE_WARNING_THRESHOLD) {
                     toast(R.string.camera_storage_full_soon)
                 }
             }
@@ -109,6 +113,8 @@ open class BaseActivity<T : ViewBinding, V : BaseViewModel> : AppCompatActivity(
             is CameraSDCardStateChangedEvent -> {
                 toast(if (event.enabled) R.string.camera_sd_card_insert else R.string.camera_sd_card_extract)
             }
+
+            is BaseEvent.CameraStatusChangedEvent -> {}
         }
     }
 
@@ -155,8 +161,8 @@ open class BaseActivity<T : ViewBinding, V : BaseViewModel> : AppCompatActivity(
 
     fun showLoading(message: String) {
         loadingTask.add(message)
-        if (!handler.hasMessages(1001)) {
-            handler.sendEmptyMessage(1001)
+        if (!handler.hasMessages(LOADING_SHOW_WHAT)) {
+            handler.sendEmptyMessage(LOADING_SHOW_WHAT)
         }
     }
 
@@ -173,19 +179,19 @@ open class BaseActivity<T : ViewBinding, V : BaseViewModel> : AppCompatActivity(
 
     fun hideLoading() {
         handler.post {
-            handler.removeMessages(1001)
+            handler.removeMessages(LOADING_SHOW_WHAT)
             loading?.let {
                 if (it.isAdded) {
                     val nowTime = System.currentTimeMillis()
                     val loadingTime = nowTime - startLoadingTime
                     if (loadingTime < MIN_LOADING_TIME) {
-                        handler.sendEmptyMessageDelayed(1000, MIN_LOADING_TIME - loadingTime)
+                        handler.sendEmptyMessageDelayed(LOADING_HIDE_WHAT, MIN_LOADING_TIME - loadingTime)
                     } else {
                         loading!!.dismiss()
                         loading = null
                     }
                 } else {
-                    handler.sendEmptyMessageDelayed(1000, 100)
+                    handler.sendEmptyMessageDelayed(LOADING_HIDE_WHAT, 100)
                 }
             }
         }

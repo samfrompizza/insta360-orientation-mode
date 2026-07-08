@@ -1,7 +1,7 @@
 package com.arashivision.sdk.demo.ui.connect
 
 import com.arashivision.sdk.demo.base.BaseEvent
-import com.arashivision.sdk.demo.base.EventStatus
+import com.arashivision.sdk.demo.ui.capture.EventStatus
 import com.clj.fastble.data.BleDevice
 
 interface ConnectEvent : BaseEvent {

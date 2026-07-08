@@ -16,7 +16,6 @@ import androidx.viewbinding.ViewBinding
 import com.arashivision.sdk.demo.R
 import com.arashivision.sdk.demo.ext.dp
 import com.arashivision.sdk.demo.ext.screenWidth
-import com.arashivision.sdk.demo.util.ViewBindingUtils
 import com.elvishew.xlog.Logger
 import com.elvishew.xlog.XLog
 import com.google.android.material.bottomsheet.BottomSheetBehavior
@@ -24,7 +23,9 @@ import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.gyf.immersionbar.BarHide
 import com.gyf.immersionbar.ImmersionBar
 
-open class BaseBottomSheetDialogFragment<T : ViewBinding?> : BottomSheetDialogFragment() {
+open class BaseBottomSheetDialogFragment<T : ViewBinding>(
+    private val bindingFactory: (LayoutInflater, ViewGroup?, Boolean) -> T,
+) : BottomSheetDialogFragment() {
     private val logger: Logger = XLog.tag(BaseBottomSheetDialogFragment::class.java.simpleName).build()
 
     protected open var binding: T? = null
@@ -58,7 +59,7 @@ open class BaseBottomSheetDialogFragment<T : ViewBinding?> : BottomSheetDialogFr
         savedInstanceState: Bundle?,
     ): View? {
         logger.d("[lifecycle] " + javaClass.simpleName + " onCreateView")
-        this.binding = ViewBindingUtils.createBinding<T>(javaClass, inflater, 0, container)
+        this.binding = bindingFactory(inflater, container, false)
         return binding!!.root
     }
 

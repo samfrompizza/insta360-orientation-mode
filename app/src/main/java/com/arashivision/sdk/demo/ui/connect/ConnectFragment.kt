@@ -9,7 +9,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.arashivision.sdk.demo.R
 import com.arashivision.sdk.demo.base.BaseEvent
 import com.arashivision.sdk.demo.base.BaseFragment
-import com.arashivision.sdk.demo.base.EventStatus
 import com.arashivision.sdk.demo.databinding.FragmentConnectBinding
 import com.arashivision.sdk.demo.ext.durationFormat
 import com.arashivision.sdk.demo.ext.gb
@@ -17,13 +16,18 @@ import com.arashivision.sdk.demo.ext.instaCameraManager
 import com.arashivision.sdk.demo.ext.isPrimaryConnect
 import com.arashivision.sdk.demo.ext.timeFormat
 import com.arashivision.sdk.demo.ui.capture.CaptureActivity
+import com.arashivision.sdk.demo.ui.capture.EventStatus
 import com.arashivision.sdk.demo.ui.connect.adapter.BleDeviceAdapter
 import com.arashivision.sdk.demo.ui.player.LocalSphericalPlayerActivity
 import com.arashivision.sdkcamera.camera.InstaCameraManager
 import com.elvishew.xlog.Logger
 import com.elvishew.xlog.XLog
 
-class ConnectFragment : BaseFragment<FragmentConnectBinding, ConnectViewModel>() {
+class ConnectFragment :
+    BaseFragment<FragmentConnectBinding, ConnectViewModel>(
+        bindingFactory = { inflater, container, attachToParent -> FragmentConnectBinding.inflate(inflater, container, attachToParent) },
+        viewModelClass = ConnectViewModel::class.java,
+    ) {
     private val logger: Logger = XLog.tag(ConnectFragment::class.java.simpleName).build()
 
     private var bleDeviceAdapter: BleDeviceAdapter? = null

@@ -5,12 +5,13 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
-import com.arashivision.sdk.demo.util.ViewBindingUtils
 import com.elvishew.xlog.Logger
 import com.elvishew.xlog.XLog
 
 @SuppressLint("NotifyDataSetChanged")
-abstract class BaseAdapter<T : ViewBinding, K> : RecyclerView.Adapter<BaseAdapter.ViewHolder<T>>() {
+abstract class BaseAdapter<T : ViewBinding, K>(
+    private val bindingFactory: (LayoutInflater, ViewGroup) -> T,
+) : RecyclerView.Adapter<BaseAdapter.ViewHolder<T>>() {
     private val logger: Logger = XLog.tag(BaseAdapter::class.java.simpleName).build()
 
     private var itemClickListener: ((data: K, position: Int) -> Unit)? = null
@@ -62,7 +63,7 @@ abstract class BaseAdapter<T : ViewBinding, K> : RecyclerView.Adapter<BaseAdapte
         parent: ViewGroup,
         viewType: Int,
     ): ViewHolder<T> {
-        val binding = ViewBindingUtils.createBinding<T>(this.javaClass, LayoutInflater.from(parent.context), 0, parent)
+        val binding = bindingFactory(LayoutInflater.from(parent.context), parent)
         return ViewHolder(binding)
     }
 

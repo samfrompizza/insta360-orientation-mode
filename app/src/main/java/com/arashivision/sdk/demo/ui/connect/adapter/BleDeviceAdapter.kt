@@ -4,7 +4,10 @@ import com.arashivision.sdk.demo.base.BaseAdapter
 import com.arashivision.sdk.demo.databinding.ItemBleDevicesBinding
 import com.clj.fastble.data.BleDevice
 
-class BleDeviceAdapter : BaseAdapter<ItemBleDevicesBinding, BleDevice>() {
+class BleDeviceAdapter :
+    BaseAdapter<ItemBleDevicesBinding, BleDevice>(
+        bindingFactory = { inflater, parent -> ItemBleDevicesBinding.inflate(inflater, parent, false) },
+    ) {
     private var connectBleClickListener: ((data: BleDevice, position: Int) -> Unit)? = null
     private var connectWiFiClickListener: ((data: BleDevice, position: Int) -> Unit)? = null
 

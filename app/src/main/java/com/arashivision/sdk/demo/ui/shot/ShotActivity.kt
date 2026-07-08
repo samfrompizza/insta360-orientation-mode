@@ -6,13 +6,13 @@ import android.widget.PopupMenu
 import com.arashivision.sdk.demo.R
 import com.arashivision.sdk.demo.base.BaseActivity
 import com.arashivision.sdk.demo.base.BaseEvent
-import com.arashivision.sdk.demo.base.EventStatus
 import com.arashivision.sdk.demo.databinding.ActivityShotBinding
 import com.arashivision.sdk.demo.ext.durationFormat
 import com.arashivision.sdk.demo.ext.getCaptureSettingSupportList
 import com.arashivision.sdk.demo.ext.getCaptureSettingValue
 import com.arashivision.sdk.demo.ext.instaCameraManager
 import com.arashivision.sdk.demo.ext.setCaptureSettingValue
+import com.arashivision.sdk.demo.ui.capture.EventStatus
 import com.arashivision.sdk.demo.ui.capture.getCaptureModeTextResId
 import com.arashivision.sdk.demo.ui.capture.getCaptureSettingNameResId
 import com.arashivision.sdk.demo.ui.capture.getCaptureSettingValueName
@@ -20,7 +20,11 @@ import com.arashivision.sdk.demo.util.LocationManager
 import com.arashivision.sdk.demo.view.picker.PickData
 import com.arashivision.sdkcamera.camera.model.CaptureSetting
 
-class ShotActivity : BaseActivity<ActivityShotBinding, ShotViewModel>() {
+class ShotActivity :
+    BaseActivity<ActivityShotBinding, ShotViewModel>(
+        bindingFactory = { ActivityShotBinding.inflate(it) },
+        viewModelClass = ShotViewModel::class.java,
+    ) {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         LocationManager.registerLocation(this)
@@ -69,7 +73,7 @@ class ShotActivity : BaseActivity<ActivityShotBinding, ShotViewModel>() {
     override fun onEvent(event: BaseEvent) {
         super.onEvent(event)
         when (event) {
-            is BaseEvent.CameraStatusChangedEvent -> if (!event.enable) finish()
+            is BaseEvent.CameraStatusChangedEvent -> if (!event.enabled) finish()
 
             // 无SD卡
             ShotEvent.SDCardDisableEvent -> toast(R.string.toast_no_sd)
