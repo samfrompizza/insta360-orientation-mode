@@ -5,10 +5,10 @@ import com.arashivision.sdk.demo.InstaApp
 import com.arashivision.sdk.demo.R
 
 object Pref {
-
     fun getStabCacheFrameNum(): Int {
         val sp = PreferenceManager.getDefaultSharedPreferences(InstaApp.instance)
-        return sp.getString(InstaApp.instance.getString(R.string.pref_stab_cache_frame_num), "0")
+        return sp
+            .getString(InstaApp.instance.getString(R.string.pref_stab_cache_frame_num), "0")
             ?.toInt() ?: 0
     }
 
@@ -16,7 +16,7 @@ object Pref {
         val sp = PreferenceManager.getDefaultSharedPreferences(InstaApp.instance)
         return sp.getBoolean(
             InstaApp.instance.getString(R.string.pref_real_time_capture_logs),
-            true
+            true,
         )
     }
 

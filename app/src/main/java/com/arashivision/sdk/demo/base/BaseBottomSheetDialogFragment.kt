@@ -25,7 +25,6 @@ import com.gyf.immersionbar.BarHide
 import com.gyf.immersionbar.ImmersionBar
 
 open class BaseBottomSheetDialogFragment<T : ViewBinding?> : BottomSheetDialogFragment() {
-
     private val logger: Logger = XLog.tag(BaseBottomSheetDialogFragment::class.java.simpleName).build()
 
     protected open var binding: T? = null
@@ -43,7 +42,6 @@ open class BaseBottomSheetDialogFragment<T : ViewBinding?> : BottomSheetDialogFr
         return dialog
     }
 
-
     override fun onAttach(context: Context) {
         super.onAttach(context)
         logger.d("[lifecycle] " + javaClass.simpleName + " onAttach")
@@ -54,13 +52,20 @@ open class BaseBottomSheetDialogFragment<T : ViewBinding?> : BottomSheetDialogFr
         logger.d("[lifecycle] " + javaClass.simpleName + " onCreate")
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?,
+    ): View? {
         logger.d("[lifecycle] " + javaClass.simpleName + " onCreateView")
         this.binding = ViewBindingUtils.createBinding<T>(javaClass, inflater, 0, container)
         return binding!!.root
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+    override fun onViewCreated(
+        view: View,
+        savedInstanceState: Bundle?,
+    ) {
         super.onViewCreated(view, savedInstanceState)
         logger.d("[lifecycle] " + javaClass.simpleName + " onViewCreated")
         ImmersionBar.with(this).hideBar(BarHide.FLAG_HIDE_BAR).init()
@@ -123,18 +128,21 @@ open class BaseBottomSheetDialogFragment<T : ViewBinding?> : BottomSheetDialogFr
         logger.d("[lifecycle] " + javaClass.simpleName + " onHiddenChanged:" + hidden)
     }
 
-
     @SuppressLint("RestrictedApi")
     private fun initRootView() {
         view?.parent?.let {
             (it as View).post {
                 it.setBackgroundResource(R.color.transparent)
                 it.clipToOutline = true
-                it.outlineProvider = object : ViewOutlineProvider() {
-                    override fun getOutline(view1: View, outline: Outline) {
-                        outline.setRoundRect(0, 0, view1.width, view1.height * 2, 12f.dp.toFloat())
+                it.outlineProvider =
+                    object : ViewOutlineProvider() {
+                        override fun getOutline(
+                            view1: View,
+                            outline: Outline,
+                        ) {
+                            outline.setRoundRect(0, 0, view1.width, view1.height * 2, 12f.dp.toFloat())
+                        }
                     }
-                }
                 val lp: CoordinatorLayout.LayoutParams = it.layoutParams as CoordinatorLayout.LayoutParams
                 val behavior: BottomSheetBehavior<*> = lp.behavior as BottomSheetBehavior<*>
                 lp.height = view?.height ?: 0
@@ -145,7 +153,10 @@ open class BaseBottomSheetDialogFragment<T : ViewBinding?> : BottomSheetDialogFr
         }
     }
 
-    override fun show(manager: FragmentManager, tag: String?) {
+    override fun show(
+        manager: FragmentManager,
+        tag: String?,
+    ) {
         try {
             for (declaredField in this.javaClass.declaredFields) {
                 if (declaredField.name == "mDismissed") {
@@ -172,9 +183,7 @@ open class BaseBottomSheetDialogFragment<T : ViewBinding?> : BottomSheetDialogFr
      *
      * @return Boolean
      */
-    fun isReadyToAdd(): Boolean {
-        return isReadyToAdd || isAdded
-    }
+    fun isReadyToAdd(): Boolean = isReadyToAdd || isAdded
 
     override fun dismiss() {
         safeFragmentManager?.let {

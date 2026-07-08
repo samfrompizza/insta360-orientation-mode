@@ -13,7 +13,6 @@ import kotlinx.coroutines.withContext
 import java.io.File
 
 class SettingViewModel : BaseViewModel() {
-
     fun exportTodayLog(context: Context) {
         emitEvent(SettingEvent.ExportLogEvent(EventStatus.START))
         val todayLogPath: String =

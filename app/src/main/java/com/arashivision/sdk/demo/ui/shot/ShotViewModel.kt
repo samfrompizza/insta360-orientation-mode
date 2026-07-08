@@ -20,33 +20,38 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 
-class ShotViewModel : BaseViewModel(), ICaptureStatusListener {
-
+class ShotViewModel :
+    BaseViewModel(),
+    ICaptureStatusListener {
     private val logger: Logger = XLog.tag(ShotViewModel::class.java.simpleName).build()
 
     val supportCaptureSettings: List<CaptureSetting>
         get() = instaCameraManager.getSupportCaptureSettingList(currentCaptureMode)
 
     val captureModeList: List<CaptureMode>
-        get() = instaCameraManager.supportCaptureMode.filter {
-            it !in arrayOf(
-                CaptureMode.LIVE,
-                CaptureMode.LIVE_ANIMATION,
-                CaptureMode.VIDEO_NONE,
-                CaptureMode.PHOTO_NONE
-            )
-        }
+        get() =
+            instaCameraManager.supportCaptureMode.filter {
+                it !in
+                    arrayOf(
+                        CaptureMode.LIVE,
+                        CaptureMode.LIVE_ANIMATION,
+                        CaptureMode.VIDEO_NONE,
+                        CaptureMode.PHOTO_NONE,
+                    )
+            }
 
     var currentCaptureMode: CaptureMode = CaptureMode.CAPTURE_NORMAL
 
-
     private val isSingleClickAction: Boolean
-        get() = currentCaptureMode.let {
-            it.isPhotoMode && it !in listOf(
-                CaptureMode.INTERVAL_SHOOTING,
-                CaptureMode.STARLAPSE_SHOOTING
-            )
-        }
+        get() =
+            currentCaptureMode.let {
+                it.isPhotoMode &&
+                    it !in
+                    listOf(
+                        CaptureMode.INTERVAL_SHOOTING,
+                        CaptureMode.STARLAPSE_SHOOTING,
+                    )
+            }
 
     val isCameraWorking: Boolean
         get() = instaCameraManager.isCameraWorking
@@ -58,15 +63,17 @@ class ShotViewModel : BaseViewModel(), ICaptureStatusListener {
     }
 
     private fun initCameraSupportConfig() {
-        instaCameraManager.initCameraSupportConfig(object : ICaptureSupportConfigCallback {
-            override fun onComplete() {
-                logger.d("initCameraSupportConfig success")
-            }
+        instaCameraManager.initCameraSupportConfig(
+            object : ICaptureSupportConfigCallback {
+                override fun onComplete() {
+                    logger.d("initCameraSupportConfig success")
+                }
 
-            override fun onFailed(s: String) {
-                logger.d("initCameraSupportConfig failed : $s")
-            }
-        })
+                override fun onFailed(s: String) {
+                    logger.d("initCameraSupportConfig failed : $s")
+                }
+            },
+        )
     }
 
     fun switchPanoramaSensorMode() {
@@ -78,22 +85,24 @@ class ShotViewModel : BaseViewModel(), ICaptureStatusListener {
             return
         }
 
-        InstaCameraManager.getInstance().switchPanoramaSensorMode(object : ICameraOperateCallback {
-            override fun onSuccessful() {
-                logger.d("switch sensor success.")
-                emitEvent(ShotEvent.SwitchPanoramaSensorModeEvent(EventStatus.SUCCESS))
-            }
+        InstaCameraManager.getInstance().switchPanoramaSensorMode(
+            object : ICameraOperateCallback {
+                override fun onSuccessful() {
+                    logger.d("switch sensor success.")
+                    emitEvent(ShotEvent.SwitchPanoramaSensorModeEvent(EventStatus.SUCCESS))
+                }
 
-            override fun onFailed() {
-                logger.d("switch sensor fail.")
-                emitEvent(ShotEvent.SwitchPanoramaSensorModeEvent(EventStatus.FAILED))
-            }
+                override fun onFailed() {
+                    logger.d("switch sensor fail.")
+                    emitEvent(ShotEvent.SwitchPanoramaSensorModeEvent(EventStatus.FAILED))
+                }
 
-            override fun onCameraConnectError() {
-                logger.d("switch sensor error.")
-                emitEvent(ShotEvent.SwitchPanoramaSensorModeEvent(EventStatus.FAILED))
-            }
-        })
+                override fun onCameraConnectError() {
+                    logger.d("switch sensor error.")
+                    emitEvent(ShotEvent.SwitchPanoramaSensorModeEvent(EventStatus.FAILED))
+                }
+            },
+        )
     }
 
     fun switchCaptureMode(captureMode: CaptureMode) {
@@ -101,16 +110,15 @@ class ShotViewModel : BaseViewModel(), ICaptureStatusListener {
         viewModelScope.launch { setCaptureMode(captureMode) }
     }
 
-    private suspend fun setCaptureMode(captureMode: CaptureMode): Boolean {
-        return suspendCancellableCoroutine {
+    private suspend fun setCaptureMode(captureMode: CaptureMode): Boolean =
+        suspendCancellableCoroutine {
             instaCameraManager.setCaptureMode(captureMode) { code ->
                 it.resume(code == 0)
             }
         }
-    }
 
-    private fun getGpsData(): ByteArray? {
-        return LocationManager.currentLocation?.let {
+    private fun getGpsData(): ByteArray? =
+        LocationManager.currentLocation?.let {
             val gpsData = GpsData()
             gpsData.latitude = it.latitude
             gpsData.longitude = it.longitude
@@ -122,9 +130,7 @@ class ShotViewModel : BaseViewModel(), ICaptureStatusListener {
             val gpsData2ByteArray = GpsData.GpsData2ByteArray(listOf(gpsData))
             logger.d("gpsData2ByteArray = ${String(gpsData2ByteArray, Charsets.UTF_8)}")
             gpsData2ByteArray
-
         }
-    }
 
     fun startWork() {
         if (!instaCameraManager.isSdCardEnabled) {
@@ -133,11 +139,12 @@ class ShotViewModel : BaseViewModel(), ICaptureStatusListener {
         }
         when (currentCaptureMode) {
             CaptureMode.CAPTURE_NORMAL -> {
-                getGpsData()?.let {
-                    instaCameraManager.startNormalCapture(it)
-                }?.run {
-                    instaCameraManager.startNormalCapture()
-                }
+                getGpsData()
+                    ?.let {
+                        instaCameraManager.startNormalCapture(it)
+                    }?.run {
+                        instaCameraManager.startNormalCapture()
+                    }
             }
 
             CaptureMode.HDR_CAPTURE -> instaCameraManager.startHDRCapture()
@@ -209,7 +216,6 @@ class ShotViewModel : BaseViewModel(), ICaptureStatusListener {
     override fun onCaptureCountChanged(captureCount: Int) {
         logger.d("onCaptureCountChanged -> $captureCount")
         emitEvent(ShotEvent.CaptureCountChangedEvent(captureCount))
-
     }
 
     override fun onCaptureError(p0: Int) {

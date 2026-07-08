@@ -27,7 +27,6 @@ import kotlinx.coroutines.launch
 import java.util.LinkedList
 
 open class BaseActivity<T : ViewBinding, V : BaseViewModel> : AppCompatActivity() {
-
     companion object {
         private var isCharging: Boolean = false
         private const val MIN_LOADING_TIME = 100L
@@ -123,7 +122,6 @@ open class BaseActivity<T : ViewBinding, V : BaseViewModel> : AppCompatActivity(
         logger.d("[lifecycle] " + javaClass.simpleName + " onPause")
     }
 
-
     override fun onRestart() {
         super.onRestart()
         logger.d("[lifecycle] " + javaClass.simpleName + " onRestart")
@@ -132,7 +130,6 @@ open class BaseActivity<T : ViewBinding, V : BaseViewModel> : AppCompatActivity(
     override fun onResume() {
         super.onResume()
         logger.d("[lifecycle] " + javaClass.simpleName + " onResume")
-
     }
 
     override fun onStop() {
@@ -146,12 +143,13 @@ open class BaseActivity<T : ViewBinding, V : BaseViewModel> : AppCompatActivity(
         lifecycleScope.cancel()
     }
 
-
     fun showLoading() {
         showLoading("")
     }
 
-    fun showLoading(@StringRes id: Int) {
+    fun showLoading(
+        @StringRes id: Int,
+    ) {
         showLoading(getString(id))
     }
 
@@ -179,7 +177,7 @@ open class BaseActivity<T : ViewBinding, V : BaseViewModel> : AppCompatActivity(
             loading?.let {
                 if (it.isAdded) {
                     val nowTime = System.currentTimeMillis()
-                    val loadingTime = nowTime - startLoadingTime;
+                    val loadingTime = nowTime - startLoadingTime
                     if (loadingTime < MIN_LOADING_TIME) {
                         handler.sendEmptyMessageDelayed(1000, MIN_LOADING_TIME - loadingTime)
                     } else {
@@ -197,11 +195,16 @@ open class BaseActivity<T : ViewBinding, V : BaseViewModel> : AppCompatActivity(
         toast(message, false)
     }
 
-    fun toast(@StringRes id: Int) {
+    fun toast(
+        @StringRes id: Int,
+    ) {
         toast(id, false)
     }
 
-    fun toast(@StringRes id: Int, longTime: Boolean) {
+    fun toast(
+        @StringRes id: Int,
+        longTime: Boolean,
+    ) {
         if (longTime) {
             toast(getString(id), Toast.LENGTH_LONG)
         } else {
@@ -209,7 +212,10 @@ open class BaseActivity<T : ViewBinding, V : BaseViewModel> : AppCompatActivity(
         }
     }
 
-    fun toast(message: String?, longTime: Boolean) {
+    fun toast(
+        message: String?,
+        longTime: Boolean,
+    ) {
         if (longTime) {
             toast(message, Toast.LENGTH_LONG)
         } else {
@@ -217,7 +223,10 @@ open class BaseActivity<T : ViewBinding, V : BaseViewModel> : AppCompatActivity(
         }
     }
 
-    private fun toast(message: String?, duration: Int) {
+    private fun toast(
+        message: String?,
+        duration: Int,
+    ) {
         val toast = Toast.makeText(this, message, duration)
         toast.setGravity(Gravity.TOP, 0, 0)
         toast.show()
@@ -227,17 +236,23 @@ open class BaseActivity<T : ViewBinding, V : BaseViewModel> : AppCompatActivity(
         (InstaApp.instance.lastActivity as? BaseActivity<*, *>)?.toast(message, false)
     }
 
-    fun lastToast(@StringRes id: Int) {
+    fun lastToast(
+        @StringRes id: Int,
+    ) {
         (InstaApp.instance.lastActivity as? BaseActivity<*, *>)?.toast(id, false)
     }
 
-    fun lastToast(@StringRes id: Int, longTime: Boolean) {
+    fun lastToast(
+        @StringRes id: Int,
+        longTime: Boolean,
+    ) {
         (InstaApp.instance.lastActivity as? BaseActivity<*, *>)?.toast(getString(id), longTime)
     }
 
-    fun lastToast(message: String, longTime: Boolean) {
+    fun lastToast(
+        message: String,
+        longTime: Boolean,
+    ) {
         (InstaApp.instance.lastActivity as? BaseActivity<*, *>)?.toast(message, longTime)
     }
-
-
 }

@@ -9,7 +9,7 @@ import kotlin.math.abs
  * metadata for the current playback time without coupling playback code to JSON parsing details.
  */
 class VideoDetectionTimeline(
-    sidecar: VideoDetectionSidecar
+    sidecar: VideoDetectionSidecar,
 ) {
     private val frames: List<VideoDetectionFrame> = sidecar.frames
 
@@ -19,9 +19,10 @@ class VideoDetectionTimeline(
         if (frames.isEmpty()) return null
 
         val positionSec = positionMs / 1000.0
-        val insertionPoint = frames.binarySearchBy(positionSec) { it.timeSec }.let { result ->
-            if (result >= 0) result else -result - 1
-        }
+        val insertionPoint =
+            frames.binarySearchBy(positionSec) { it.timeSec }.let { result ->
+                if (result >= 0) result else -result - 1
+            }
 
         val previous = frames.getOrNull(insertionPoint - 1)
         val next = frames.getOrNull(insertionPoint)
@@ -34,9 +35,7 @@ class VideoDetectionTimeline(
         }
     }
 
-    fun detectionsAt(positionMs: Long): List<VideoDetectedObject> =
-        frameAt(positionMs)?.objects.orEmpty()
+    fun detectionsAt(positionMs: Long): List<VideoDetectedObject> = frameAt(positionMs)?.objects.orEmpty()
 
-    fun frameByIndex(frameIdx: Int): VideoDetectionFrame? =
-        frames.firstOrNull { it.frameIdx == frameIdx }
+    fun frameByIndex(frameIdx: Int): VideoDetectionFrame? = frames.firstOrNull { it.frameIdx == frameIdx }
 }

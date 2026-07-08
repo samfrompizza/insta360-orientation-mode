@@ -1,0 +1,73 @@
+# detekt configuration — Phase 0 baseline
+# After Phase 1 cleanup, tighten rules progressively.
+
+build:
+  maxIssues: 999
+
+style:
+  active: true
+  MagicNumber:
+    active: false
+  WildcardImport:
+    active: true
+  MaxLineLength:
+    active: false
+  ForbiddenComment:
+    active: false
+  UnusedImports:
+    active: true
+  UnusedPrivateMember:
+    active: true
+  NewLineAtEndOfFile:
+    active: true
+  NoTabs:
+    active: true
+
+naming:
+  active: true
+  ClassNaming:
+    active: true
+  FunctionNaming:
+    active: true
+  VariableNaming:
+    active: true
+  PackageNaming:
+    active: true
+
+complexity:
+  active: true
+  TooManyFunctions:
+    active: false
+  LongParameterList:
+    active: false
+  LongMethod:
+    active: false
+  LargeClass:
+    active: false
+  CyclomaticComplexMethod:
+    active: false
+  NestedBlockDepth:
+    active: false
+
+exceptions:
+  active: true
+  SwallowedException:
+    active: true
+  TooGenericExceptionCaught:
+    active: false
+  InstanceOfCheckForException:
+    active: true
+
+performance:
+  active: true
+  SpreadOperator:
+    active: true
+  UnnecessaryTemporaryInstantiation:
+    active: true
+
+potential-bugs:
+  active: true
+  UnsafeCallOnNullableType:
+    active: true
+  UnusedUnaryOperator:
+    active: true

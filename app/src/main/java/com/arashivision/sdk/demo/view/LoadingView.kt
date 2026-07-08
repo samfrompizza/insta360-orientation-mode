@@ -8,25 +8,21 @@ import android.widget.TextView
 import com.arashivision.sdk.demo.R
 import com.arashivision.sdk.demo.base.BaseDialog
 
-class LoadingView(private var message: String = "") : BaseDialog() {
-
-    fun getMessage(): String {
-        return message
-    }
+class LoadingView(
+    private var message: String = "",
+) : BaseDialog() {
+    fun getMessage(): String = message
 
     fun setMessage(message: String) {
         this.message = message
         (mView?.findViewById<View>(R.id.tv_message) as TextView).text = message
     }
 
-    public override fun layoutResId(): Int {
-        return R.layout.layout_loading
-    }
+    public override fun layoutResId(): Int = R.layout.layout_loading
 
     override fun initView(view: View) {
         // 空实现
     }
-
 
     public override fun initListener() {
         // 空实现
@@ -35,14 +31,15 @@ class LoadingView(private var message: String = "") : BaseDialog() {
     private fun loading() {
         if (mView != null && mView!!.findViewById<View?>(R.id.iv_loading) != null) {
             val animationSet = AnimationSet(true)
-            val rotate = RotateAnimation(
-                0.0f,
-                359.0f,
-                RotateAnimation.RELATIVE_TO_SELF,
-                0.5f,
-                RotateAnimation.RELATIVE_TO_SELF,
-                0.5f
-            )
+            val rotate =
+                RotateAnimation(
+                    0.0f,
+                    359.0f,
+                    RotateAnimation.RELATIVE_TO_SELF,
+                    0.5f,
+                    RotateAnimation.RELATIVE_TO_SELF,
+                    0.5f,
+                )
             // 第一个参数fromDegrees为动画起始时的旋转角度
             // 第二个参数toDegrees为动画旋转到的角度
             // 第三个参数pivotXType为动画在X轴相对于物件位置类型

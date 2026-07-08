@@ -5,7 +5,8 @@ import com.arashivision.sdk.demo.base.EventStatus
 import java.io.File
 
 interface SettingEvent : BaseEvent {
-
-    class ExportLogEvent(var status: EventStatus, var zipFile: File? = null) : SettingEvent
-
+    class ExportLogEvent(
+        var status: EventStatus,
+        var zipFile: File? = null,
+    ) : SettingEvent
 }

@@ -10,13 +10,16 @@ import java.io.InputStream
 
 @GlideModule
 class MyGlideModule : AppGlideModule() {
-
-    override fun registerComponents(context: Context, glide: Glide, registry: Registry) {
+    override fun registerComponents(
+        context: Context,
+        glide: Glide,
+        registry: Registry,
+    ) {
         super.registerComponents(context, glide, registry)
         registry.prepend(
             WorkWrapper::class.java,
             InputStream::class.java,
-            WorkModelLoaderFactory(context)
+            WorkModelLoaderFactory(context),
         )
     }
 }

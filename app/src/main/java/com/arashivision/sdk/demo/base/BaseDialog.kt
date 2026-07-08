@@ -17,9 +17,8 @@ abstract class BaseDialog(
     private var isOnTouchOutSide: Boolean = false,
     private var alpha: Float = 0.8f,
     private var windowWidth: Int = ViewGroup.LayoutParams.MATCH_PARENT,
-    private var windowHeight: Int = ViewGroup.LayoutParams.MATCH_PARENT
+    private var windowHeight: Int = ViewGroup.LayoutParams.MATCH_PARENT,
 ) : DialogFragment() {
-
     protected var mView: View? = null
 
     @LayoutRes
@@ -34,7 +33,10 @@ abstract class BaseDialog(
         setStyle(STYLE_NORMAL, R.style.BaseDialogStyle)
     }
 
-    override fun show(manager: FragmentManager, tag: String?) {
+    override fun show(
+        manager: FragmentManager,
+        tag: String?,
+    ) {
         if (manager.isDestroyed) {
             return
         }
@@ -46,14 +48,21 @@ abstract class BaseDialog(
         }
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?,
+    ): View? {
         dialog?.setCanceledOnTouchOutside(isOnTouchOutSide)
         dialog?.setCancelable(false)
         mView = LayoutInflater.from(context).inflate(layoutResId(), container, false)
         return mView
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+    override fun onViewCreated(
+        view: View,
+        savedInstanceState: Bundle?,
+    ) {
         super.onViewCreated(view, savedInstanceState)
         ImmersionBar.with(this).hideBar(BarHide.FLAG_HIDE_BAR).init()
         initView(view)
@@ -86,4 +95,3 @@ abstract class BaseDialog(
         dialog?.window?.setDimAmount(alpha) // 0~1 , 1表示完全昏暗
     }
 }
-

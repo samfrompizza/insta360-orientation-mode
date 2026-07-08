@@ -17,12 +17,17 @@ import java.io.IOException
 import java.io.InputStream
 import java.util.function.Consumer
 
-class WorkDataFetcher(private val mContext: Context, private val mWorkWrapper: WorkWrapper) :
-    DataFetcher<InputStream> {
+class WorkDataFetcher(
+    private val mContext: Context,
+    private val mWorkWrapper: WorkWrapper,
+) : DataFetcher<InputStream> {
     private var mExportId = -1
     private var mInputStream: InputStream? = null
 
-    override fun loadData(priority: Priority, callback: DataFetcher.DataCallback<in InputStream?>) {
+    override fun loadData(
+        priority: Priority,
+        callback: DataFetcher.DataCallback<in InputStream?>,
+    ) {
         mWorkWrapper.loadThumbnail()?.let {
             mInputStream = convertBitmapToInputStream(it, CompressFormat.PNG, 100)
             callback.onDataReady(mInputStream)
@@ -42,40 +47,50 @@ class WorkDataFetcher(private val mContext: Context, private val mWorkWrapper: W
         }
     }
 
-
     private fun exportThumbnail(consumer: Consumer<String?>) {
         val targetPath =
             mContext.cacheDir.toString() + "/glide_thumbnail/" + mWorkWrapper.identicalKey
-        val exportCallback: IExportCallback = object : IExportCallback {
-            override fun onStart(id: Int) {
-                mExportId = id
-            }
+        val exportCallback: IExportCallback =
+            object : IExportCallback {
+                override fun onStart(id: Int) {
+                    mExportId = id
+                }
 
-            override fun onSuccess() {
-                consumer.accept(targetPath)
-            }
+                override fun onSuccess() {
+                    consumer.accept(targetPath)
+                }
 
-            override fun onFail(errorCode: Int, errorMsg: String) {
-                consumer.accept(null)
-                mExportId = -1
-            }
+                override fun onFail(
+                    errorCode: Int,
+                    errorMsg: String,
+                ) {
+                    consumer.accept(null)
+                    mExportId = -1
+                }
 
-            override fun onCancel() {
-                mExportId = -1
-                consumer.accept(null)
+                override fun onCancel() {
+                    mExportId = -1
+                    consumer.accept(null)
+                }
             }
-        }
         if (mWorkWrapper.isVideo) {
-            val builder = ExportImageParamsBuilder().setExportMode(ExportUtils.ExportMode.SPHERE)
-                .setTargetPath(targetPath).setWidth(256).setHeight(256)
+            val builder =
+                ExportImageParamsBuilder()
+                    .setExportMode(ExportUtils.ExportMode.SPHERE)
+                    .setTargetPath(targetPath)
+                    .setWidth(256)
+                    .setHeight(256)
             ExportUtils.exportVideoToImage(mWorkWrapper, builder, exportCallback)
         } else {
-            val builder = ExportImageParamsBuilder().setExportMode(ExportUtils.ExportMode.SPHERE)
-                .setTargetPath(targetPath).setWidth(256).setHeight(256)
+            val builder =
+                ExportImageParamsBuilder()
+                    .setExportMode(ExportUtils.ExportMode.SPHERE)
+                    .setTargetPath(targetPath)
+                    .setWidth(256)
+                    .setHeight(256)
             ExportUtils.exportImage(mWorkWrapper, builder, exportCallback)
         }
     }
-
 
     override fun cleanup() {
         try {
@@ -94,19 +109,15 @@ class WorkDataFetcher(private val mContext: Context, private val mWorkWrapper: W
         }
     }
 
-    override fun getDataClass(): Class<InputStream> {
-        return InputStream::class.java
-    }
+    override fun getDataClass(): Class<InputStream> = InputStream::class.java
 
-    override fun getDataSource(): DataSource {
-        return DataSource.LOCAL
-    }
+    override fun getDataSource(): DataSource = DataSource.LOCAL
 
     companion object {
         fun convertBitmapToInputStream(
             bitmap: Bitmap,
             format: CompressFormat,
-            quality: Int
+            quality: Int,
         ): InputStream {
             val bos = ByteArrayOutputStream()
             bitmap.compress(format, quality, bos)

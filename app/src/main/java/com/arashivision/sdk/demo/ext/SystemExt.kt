@@ -18,15 +18,16 @@ val connectedWiFiSsid: String
         return ssid
     }
 
-
-fun vibrate(secMill: Long, amplitude: Int) {
+fun vibrate(
+    secMill: Long,
+    amplitude: Int,
+) {
     val vibrator = InstaApp.instance.getSystemService(Service.VIBRATOR_SERVICE) as Vibrator
     vibrator.vibrate(VibrationEffect.createOneShot(secMill, amplitude))
 }
 
 val connectivityManager: ConnectivityManager
     get() = InstaApp.instance.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-
 
 val wifiManager: WifiManager
     get() = InstaApp.instance.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager

@@ -33,87 +33,85 @@ object LocationManager {
             if (isRegistered) {
                 return
             }
-            mLocationListener = object : LocationListener {
-                /**
-                 * 位置信息变化时触发
-                 */
-                /**
-                 * 位置信息变化时触发
-                 */
-                override fun onLocationChanged(location: Location) {
-                    if (location.provider == android.location.LocationManager.GPS_PROVIDER) {
-                        Log.v(
-                            TAG, "update gps location $mLastGpslocation"
-                        )
-                        mLastGpslocation = location
+            mLocationListener =
+                object : LocationListener {
+                    /**
+                     * 位置信息变化时触发
+                     */
+                    override fun onLocationChanged(location: Location) {
+                        if (location.provider == android.location.LocationManager.GPS_PROVIDER) {
+                            Log.v(
+                                TAG,
+                                "update gps location $mLastGpslocation",
+                            )
+                            mLastGpslocation = location
+                        }
+                        if (location.provider == android.location.LocationManager.NETWORK_PROVIDER) {
+                            Log.v(
+                                TAG,
+                                "update network location $mLastNetworklocation",
+                            )
+                            mLastNetworklocation = location
+                        }
                     }
-                    if (location.provider == android.location.LocationManager.NETWORK_PROVIDER) {
-                        Log.v(
-                            TAG, "update network location $mLastNetworklocation"
-                        )
-                        mLastNetworklocation = location
-                    }
-                }
 
-                /**
-                 * GPS状态变化时触发
-                 */
-                /**
-                 * GPS状态变化时触发
-                 */
-                override fun onStatusChanged(provider: String, status: Int, extras: Bundle) {
-                    when (status) {
-                        LocationProvider.AVAILABLE -> Log.d(TAG, "当前GPS状态为可见状态")
-                        LocationProvider.OUT_OF_SERVICE -> Log.d(TAG, "当前GPS状态为服务区外状态")
-                        LocationProvider.TEMPORARILY_UNAVAILABLE -> Log.d(
-                            TAG, "当前GPS状态为暂停服务状态"
-                        )
+                    /**
+                     * GPS状态变化时触发
+                     */
+                    override fun onStatusChanged(
+                        provider: String,
+                        status: Int,
+                        extras: Bundle,
+                    ) {
+                        when (status) {
+                            LocationProvider.AVAILABLE -> Log.d(TAG, "当前GPS状态为可见状态")
+                            LocationProvider.OUT_OF_SERVICE -> Log.d(TAG, "当前GPS状态为服务区外状态")
+                            LocationProvider.TEMPORARILY_UNAVAILABLE ->
+                                Log.d(
+                                    TAG,
+                                    "当前GPS状态为暂停服务状态",
+                                )
+                        }
                     }
-                }
 
-                /**
-                 * GPS开启时触发
-                 */
-                /**
-                 * GPS开启时触发
-                 */
-                override fun onProviderEnabled(provider: String) {
-                    if (provider == android.location.LocationManager.GPS_PROVIDER) {
-                        Log.d(TAG, "gps provider enabled")
-                        mLastGpslocation = getLastLocation(provider)
-                        requestLocationUpdates(provider)
+                    /**
+                     * GPS开启时触发
+                     */
+                    override fun onProviderEnabled(provider: String) {
+                        if (provider == android.location.LocationManager.GPS_PROVIDER) {
+                            Log.d(TAG, "gps provider enabled")
+                            mLastGpslocation = getLastLocation(provider)
+                            requestLocationUpdates(provider)
+                        }
+                        if (provider == android.location.LocationManager.NETWORK_PROVIDER) {
+                            Log.d(TAG, "network provider enabled")
+                            mLastNetworklocation = getLastLocation(provider)
+                            requestLocationUpdates(provider)
+                        }
                     }
-                    if (provider == android.location.LocationManager.NETWORK_PROVIDER) {
-                        Log.d(TAG, "network provider enabled")
-                        mLastNetworklocation = getLastLocation(provider)
-                        requestLocationUpdates(provider)
-                    }
-                }
 
-                /**
-                 * GPS禁用时触发
-                 */
-                /**
-                 * GPS禁用时触发
-                 */
-                override fun onProviderDisabled(provider: String) {
-                    if (provider == android.location.LocationManager.GPS_PROVIDER) {
-                        Log.d(TAG, "gps provider disabled")
-                        mLastGpslocation = null
-                    }
-                    if (provider == android.location.LocationManager.NETWORK_PROVIDER) {
-                        Log.d(TAG, "network provider disabled")
-                        mLastNetworklocation = null
+                    /**
+                     * GPS禁用时触发
+                     */
+                    override fun onProviderDisabled(provider: String) {
+                        if (provider == android.location.LocationManager.GPS_PROVIDER) {
+                            Log.d(TAG, "gps provider disabled")
+                            mLastGpslocation = null
+                        }
+                        if (provider == android.location.LocationManager.NETWORK_PROVIDER) {
+                            Log.d(TAG, "network provider disabled")
+                            mLastNetworklocation = null
+                        }
                     }
                 }
-            }
 
             mLocationManager =
                 context.getSystemService(Context.LOCATION_SERVICE) as android.location.LocationManager
             if (mLocationManager != null) {
                 if (mLocationManager!!.isProviderEnabled(android.location.LocationManager.GPS_PROVIDER)) {
                     Log.d(
-                        TAG, "get last gps location $mLastGpslocation"
+                        TAG,
+                        "get last gps location $mLastGpslocation",
                     )
                     mLastGpslocation =
                         getLastLocation(android.location.LocationManager.GPS_PROVIDER)
@@ -121,7 +119,8 @@ object LocationManager {
                 }
                 if (mLocationManager!!.isProviderEnabled(android.location.LocationManager.NETWORK_PROVIDER)) {
                     Log.d(
-                        TAG, "get last network location $mLastNetworklocation"
+                        TAG,
+                        "get last network location $mLastNetworklocation",
                     )
                     mLastNetworklocation =
                         getLastLocation(android.location.LocationManager.NETWORK_PROVIDER)
@@ -182,26 +181,34 @@ object LocationManager {
             try {
                 mLocationManager!!.requestLocationUpdates(provider, 10, 0f, mLocationListener!!)
             } catch (e: Exception) {
-                //Fatal Exception: java.lang.SecurityException
-                //uid 10247 does not have android.permission.ACCESS_COARSE_LOCATION or android.permission.ACCESS_FINE_LOCATION.
+                // Fatal Exception: java.lang.SecurityException
+                // uid 10247 does not have android.permission.ACCESS_COARSE_LOCATION or android.permission.ACCESS_FINE_LOCATION.
                 e.printStackTrace()
             }
         }
     }
 
     enum class LocationType {
-        ANY, GPS, NETWORK, PASSIVE
+        ANY,
+        GPS,
+        NETWORK,
+        PASSIVE,
     }
 
     private val TAG: String = LocationManager::class.java.simpleName
-    private val GPS_PERMISSIONS = arrayOf(
-        Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION
-    )
+    private val GPS_PERMISSIONS =
+        arrayOf(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+        )
 
     /**
      * 手机是否支持定位服务功能
      */
-    fun isSystemSupportLocationService(context: Context, locationType: LocationType): Boolean {
+    fun isSystemSupportLocationService(
+        context: Context,
+        locationType: LocationType,
+    ): Boolean {
         try {
             val locationManager =
                 context.getSystemService(Context.LOCATION_SERVICE) as android.location.LocationManager
@@ -222,7 +229,10 @@ object LocationManager {
     /**
      * 手机是否开启定位服务
      */
-    fun isLocationServiceEnable(context: Context, locationType: LocationType): Boolean {
+    fun isLocationServiceEnable(
+        context: Context,
+        locationType: LocationType,
+    ): Boolean {
         try {
             val locationManager =
                 context.getSystemService(Context.LOCATION_SERVICE) as android.location.LocationManager

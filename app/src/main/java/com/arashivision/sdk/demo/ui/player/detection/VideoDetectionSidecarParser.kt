@@ -1,10 +1,9 @@
 package com.arashivision.sdk.demo.ui.player.detection
 
 import org.json.JSONArray
-import org.json.JSONObject
 import org.json.JSONException
+import org.json.JSONObject
 
-/** Parses detection sidecar JSON files produced for offline panoramic videos. */
 /*JSON example (coordinates are in pixels):
 {
   "video": {
@@ -39,29 +38,32 @@ import org.json.JSONException
       "time_sec": 6.6066
     },
  */
-class VideoDetectionSidecarParser {
 
+/** Parses detection sidecar JSON files produced for offline panoramic videos. */
+class VideoDetectionSidecarParser {
     fun parse(json: String): VideoDetectionSidecar {
         val trimmed = json.trim()
         require(trimmed.isNotEmpty()) { "Detection JSON is empty" }
 
-        val framesArray = when (trimmed.first()) {
-            '[' -> JSONArray(trimmed)
-            '{' -> parseObjectRootOrObjectSequence(trimmed)
-            else -> error("Detection JSON must start with '[' or '{'")
-        }
-
-        val frames = buildList {
-            for (index in 0 until framesArray.length()) {
-                add(parseFrame(framesArray.getJSONObject(index)))
+        val framesArray =
+            when (trimmed.first()) {
+                '[' -> JSONArray(trimmed)
+                '{' -> parseObjectRootOrObjectSequence(trimmed)
+                else -> error("Detection JSON must start with '[' or '{'")
             }
-        }.sortedWith(compareBy<VideoDetectionFrame> { it.timeSec }.thenBy { it.frameIdx })
+
+        val frames =
+            buildList {
+                for (index in 0 until framesArray.length()) {
+                    add(parseFrame(framesArray.getJSONObject(index)))
+                }
+            }.sortedWith(compareBy<VideoDetectionFrame> { it.timeSec }.thenBy { it.frameIdx })
 
         return VideoDetectionSidecar(frames)
     }
 
-    private fun parseObjectRootOrObjectSequence(json: String): JSONArray {
-        return try {
+    private fun parseObjectRootOrObjectSequence(json: String): JSONArray =
+        try {
             val root = JSONObject(json)
             when {
                 root.has("frame_idx") -> JSONArray().put(root)
@@ -72,7 +74,6 @@ class VideoDetectionSidecarParser {
             // the enclosing '[' and ']' omitted. Accept that shape as a convenience for sidecars.
             JSONArray("[${json.trim().trimEnd(',')}]")
         }
-    }
 
     private fun findFramesArray(root: JSONObject): JSONArray {
         val supportedKeys = listOf("frames", "detections", "data")
@@ -83,27 +84,27 @@ class VideoDetectionSidecarParser {
 
     private fun parseFrame(frameJson: JSONObject): VideoDetectionFrame {
         val objectsJson = frameJson.optJSONArray("objects") ?: JSONArray()
-        val objects = buildList {
-            for (index in 0 until objectsJson.length()) {
-                add(parseObject(objectsJson.getJSONObject(index)))
+        val objects =
+            buildList {
+                for (index in 0 until objectsJson.length()) {
+                    add(parseObject(objectsJson.getJSONObject(index)))
+                }
             }
-        }
 
         return VideoDetectionFrame(
             frameIdx = frameJson.getInt("frame_idx"),
             timeSec = frameJson.getDouble("time_sec"),
-            objects = objects
+            objects = objects,
         )
     }
 
-    private fun parseObject(objectJson: JSONObject): VideoDetectedObject {
-        return VideoDetectedObject(
+    private fun parseObject(objectJson: JSONObject): VideoDetectedObject =
+        VideoDetectedObject(
             trackId = objectJson.getInt("track_id"),
             bboxXyxy = objectJson.getJSONArray("bbox_xyxy").toBboxXyxy(),
             centerXy = objectJson.getJSONArray("center_xy").toPoint2d(),
-            centerNorm = objectJson.getJSONArray("center_norm").toPoint2d()
+            centerNorm = objectJson.getJSONArray("center_norm").toPoint2d(),
         )
-    }
 
     private fun JSONArray.toBboxXyxy(): BboxXyxy {
         require(length() == 4) { "bbox_xyxy must contain four numbers" }
@@ -111,7 +112,7 @@ class VideoDetectionSidecarParser {
             left = getDouble(0),
             top = getDouble(1),
             right = getDouble(2),
-            bottom = getDouble(3)
+            bottom = getDouble(3),
         )
     }
 
@@ -119,7 +120,7 @@ class VideoDetectionSidecarParser {
         require(length() == 2) { "point array must contain two numbers" }
         return Point2d(
             x = getDouble(0),
-            y = getDouble(1)
+            y = getDouble(1),
         )
     }
 }

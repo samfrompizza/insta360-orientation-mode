@@ -11,7 +11,9 @@ import java.io.IOException
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
-class ZipUtils(private val context: Context) {
+class ZipUtils(
+    private val context: Context,
+) {
     /**
      * 将多个指定文件夹打包成 ZIP 文件
      *
@@ -23,7 +25,7 @@ class ZipUtils(private val context: Context) {
     fun zipSelectedFolders(
         sourceDirs: List<File>?,
         zipFilePath: String?,
-        includeRoot: Boolean
+        includeRoot: Boolean,
     ): Boolean {
         if (sourceDirs.isNullOrEmpty()) {
             Log.e(TAG, "源文件夹列表为空")
@@ -60,14 +62,20 @@ class ZipUtils(private val context: Context) {
      * 递归将文件夹添加到 ZIP
      */
     @Throws(IOException::class)
-    private fun addFolderToZip(folder: File, zos: ZipOutputStream, parentPath: String) {
+    private fun addFolderToZip(
+        folder: File,
+        zos: ZipOutputStream,
+        parentPath: String,
+    ) {
         val entries = folder.listFiles() ?: return
 
         for (entry in entries) {
-            val zipEntryPath = if (parentPath.isEmpty())
-                entry.name
-            else
-                parentPath + "/" + entry.name
+            val zipEntryPath =
+                if (parentPath.isEmpty()) {
+                    entry.name
+                } else {
+                    parentPath + "/" + entry.name
+                }
 
             if (entry.isDirectory) {
                 // 添加目录（需要以斜杠结尾）

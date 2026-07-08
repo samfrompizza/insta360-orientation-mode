@@ -20,8 +20,12 @@ import kotlin.math.sqrt
  * With this convention, positive yaw turns the gaze to the right, and positive pitch looks up.
  */
 object EquirectangularProjection {
-
-    fun fromPixel(x: Double, y: Double, width: Int, height: Int): PanoramaDirection {
+    fun fromPixel(
+        x: Double,
+        y: Double,
+        width: Int,
+        height: Int,
+    ): PanoramaDirection {
         require(width > 0) { "width must be positive" }
         require(height > 0) { "height must be positive" }
         require(x in 0.0..width.toDouble()) { "x must be in [0, width]" }
@@ -30,7 +34,10 @@ object EquirectangularProjection {
         return fromNormalized(x / width.toDouble(), y / height.toDouble())
     }
 
-    fun fromNormalized(x: Double, y: Double): PanoramaDirection {
+    fun fromNormalized(
+        x: Double,
+        y: Double,
+    ): PanoramaDirection {
         require(x in 0.0..1.0) { "normalized x must be in [0, 1]" }
         require(y in 0.0..1.0) { "normalized y must be in [0, 1]" }
 
@@ -39,7 +46,10 @@ object EquirectangularProjection {
         return fromYawPitch(yawRad, pitchRad)
     }
 
-    fun fromYawPitch(yawRad: Double, pitchRad: Double): PanoramaDirection {
+    fun fromYawPitch(
+        yawRad: Double,
+        pitchRad: Double,
+    ): PanoramaDirection {
         require(yawRad.isFinite()) { "yawRad must be finite" }
         require(pitchRad.isFinite()) { "pitchRad must be finite" }
         require(pitchRad in -HALF_TURN_RAD..HALF_TURN_RAD) { "pitchRad must be in [-PI/2, PI/2]" }
@@ -49,7 +59,7 @@ object EquirectangularProjection {
             yawRad = yawRad,
             pitchRad = pitchRad,
             unitVector = unitVector,
-            orientation = UnitQuaternion.fromYawPitch(yawRad, pitchRad)
+            orientation = UnitQuaternion.fromYawPitch(yawRad, pitchRad),
         )
     }
 
@@ -66,7 +76,7 @@ data class PanoramaDirection(
      * coordinate system. Applying this quaternion to the forward vector (1, 0, 0) yields
      * [unitVector]. Components are stored as Android/common math friendly x, y, z, w.
      */
-    val orientation: UnitQuaternion
+    val orientation: UnitQuaternion,
 ) {
     val yawDeg: Double = Math.toDegrees(yawRad)
     val pitchDeg: Double = Math.toDegrees(pitchRad)
@@ -75,19 +85,22 @@ data class PanoramaDirection(
 data class UnitVector3(
     val x: Double,
     val y: Double,
-    val z: Double
+    val z: Double,
 ) {
     init {
         require(x.isFinite() && y.isFinite() && z.isFinite()) { "vector components must be finite" }
     }
 
     companion object {
-        fun fromYawPitch(yawRad: Double, pitchRad: Double): UnitVector3 {
+        fun fromYawPitch(
+            yawRad: Double,
+            pitchRad: Double,
+        ): UnitVector3 {
             val cosPitch = cos(pitchRad)
             return UnitVector3(
                 x = cosPitch * cos(yawRad),
                 y = cosPitch * sin(yawRad),
-                z = sin(pitchRad)
+                z = sin(pitchRad),
             ).normalized()
         }
     }
@@ -103,7 +116,7 @@ data class UnitQuaternion(
     val x: Double,
     val y: Double,
     val z: Double,
-    val w: Double
+    val w: Double,
 ) {
     init {
         require(x.isFinite() && y.isFinite() && z.isFinite() && w.isFinite()) {
@@ -118,30 +131,39 @@ data class UnitQuaternion(
          * Builds orientation as yaw around +Z followed by pitch around local -Y.
          * This maps the forward vector (+X) to the same direction as [UnitVector3.fromYawPitch].
          */
-        fun fromYawPitch(yawRad: Double, pitchRad: Double): UnitQuaternion {
+        fun fromYawPitch(
+            yawRad: Double,
+            pitchRad: Double,
+        ): UnitQuaternion {
             val yaw = fromAxisAngle(axisX = 0.0, axisY = 0.0, axisZ = 1.0, angleRad = yawRad)
             val pitch = fromAxisAngle(axisX = 0.0, axisY = -1.0, axisZ = 0.0, angleRad = pitchRad)
             return (yaw * pitch).normalized()
         }
 
-        private fun fromAxisAngle(axisX: Double, axisY: Double, axisZ: Double, angleRad: Double): UnitQuaternion {
+        private fun fromAxisAngle(
+            axisX: Double,
+            axisY: Double,
+            axisZ: Double,
+            angleRad: Double,
+        ): UnitQuaternion {
             val halfAngle = angleRad / 2.0
             val sinHalf = sin(halfAngle)
             return UnitQuaternion(
                 x = axisX * sinHalf,
                 y = axisY * sinHalf,
                 z = axisZ * sinHalf,
-                w = cos(halfAngle)
+                w = cos(halfAngle),
             ).normalized()
         }
     }
 
-    operator fun times(other: UnitQuaternion): UnitQuaternion = UnitQuaternion(
-        w = w * other.w - x * other.x - y * other.y - z * other.z,
-        x = w * other.x + x * other.w + y * other.z - z * other.y,
-        y = w * other.y - x * other.z + y * other.w + z * other.x,
-        z = w * other.z + x * other.y - y * other.x + z * other.w
-    )
+    operator fun times(other: UnitQuaternion): UnitQuaternion =
+        UnitQuaternion(
+            w = w * other.w - x * other.x - y * other.y - z * other.z,
+            x = w * other.x + x * other.w + y * other.z - z * other.y,
+            y = w * other.y - x * other.z + y * other.w + z * other.x,
+            z = w * other.z + x * other.y - y * other.x + z * other.w,
+        )
 
     fun rotate(vector: UnitVector3): UnitVector3 {
         val vectorQuaternion = UnitQuaternion(vector.x, vector.y, vector.z, 0.0)

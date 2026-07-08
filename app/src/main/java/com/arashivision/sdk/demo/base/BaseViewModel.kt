@@ -3,7 +3,6 @@ package com.arashivision.sdk.demo.base
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.arashivision.sdk.demo.ext.instaCameraManager
-import com.arashivision.sdkcamera.camera.InstaCameraManager
 import com.arashivision.sdkcamera.camera.callback.ICameraChangedCallback
 import com.arashivision.sdkcamera.camera.model.TemperatureLevel
 import kotlinx.coroutines.cancel
@@ -12,8 +11,9 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 
-open class BaseViewModel : ViewModel(), ICameraChangedCallback {
-
+open class BaseViewModel :
+    ViewModel(),
+    ICameraChangedCallback {
     private val _event = MutableSharedFlow<BaseEvent>()
     val event: SharedFlow<BaseEvent> = _event.asSharedFlow()
 
@@ -34,19 +34,24 @@ open class BaseViewModel : ViewModel(), ICameraChangedCallback {
     }
 
     override fun onCameraSDCardStateChanged(enabled: Boolean) {
-        emitEvent(BaseEvent.CameraSDCardStateChangedEvent(enabled));
+        emitEvent(BaseEvent.CameraSDCardStateChangedEvent(enabled))
     }
 
     override fun onCameraBatteryLow() {
         emitEvent(BaseEvent.CameraBatteryLowEvent)
     }
 
-    override fun onCameraBatteryUpdate(batteryLevel: Int, isCharging: Boolean) {
-        emitEvent(BaseEvent.CameraBatteryUpdateEvent(batteryLevel, isCharging));
+    override fun onCameraBatteryUpdate(
+        batteryLevel: Int,
+        isCharging: Boolean,
+    ) {
+        emitEvent(BaseEvent.CameraBatteryUpdateEvent(batteryLevel, isCharging))
     }
 
-
-    override fun onCameraStorageChanged(freeSpace: Long, totalSpace: Long) {
+    override fun onCameraStorageChanged(
+        freeSpace: Long,
+        totalSpace: Long,
+    ) {
         emitEvent(BaseEvent.CameraStorageChangedEvent(freeSpace, totalSpace))
     }
 
@@ -54,8 +59,10 @@ open class BaseViewModel : ViewModel(), ICameraChangedCallback {
         super.onCameraTemperatureChanged(tempLevel)
     }
 
-
-    override fun onCameraStatusChanged(enabled: Boolean, connectType: Int) {
-        emitEvent(BaseEvent.CameraStatusChangedEvent(enabled,connectType))
+    override fun onCameraStatusChanged(
+        enabled: Boolean,
+        connectType: Int,
+    ) {
+        emitEvent(BaseEvent.CameraStatusChangedEvent(enabled, connectType))
     }
 }

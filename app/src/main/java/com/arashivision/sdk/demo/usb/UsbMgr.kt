@@ -18,36 +18,40 @@ object UsbMgr {
 
     private var context: Context? = null
 
-    private val usbReceiver: BroadcastReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) {
-            val action = intent.action
-            if (UsbManager.ACTION_USB_DEVICE_ATTACHED == action) {
-                // 设备插入（未获得权限时触发）
-                println("设备插入")
-                val device = intent.getParcelableExtra<UsbDevice>(UsbManager.EXTRA_DEVICE)
-                if (device != null) {
-                    requestUsbPermission(device)
-                }
-            } else if (UsbManager.ACTION_USB_DEVICE_DETACHED == action) {
-                val device = intent.getParcelableExtra<UsbDevice>(UsbManager.EXTRA_DEVICE)
-                if (device != null) {
-                    println("设备拔出")
-                }
-            } else if (ACTION_USB_PERMISSION == action) {
-                synchronized(this) {
+    private val usbReceiver: BroadcastReceiver =
+        object : BroadcastReceiver() {
+            override fun onReceive(
+                context: Context,
+                intent: Intent,
+            ) {
+                val action = intent.action
+                if (UsbManager.ACTION_USB_DEVICE_ATTACHED == action) {
+                    // 设备插入（未获得权限时触发）
+                    println("设备插入")
                     val device = intent.getParcelableExtra<UsbDevice>(UsbManager.EXTRA_DEVICE)
-                    if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
-                        if (device != null) {
-                            // 已获得权限，处理设备
-                            handleUsbDevice(device)
+                    if (device != null) {
+                        requestUsbPermission(device)
+                    }
+                } else if (UsbManager.ACTION_USB_DEVICE_DETACHED == action) {
+                    val device = intent.getParcelableExtra<UsbDevice>(UsbManager.EXTRA_DEVICE)
+                    if (device != null) {
+                        println("设备拔出")
+                    }
+                } else if (ACTION_USB_PERMISSION == action) {
+                    synchronized(this) {
+                        val device = intent.getParcelableExtra<UsbDevice>(UsbManager.EXTRA_DEVICE)
+                        if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
+                            if (device != null) {
+                                // 已获得权限，处理设备
+                                handleUsbDevice(device)
+                            }
+                        } else {
+                            println("USB 权限被拒绝")
                         }
-                    } else {
-                        println("USB 权限被拒绝")
                     }
                 }
             }
         }
-    }
 
     fun init(context: Context) {
         this.context = context
@@ -61,7 +65,7 @@ object UsbMgr {
             context,
             usbReceiver,
             filter,
-            ContextCompat.RECEIVER_NOT_EXPORTED
+            ContextCompat.RECEIVER_NOT_EXPORTED,
         )
 
         checkConnectedUsbDevices()
@@ -88,10 +92,13 @@ object UsbMgr {
             handleUsbDevice(device)
         } else {
             // 创建 PendingIntent 用于接收权限响应
-            val permissionIntent = PendingIntent.getBroadcast(
-                context, 0, Intent(ACTION_USB_PERMISSION),
-                PendingIntent.FLAG_IMMUTABLE
-            )
+            val permissionIntent =
+                PendingIntent.getBroadcast(
+                    context,
+                    0,
+                    Intent(ACTION_USB_PERMISSION),
+                    PendingIntent.FLAG_IMMUTABLE,
+                )
             usbManager!!.requestPermission(device, permissionIntent)
         }
     }
@@ -107,5 +114,4 @@ object UsbMgr {
         // 这里可以添加与 USB 设备通信的逻辑
         // 例如：使用 UsbDeviceConnection 和 UsbInterface 进行数据传输
     }
-
 }

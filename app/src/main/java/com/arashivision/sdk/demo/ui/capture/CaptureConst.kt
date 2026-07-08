@@ -35,23 +35,24 @@ import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
 import java.util.Locale
 
-val stepToLoadingTextMap = mapOf(
-    CHECK_SENSOR to R.string.capture_init_check_camera_sensor_mode,
-    INIT_SUPPORT_CONFIG to R.string.capture_init_init_support_config,
-    FETCH_CAMERA_OPTIONS to R.string.capture_init_fetch_camera_options,
-    OPEN_PREVIEW_STREAM to R.string.capture_opening_preview_stream
-)
+val stepToLoadingTextMap =
+    mapOf(
+        CHECK_SENSOR to R.string.capture_init_check_camera_sensor_mode,
+        INIT_SUPPORT_CONFIG to R.string.capture_init_init_support_config,
+        FETCH_CAMERA_OPTIONS to R.string.capture_init_fetch_camera_options,
+        OPEN_PREVIEW_STREAM to R.string.capture_opening_preview_stream,
+    )
 
-val stepToErrorTextMap = mapOf(
-    CHECK_SENSOR to R.string.capture_init_switch_camera_sensor_mode_failed,
-    INIT_SUPPORT_CONFIG to R.string.capture_init_init_support_config_failed,
-    FETCH_CAMERA_OPTIONS to R.string.capture_init_fetch_camera_options_failed,
-    OPEN_PREVIEW_STREAM to R.string.capture_opening_preview_stream_failed
-)
+val stepToErrorTextMap =
+    mapOf(
+        CHECK_SENSOR to R.string.capture_init_switch_camera_sensor_mode_failed,
+        INIT_SUPPORT_CONFIG to R.string.capture_init_init_support_config_failed,
+        FETCH_CAMERA_OPTIONS to R.string.capture_init_fetch_camera_options_failed,
+        OPEN_PREVIEW_STREAM to R.string.capture_opening_preview_stream_failed,
+    )
 
-
-fun getCaptureModeTextResId(captureMode: CaptureMode): Int? {
-    return when (captureMode) {
+fun getCaptureModeTextResId(captureMode: CaptureMode): Int? =
+    when (captureMode) {
         CaptureMode.CAPTURE_NORMAL -> R.string.capture_mode_normal_capture
         CaptureMode.HDR_CAPTURE -> R.string.capture_mode_hdr_capture
         CaptureMode.NIGHT_SCENE -> R.string.capture_mode_night_scene
@@ -72,11 +73,9 @@ fun getCaptureModeTextResId(captureMode: CaptureMode): Int? {
         CaptureMode.PURE_RECORD -> R.string.capture_mode_pure_record
         CaptureMode.VIDEO_NONE, CaptureMode.PHOTO_NONE -> null
     }
-}
 
-
-fun getCaptureSettingNameResId(captureSetting: CaptureSetting): Int {
-    return when (captureSetting) {
+fun getCaptureSettingNameResId(captureSetting: CaptureSetting): Int =
+    when (captureSetting) {
         CaptureSetting.EXPOSURE -> R.string.capture_setting_exposure_name
         CaptureSetting.EV -> R.string.capture_setting_ev_name
         CaptureSetting.EV_INTERVAL -> R.string.capture_setting_ev_interval_name
@@ -101,23 +100,22 @@ fun getCaptureSettingNameResId(captureSetting: CaptureSetting): Int {
         CaptureSetting.LIVE_BITRATE -> R.string.capture_setting_live_bitrate
         CaptureSetting.I_LOG -> R.string.capture_setting_i_log
     }
-}
-
 
 fun getCaptureSettingValueName(
     context: Context,
     captureSetting: CaptureSetting,
-    value: Any
-): String {
-    return when (captureSetting) {
-        CaptureSetting.EXPOSURE -> when (value as Exposure) {
-            Exposure.AUTO -> context.getString(R.string.exposure_auto)
-            Exposure.FULL_AUTO -> context.getString(R.string.exposure_full_auto)
-            Exposure.ISO_FIRST -> context.getString(R.string.exposure_iso)
-            Exposure.SHUTTER_FIRST -> context.getString(R.string.exposure_shutter)
-            Exposure.MANUAL -> context.getString(R.string.exposure_manual)
-            Exposure.ADAPTIVE -> context.getString(R.string.exposure_isolated)
-        }
+    value: Any,
+): String =
+    when (captureSetting) {
+        CaptureSetting.EXPOSURE ->
+            when (value as Exposure) {
+                Exposure.AUTO -> context.getString(R.string.exposure_auto)
+                Exposure.FULL_AUTO -> context.getString(R.string.exposure_full_auto)
+                Exposure.ISO_FIRST -> context.getString(R.string.exposure_iso)
+                Exposure.SHUTTER_FIRST -> context.getString(R.string.exposure_shutter)
+                Exposure.MANUAL -> context.getString(R.string.exposure_manual)
+                Exposure.ADAPTIVE -> context.getString(R.string.exposure_isolated)
+            }
 
         CaptureSetting.EV -> {
             val ev = value as EV
@@ -134,7 +132,11 @@ fun getCaptureSettingValueName(
             if (shutter == Shutter.SHUTTER_AUTO) {
                 context.getString(R.string.auto)
             } else {
-                val split: Array<String> = shutter.name.split("_".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+                val split: Array<String> =
+                    shutter.name
+                        .split("_".toRegex())
+                        .dropLastWhile { it.isEmpty() }
+                        .toTypedArray()
                 when (split.size) {
                     2 -> split[1]
                     3 -> split[1] + "/" + split[2]
@@ -153,7 +155,7 @@ fun getCaptureSettingValueName(
         }
 
         CaptureSetting.ISO -> {
-            if(value == ISO.ISO_AUTO){
+            if (value == ISO.ISO_AUTO) {
                 context.getString(R.string.auto)
             } else {
                 (value as ISO).nativeValue.toString()
@@ -262,7 +264,7 @@ fun getCaptureSettingValueName(
             context.getString(
                 R.string.capture_setting_burst_capture_text,
                 burstCapture.num,
-                burstCapture.time
+                burstCapture.time,
             )
         }
 
@@ -304,4 +306,3 @@ fun getCaptureSettingValueName(
             }
         }
     }
-}

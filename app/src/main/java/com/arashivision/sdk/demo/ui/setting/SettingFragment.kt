@@ -15,8 +15,10 @@ import com.arashivision.sdk.demo.util.ShareUtils.shareFile
 import com.arashivision.sdkcamera.log.LogManager
 
 class SettingFragment : BasePreferenceFragment<SettingViewModel>() {
-
-    override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
+    override fun onCreatePreferences(
+        savedInstanceState: Bundle?,
+        rootKey: String?,
+    ) {
         setPreferencesFromResource(R.xml.preferences_setting, rootKey)
 
         initStabCacheFrameNum()
@@ -25,7 +27,6 @@ class SettingFragment : BasePreferenceFragment<SettingViewModel>() {
         initLiveRtmp()
         initLiveBindMobileNetwork()
     }
-
 
     private fun initLiveRtmp() {
         val key = getString(R.string.pref_live_rtmp)
@@ -74,7 +75,6 @@ class SettingFragment : BasePreferenceFragment<SettingViewModel>() {
         }
     }
 
-
     private fun initExportLogs() {
         val key = getString(R.string.pref_export_log)
         val preference = findPreference<Preference>(key)
@@ -83,7 +83,6 @@ class SettingFragment : BasePreferenceFragment<SettingViewModel>() {
             true
         }
     }
-
 
     override fun onEvent(event: BaseEvent?) {
         super.onEvent(event)
@@ -111,5 +110,4 @@ class SettingFragment : BasePreferenceFragment<SettingViewModel>() {
             }
         }
     }
-
 }

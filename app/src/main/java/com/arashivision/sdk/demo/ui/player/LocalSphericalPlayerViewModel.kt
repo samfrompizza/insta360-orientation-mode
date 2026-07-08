@@ -2,12 +2,11 @@ package com.arashivision.sdk.demo.ui.player
 
 import android.net.Uri
 import com.arashivision.sdk.demo.base.BaseViewModel
+import com.arashivision.sdk.demo.ui.player.detection.VideoDetectedObject
 import com.arashivision.sdk.demo.ui.player.detection.VideoDetectionFrame
 import com.arashivision.sdk.demo.ui.player.detection.VideoDetectionTimeline
-import com.arashivision.sdk.demo.ui.player.detection.VideoDetectedObject
 
 class LocalSphericalPlayerViewModel : BaseViewModel() {
-
     var currentVideoUri: Uri? = null
         private set
 
@@ -23,16 +22,17 @@ class LocalSphericalPlayerViewModel : BaseViewModel() {
         currentVideoUri = uri
     }
 
-    fun onJsonSelected(uri: Uri, timeline: VideoDetectionTimeline) {
+    fun onJsonSelected(
+        uri: Uri,
+        timeline: VideoDetectionTimeline,
+    ) {
         currentJsonUri = uri
         detectionTimeline = timeline
     }
 
-    fun currentDetectionFrame(positionMs: Long): VideoDetectionFrame? =
-        detectionTimeline?.frameAt(positionMs)
+    fun currentDetectionFrame(positionMs: Long): VideoDetectionFrame? = detectionTimeline?.frameAt(positionMs)
 
-    fun currentDetections(positionMs: Long): List<VideoDetectedObject> =
-        detectionTimeline?.detectionsAt(positionMs).orEmpty()
+    fun currentDetections(positionMs: Long): List<VideoDetectedObject> = detectionTimeline?.detectionsAt(positionMs).orEmpty()
 
     fun loadedDetectionFrameCount(): Int = detectionTimeline?.frameCount ?: 0
 

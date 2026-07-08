@@ -21,9 +21,9 @@ import com.arashivision.sdk.demo.base.BaseActivity
 import com.arashivision.sdk.demo.base.BaseEvent
 import com.arashivision.sdk.demo.databinding.ActivityLocalSphericalPlayerBinding
 import com.arashivision.sdk.demo.ui.capture.GyroOrientationController
+import com.arashivision.sdk.demo.ui.player.detection.VideoDetectedObject
 import com.arashivision.sdk.demo.ui.player.detection.VideoDetectionSidecarParser
 import com.arashivision.sdk.demo.ui.player.detection.VideoDetectionTimeline
-import com.arashivision.sdk.demo.ui.player.detection.VideoDetectedObject
 import com.arashivision.sdk.demo.ui.player.panorama.EquirectangularProjection
 import com.arashivision.sdk.demo.ui.player.panorama.PanoramaDirection
 import com.arashivision.sdk.demo.ui.player.panorama.PanoramaFovMath
@@ -35,9 +35,7 @@ import kotlinx.coroutines.withContext
 
 @UnstableApi
 @OptIn(UnstableApi::class)
-class LocalSphericalPlayerActivity :
-    BaseActivity<ActivityLocalSphericalPlayerBinding, LocalSphericalPlayerViewModel>() {
-
+class LocalSphericalPlayerActivity : BaseActivity<ActivityLocalSphericalPlayerBinding, LocalSphericalPlayerViewModel>() {
     private val logger = XLog.tag(LocalSphericalPlayerActivity::class.java.simpleName).build()
 
     private var player: ExoPlayer? = null
@@ -48,12 +46,13 @@ class LocalSphericalPlayerActivity :
     private val uiHandler = Handler(Looper.getMainLooper())
     private val detectionParser = VideoDetectionSidecarParser()
     private var currentGazeDirection: PanoramaDirection = EquirectangularProjection.fromYawPitch(0.0, 0.0)
-    private val detectionUpdateRunnable = object : Runnable {
-        override fun run() {
-            updateCurrentDetections()
-            uiHandler.postDelayed(this, DETECTION_UPDATE_INTERVAL_MS)
+    private val detectionUpdateRunnable =
+        object : Runnable {
+            override fun run() {
+                updateCurrentDetections()
+                uiHandler.postDelayed(this, DETECTION_UPDATE_INTERVAL_MS)
+            }
         }
-    }
 
     private val pickVideoLauncher =
         registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
@@ -82,18 +81,20 @@ class LocalSphericalPlayerActivity :
         // Our GyroOrientationController is used only for gaze tracking (arrow direction).
         binding.sphericalView.setUseSensorRotation(true)
 
-        gyroController = GyroOrientationController(
-            context = this,
-            getDisplayRotation = { display?.rotation ?: Surface.ROTATION_0 },
-            applyOrientation = { _, _ -> tryApplyOrientation() }
-        )
+        gyroController =
+            GyroOrientationController(
+                context = this,
+                getDisplayRotation = { display?.rotation ?: Surface.ROTATION_0 },
+                applyOrientation = { _, _ -> tryApplyOrientation() },
+            )
 
-        vrManager = LocalVrManager(
-            activity = this,
-            sourceView = binding.sphericalView,
-            leftEyeImage = binding.vrLeftEye,
-            overlaysToHide = listOf(binding.btnPlayPause, binding.ivCaptureSetting, binding.btnCalibrate)
-        )
+        vrManager =
+            LocalVrManager(
+                activity = this,
+                sourceView = binding.sphericalView,
+                leftEyeImage = binding.vrLeftEye,
+                overlaysToHide = listOf(binding.btnPlayPause, binding.ivCaptureSetting, binding.btnCalibrate),
+            )
         vrManager.onVrModeChanged = { isVrMode ->
             binding.directionArrowOverlay.setVrMode(isVrMode)
         }
@@ -135,15 +136,16 @@ class LocalSphericalPlayerActivity :
     override fun onStart() {
         super.onStart()
         if (player == null) {
-            player = ExoPlayer.Builder(this).build().also { exo ->
-                exo.repeatMode = Player.REPEAT_MODE_ALL
-                exo.setVideoSurfaceView(binding.sphericalView)
-                viewModel.currentVideoUri?.let { uri ->
-                    exo.setMediaItem(MediaItem.fromUri(uri))
-                    exo.prepare()
-                    exo.playWhenReady = true
+            player =
+                ExoPlayer.Builder(this).build().also { exo ->
+                    exo.repeatMode = Player.REPEAT_MODE_ALL
+                    exo.setVideoSurfaceView(binding.sphericalView)
+                    viewModel.currentVideoUri?.let { uri ->
+                        exo.setMediaItem(MediaItem.fromUri(uri))
+                        exo.prepare()
+                        exo.playWhenReady = true
+                    }
                 }
-            }
         }
     }
 
@@ -186,18 +188,20 @@ class LocalSphericalPlayerActivity :
     }
 
     private fun showPlaybackSettings() {
-        val actions = mutableListOf(
-            getString(R.string.pick_local_video),
-            getString(R.string.add_detection_json),
-            if (player?.isPlaying == true) getString(R.string.pause) else getString(R.string.play),
-            if (viewModel.sensorRotationEnabled) getString(R.string.disable_gyro_control) else getString(R.string.enable_gyro_control),
-            getString(R.string.recenter_view)
-        )
+        val actions =
+            mutableListOf(
+                getString(R.string.pick_local_video),
+                getString(R.string.add_detection_json),
+                if (player?.isPlaying == true) getString(R.string.pause) else getString(R.string.play),
+                if (viewModel.sensorRotationEnabled) getString(R.string.disable_gyro_control) else getString(R.string.enable_gyro_control),
+                getString(R.string.recenter_view),
+            )
         if (vrManager.isVrMode) {
             actions.add("VR: Adjust eyes")
         }
 
-        AlertDialog.Builder(this)
+        AlertDialog
+            .Builder(this)
             .setTitle(R.string.capture_settings)
             .setItems(actions.toTypedArray()) { _, which ->
                 when (actions[which]) {
@@ -219,30 +223,32 @@ class LocalSphericalPlayerActivity :
                     }
                     "VR: Adjust eyes" -> vrManager.showVrSettingsDialog()
                 }
-            }
-            .show()
+            }.show()
     }
 
     private fun loadDetectionJson(uri: Uri) {
         lifecycleScope.launch {
-            val result = runCatching {
-                withContext(Dispatchers.IO) {
-                    val json = contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
-                        ?: error("Unable to open JSON file")
-                    VideoDetectionTimeline(detectionParser.parse(json))
+            val result =
+                runCatching {
+                    withContext(Dispatchers.IO) {
+                        val json =
+                            contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
+                                ?: error("Unable to open JSON file")
+                        VideoDetectionTimeline(detectionParser.parse(json))
+                    }
                 }
-            }
 
-            result.onSuccess { timeline ->
-                viewModel.onJsonSelected(uri, timeline)
-                // TODO: restore when text overlay is needed
-                // binding.tvSelectedJson.text = uri.toString()
-                toast(getString(R.string.detection_json_loaded, timeline.frameCount))
-                updateCurrentDetections()
-            }.onFailure { error ->
-                logger.e("Detection JSON load failed: ${error.message}")
-                toast(getString(R.string.detection_json_load_failed, error.message ?: "unknown"), true)
-            }
+            result
+                .onSuccess { timeline ->
+                    viewModel.onJsonSelected(uri, timeline)
+                    // TODO: restore when text overlay is needed
+                    // binding.tvSelectedJson.text = uri.toString()
+                    toast(getString(R.string.detection_json_loaded, timeline.frameCount))
+                    updateCurrentDetections()
+                }.onFailure { error ->
+                    logger.e("Detection JSON load failed: ${error.message}")
+                    toast(getString(R.string.detection_json_load_failed, error.message ?: "unknown"), true)
+                }
         }
     }
 
@@ -278,23 +284,26 @@ class LocalSphericalPlayerActivity :
     }
 
     private fun updateDirectionArrow(detections: List<VideoDetectedObject>) {
-        val firstResult = detections.firstNotNullOfOrNull { detection ->
-            val targetDirection = EquirectangularProjection.fromNormalized(
-                x = detection.centerNorm.x.coerceIn(0.0, 1.0),
-                y = detection.centerNorm.y.coerceIn(0.0, 1.0)
-            )
-            val result = PanoramaFovMath.resolveTargetQuat(
-                gaze = currentGazeDirection,
-                target = targetDirection,
-                horizontalFovRad = HORIZONTAL_FOV_RAD,
-                verticalFovRad = VERTICAL_FOV_RAD
-            )
-            // Log quaternion debug info for the FIRST detection each tick
-            if (detection === detections.first()) {
-                logQuaternionDebug(detection, targetDirection, result)
+        val firstResult =
+            detections.firstNotNullOfOrNull { detection ->
+                val targetDirection =
+                    EquirectangularProjection.fromNormalized(
+                        x = detection.centerNorm.x.coerceIn(0.0, 1.0),
+                        y = detection.centerNorm.y.coerceIn(0.0, 1.0),
+                    )
+                val result =
+                    PanoramaFovMath.resolveTargetQuat(
+                        gaze = currentGazeDirection,
+                        target = targetDirection,
+                        horizontalFovRad = horizontalFovRad,
+                        verticalFovRad = verticalFovRad,
+                    )
+                // Log quaternion debug info for the FIRST detection each tick
+                if (detection === detections.first()) {
+                    logQuaternionDebug(detection, targetDirection, result)
+                }
+                result.takeUnless { it.isInsideFov }
             }
-            result.takeUnless { it.isInsideFov }
-        }
 
         val arrowAngleRad = firstResult?.arrowAngleRad
         if (arrowAngleRad == null) {
@@ -305,10 +314,11 @@ class LocalSphericalPlayerActivity :
     }
 
     private var quatLogCounter = 0
+
     private fun logQuaternionDebug(
         detection: VideoDetectedObject,
         targetDir: PanoramaDirection,
-        result: TargetFovState
+        result: TargetFovState,
     ) {
         // Log every 10th tick (~2 seconds) to avoid log spam
         quatLogCounter++
@@ -323,23 +333,23 @@ class LocalSphericalPlayerActivity :
 
         logger.d(
             "ARROW_DEBUG | " +
-            "trackId=${detection.trackId} " +
-            "centerNorm=(${"%.4f".format(detection.centerNorm.x)},${"%.4f".format(detection.centerNorm.y)}) " +
-            "insideFov=${result.isInsideFov} " +
-            "yawDelta=${"%.1f".format(Math.toDegrees(result.yawDeltaRad))}° " +
-            "pitchDelta=${"%.1f".format(Math.toDegrees(result.pitchDeltaRad))}° " +
-            "arrowAngle=${if (result.arrowAngleRad != null) "%.1f".format(Math.toDegrees(result.arrowAngleRad)) + "°" else "HIDDEN"}"
+                "trackId=${detection.trackId} " +
+                "centerNorm=(${"%.4f".format(detection.centerNorm.x)},${"%.4f".format(detection.centerNorm.y)}) " +
+                "insideFov=${result.isInsideFov} " +
+                "yawDelta=${"%.1f".format(Math.toDegrees(result.yawDeltaRad))}° " +
+                "pitchDelta=${"%.1f".format(Math.toDegrees(result.pitchDeltaRad))}° " +
+                "arrowAngle=${if (result.arrowAngleRad != null) "%.1f".format(Math.toDegrees(result.arrowAngleRad)) + "°" else "HIDDEN"}",
         )
         logger.d(
             "ARROW_QUAT | " +
-            "GAZE yaw=${"%.1f".format(gazeYaw)}° pitch=${"%.1f".format(gazePitch)}° " +
-            "q=(${"%.4f".format(gazeQ.x)},${"%.4f".format(gazeQ.y)},${"%.4f".format(gazeQ.z)},${"%.4f".format(gazeQ.w)})"
+                "GAZE yaw=${"%.1f".format(gazeYaw)}° pitch=${"%.1f".format(gazePitch)}° " +
+                "q=(${"%.4f".format(gazeQ.x)},${"%.4f".format(gazeQ.y)},${"%.4f".format(gazeQ.z)},${"%.4f".format(gazeQ.w)})",
         )
         logger.d(
             "ARROW_QUAT | " +
-            "TARGET yaw=${"%.1f".format(targetYaw)}° pitch=${"%.1f".format(targetPitch)}° " +
-            "q=(${"%.4f".format(targetQ.x)},${"%.4f".format(targetQ.y)},${"%.4f".format(targetQ.z)},${"%.4f".format(targetQ.w)}) " +
-            "FOV h=${"%.0f".format(Math.toDegrees(HORIZONTAL_FOV_RAD))}° v=${"%.0f".format(Math.toDegrees(VERTICAL_FOV_RAD))}°"
+                "TARGET yaw=${"%.1f".format(targetYaw)}° pitch=${"%.1f".format(targetPitch)}° " +
+                "q=(${"%.4f".format(targetQ.x)},${"%.4f".format(targetQ.y)},${"%.4f".format(targetQ.z)},${"%.4f".format(targetQ.w)}) " +
+                "FOV h=${"%.0f".format(Math.toDegrees(horizontalFovRad))}° v=${"%.0f".format(Math.toDegrees(verticalFovRad))}°",
         )
     }
 
@@ -356,10 +366,11 @@ class LocalSphericalPlayerActivity :
         val isLandscape = displayRot == Surface.ROTATION_90 || displayRot == Surface.ROTATION_270
         val eqPitchDeg = if (isLandscape) rawPitch else -rawPitch
 
-        currentGazeDirection = EquirectangularProjection.fromYawPitch(
-            yawRad = Math.toRadians(rawYaw.toDouble()),
-            pitchRad = Math.toRadians(eqPitchDeg.coerceIn(-MAX_PITCH_DEG, MAX_PITCH_DEG).toDouble())
-        )
+        currentGazeDirection =
+            EquirectangularProjection.fromYawPitch(
+                yawRad = Math.toRadians(rawYaw.toDouble()),
+                pitchRad = Math.toRadians(eqPitchDeg.coerceIn(-MAX_PITCH_DEG, MAX_PITCH_DEG).toDouble()),
+            )
     }
 
     companion object {
@@ -372,7 +383,9 @@ class LocalSphericalPlayerActivity :
         // Typical phone screen FOV: 30°–60° horizontal, 20°–50° vertical.
         // VR headset FOV: 80°–110° per eye.
         // Tune these to match your device — if the arrow never disappears, try larger values.
-        @JvmField var HORIZONTAL_FOV_RAD: Double = Math.toRadians(60.0)  // 60° total HFOV → ±30°
-        @JvmField var VERTICAL_FOV_RAD: Double = Math.toRadians(45.0)    // 45° total VFOV → ±22.5°
+        @JvmField var horizontalFovRad: Double = Math.toRadians(60.0)
+
+        // 60° total HFOV → ±30°
+        @JvmField var verticalFovRad: Double = Math.toRadians(45.0) // 45° total VFOV → ±22.5°
     }
 }

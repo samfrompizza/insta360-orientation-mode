@@ -6,9 +6,7 @@ import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
-import android.net.wifi.WifiInfo
 import android.net.wifi.WifiNetworkSpecifier
-import android.text.TextUtils
 import androidx.lifecycle.viewModelScope
 import com.arashivision.insta360.basecamera.camera.CameraType
 import com.arashivision.insta360.basecamera.camera.CameraWifiPrefix
@@ -33,7 +31,6 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 
 class ConnectViewModel : BaseViewModel() {
-
     companion object {
         private const val SYSTEM_WIFI_CONNECT_FAILED = 6051
         private const val SYSTEM_WIFI_BIND_NETWORK_FAILED = 6052
@@ -54,51 +51,55 @@ class ConnectViewModel : BaseViewModel() {
     private var isConnectingUsb = false
 
     val isConnected: Boolean
-        get() = instaCameraManager.cameraConnectedType == InstaCameraManager.CONNECT_TYPE_BLE ||
+        get() =
+            instaCameraManager.cameraConnectedType == InstaCameraManager.CONNECT_TYPE_BLE ||
                 instaCameraManager.cameraConnectedType == InstaCameraManager.CONNECT_TYPE_WIFI ||
                 instaCameraManager.cameraConnectedType == InstaCameraManager.CONNECT_TYPE_USB
 
-
     init {
-        instaCameraManager.setScanBleListener(object : IScanBleListener {
-            override fun onScanStartSuccess() {
-                logger.d("onScanStartSuccess")
-                emitEvent(ConnectEvent.ScanDeviceEvent(EventStatus.START))
-            }
+        instaCameraManager.setScanBleListener(
+            object : IScanBleListener {
+                override fun onScanStartSuccess() {
+                    logger.d("onScanStartSuccess")
+                    emitEvent(ConnectEvent.ScanDeviceEvent(EventStatus.START))
+                }
 
-            override fun onScanStartFail() {
-                logger.d("onScanStartFail")
-                emitEvent(ConnectEvent.ScanDeviceEvent(EventStatus.FAILED))
-            }
+                override fun onScanStartFail() {
+                    logger.d("onScanStartFail")
+                    emitEvent(ConnectEvent.ScanDeviceEvent(EventStatus.FAILED))
+                }
 
-            override fun onScanning(bleDevice: BleDevice) {
-                logger.d("onScanning  -->" + bleDevice.name)
-                emitEvent(ConnectEvent.ScanDeviceEvent(EventStatus.PROGRESS, bleDevice = bleDevice))
-            }
+                override fun onScanning(bleDevice: BleDevice) {
+                    logger.d("onScanning  -->" + bleDevice.name)
+                    emitEvent(ConnectEvent.ScanDeviceEvent(EventStatus.PROGRESS, bleDevice = bleDevice))
+                }
 
-            override fun onScanFinish(list: List<BleDevice>) {
-                logger.d("onScanFinish  -->" + list.size)
-                emitEvent(ConnectEvent.ScanDeviceEvent(EventStatus.SUCCESS, bleDeviceList = list))
-                instaCameraManager.stopBleScan()
-            }
-        })
+                override fun onScanFinish(list: List<BleDevice>) {
+                    logger.d("onScanFinish  -->" + list.size)
+                    emitEvent(ConnectEvent.ScanDeviceEvent(EventStatus.SUCCESS, bleDeviceList = list))
+                    instaCameraManager.stopBleScan()
+                }
+            },
+        )
     }
 
     fun refreshMediaTime() {
         emitEvent(ConnectEvent.RefreshMediaTimeEvent(EventStatus.START))
-        instaCameraManager.fetchCameraOptions(object : ICameraOperateCallback {
-            override fun onSuccessful() {
-                emitEvent(ConnectEvent.RefreshMediaTimeEvent(EventStatus.SUCCESS, instaCameraManager.mediaTime))
-            }
+        instaCameraManager.fetchCameraOptions(
+            object : ICameraOperateCallback {
+                override fun onSuccessful() {
+                    emitEvent(ConnectEvent.RefreshMediaTimeEvent(EventStatus.SUCCESS, instaCameraManager.mediaTime))
+                }
 
-            override fun onFailed() {
-                emitEvent(ConnectEvent.RefreshMediaTimeEvent(EventStatus.FAILED))
-            }
+                override fun onFailed() {
+                    emitEvent(ConnectEvent.RefreshMediaTimeEvent(EventStatus.FAILED))
+                }
 
-            override fun onCameraConnectError() {
-                emitEvent(ConnectEvent.RefreshMediaTimeEvent(EventStatus.FAILED))
-            }
-        })
+                override fun onCameraConnectError() {
+                    emitEvent(ConnectEvent.RefreshMediaTimeEvent(EventStatus.FAILED))
+                }
+            },
+        )
     }
 
     fun connectDeviceByUsb() {
@@ -112,11 +113,19 @@ class ConnectViewModel : BaseViewModel() {
         val cameraWifiPrefix = CameraWifiPrefix.getCameraWifiPrefixByName(connectedWiFiSsid)
         val cameraType: CameraType = cameraWifiPrefix.cameraTypeV2
         if (cameraType == CameraType.UNKNOWN) {
-            emitEvent(ConnectEvent.ConnectDeviceEvent(EventStatus.FAILED, InstaCameraManager.CONNECT_TYPE_WIFI, ERROR_CODE_CAMERA_WIFI_NOT_CONNECTED))
+            emitEvent(
+                ConnectEvent.ConnectDeviceEvent(
+                    EventStatus.FAILED,
+                    InstaCameraManager.CONNECT_TYPE_WIFI,
+                    ERROR_CODE_CAMERA_WIFI_NOT_CONNECTED,
+                ),
+            )
             return
         }
         if (!instaCameraManager.supportCameraType.contains(cameraType)) {
-            emitEvent(ConnectEvent.ConnectDeviceEvent(EventStatus.FAILED, InstaCameraManager.CONNECT_TYPE_WIFI, ERROR_CODE_CAMERA_NOT_SUPPORT))
+            emitEvent(
+                ConnectEvent.ConnectDeviceEvent(EventStatus.FAILED, InstaCameraManager.CONNECT_TYPE_WIFI, ERROR_CODE_CAMERA_NOT_SUPPORT),
+            )
             return
         }
         isConnectingWiFi = true
@@ -127,7 +136,10 @@ class ConnectViewModel : BaseViewModel() {
         instaCameraManager.startBleScan()
     }
 
-    fun connectDeviceByBle(bleDevice: BleDevice, onlyBle: Boolean) {
+    fun connectDeviceByBle(
+        bleDevice: BleDevice,
+        onlyBle: Boolean,
+    ) {
         emitEvent(ConnectEvent.ConnectDeviceEvent(EventStatus.START, InstaCameraManager.CONNECT_TYPE_BLE))
         instaCameraManager.stopBleScan()
         onlyConnectBle = onlyBle
@@ -157,12 +169,17 @@ class ConnectViewModel : BaseViewModel() {
         connectDeviceByWifi(ssid, pwd)
     }
 
-    private fun connectDeviceByWifi(ssid: String, pwd: String) {
+    private fun connectDeviceByWifi(
+        ssid: String,
+        pwd: String,
+    ) {
         emitEvent(ConnectEvent.ConnectDeviceEvent(EventStatus.START, InstaCameraManager.CONNECT_TYPE_WIFI))
         viewModelScope.launch {
             val success = connectSystemWifi(ssid, pwd)
             if (!success) {
-                emitEvent(ConnectEvent.ConnectDeviceEvent(EventStatus.FAILED, InstaCameraManager.CONNECT_TYPE_WIFI, SYSTEM_WIFI_CONNECT_FAILED))
+                emitEvent(
+                    ConnectEvent.ConnectDeviceEvent(EventStatus.FAILED, InstaCameraManager.CONNECT_TYPE_WIFI, SYSTEM_WIFI_CONNECT_FAILED),
+                )
                 return@launch
             }
             val bindResult = bindNetwork()
@@ -170,25 +187,35 @@ class ConnectViewModel : BaseViewModel() {
                 isConnectingWiFi = true
                 instaCameraManager.openCamera(InstaCameraManager.CONNECT_TYPE_WIFI)
             } else {
-                emitEvent(ConnectEvent.ConnectDeviceEvent(EventStatus.FAILED, InstaCameraManager.CONNECT_TYPE_WIFI, SYSTEM_WIFI_BIND_NETWORK_FAILED))
+                emitEvent(
+                    ConnectEvent.ConnectDeviceEvent(
+                        EventStatus.FAILED,
+                        InstaCameraManager.CONNECT_TYPE_WIFI,
+                        SYSTEM_WIFI_BIND_NETWORK_FAILED,
+                    ),
+                )
             }
         }
     }
 
-    private fun bindNetwork(): Boolean = kotlin.runCatching {
-        logger.d("bindNetwork")
-        NetworkManager.cameraNet?.let {
-            val result = connectivityManager.bindProcessToNetwork(it)
-            instaCameraManager.setNetIdToCamera(it.networkHandle)
-            logger.d("wiFiNetwork bind result $result")
-            return@runCatching result
-        } ?: throw IllegalStateException("WiFi network is null")
-    }.onFailure {
-        logger.d("wiFiNetwork bind exception")
-    }.getOrDefault(false)
+    private fun bindNetwork(): Boolean =
+        kotlin
+            .runCatching {
+                logger.d("bindNetwork")
+                NetworkManager.cameraNet?.let {
+                    val result = connectivityManager.bindProcessToNetwork(it)
+                    instaCameraManager.setNetIdToCamera(it.networkHandle)
+                    logger.d("wiFiNetwork bind result $result")
+                    return@runCatching result
+                } ?: throw IllegalStateException("WiFi network is null")
+            }.onFailure {
+                logger.d("wiFiNetwork bind exception")
+            }.getOrDefault(false)
 
-
-    private suspend fun connectSystemWifi(ssid: String, pwd: String): Boolean {
+    private suspend fun connectSystemWifi(
+        ssid: String,
+        pwd: String,
+    ): Boolean {
         logger.d("connectSystemWiFi  ssid=$ssid   password=$pwd")
         if (!wifiManager.isWifiEnabled) {
             logger.d("wifi disable")
@@ -199,38 +226,42 @@ class ConnectViewModel : BaseViewModel() {
             return true
         }
         return suspendCancellableCoroutine {
-            val specifier = WifiNetworkSpecifier.Builder()
-                .setSsid(ssid)
-                .setWpa2Passphrase(pwd)
-                .build()
+            val specifier =
+                WifiNetworkSpecifier
+                    .Builder()
+                    .setSsid(ssid)
+                    .setWpa2Passphrase(pwd)
+                    .build()
 
-            val request = NetworkRequest.Builder()
-                .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
-                .setNetworkSpecifier(specifier)
-                .build()
+            val request =
+                NetworkRequest
+                    .Builder()
+                    .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
+                    .setNetworkSpecifier(specifier)
+                    .build()
 
-            val callback = object : ConnectivityManager.NetworkCallback() {
+            val callback =
+                object : ConnectivityManager.NetworkCallback() {
+                    private var isResumed = false
 
-                private var isResumed = false
+                    override fun onAvailable(network: Network) {
+                        super.onAvailable(network)
+                        logger.d("onAvailable")
+                        if (!isResumed) {
+                            it.resume(true)
+                            isResumed = true
+                        }
+                    }
 
-                override fun onAvailable(network: Network) {
-                    super.onAvailable(network)
-                    logger.d("onAvailable")
-                    if(!isResumed){
-                        it.resume(true)
-                        isResumed = true
+                    override fun onUnavailable() {
+                        super.onUnavailable()
+                        logger.d("onUnavailable")
+                        if (!isResumed) {
+                            it.resume(false)
+                            isResumed = true
+                        }
                     }
                 }
-
-                override fun onUnavailable() {
-                    super.onUnavailable()
-                    logger.d("onUnavailable")
-                    if (!isResumed) {
-                        it.resume(false)
-                        isResumed = true
-                    }
-                }
-            }
             connectivityManager.requestNetwork(request, callback)
         }
     }
@@ -250,14 +281,19 @@ class ConnectViewModel : BaseViewModel() {
     }
 
     @SuppressLint("ImplicitSamInstance")
-    override fun onCameraStatusChanged(enabled: Boolean, connectType: Int) {
+    override fun onCameraStatusChanged(
+        enabled: Boolean,
+        connectType: Int,
+    ) {
         logger.d("onCameraStatusChanged    enabled=$enabled   cameraConnectedType=$connectType")
-        when(connectType){
+        when (connectType) {
             InstaCameraManager.CONNECT_TYPE_BLE -> {
                 if (enabled && connectingBleDevice != null) {
                     emitEvent(ConnectEvent.ConnectDeviceEvent(EventStatus.SUCCESS, InstaCameraManager.CONNECT_TYPE_BLE))
                     connectingBleDevice = null
-                    if (!onlyConnectBle) { connectSystemWifi() }
+                    if (!onlyConnectBle) {
+                        connectSystemWifi()
+                    }
                 } else if (!enabled) {
                     // BLE断连
                     emitEvent(ConnectEvent.CameraDisconnectedEvent)
@@ -291,7 +327,6 @@ class ConnectViewModel : BaseViewModel() {
             isConnectingUsb = false
         }
     }
-
 
     override fun onCleared() {
         instaCameraManager.unregisterCameraChangedCallback(this)

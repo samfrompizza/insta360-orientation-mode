@@ -23,9 +23,7 @@ import com.arashivision.sdkcamera.camera.InstaCameraManager
 import com.elvishew.xlog.Logger
 import com.elvishew.xlog.XLog
 
-
 class ConnectFragment : BaseFragment<FragmentConnectBinding, ConnectViewModel>() {
-
     private val logger: Logger = XLog.tag(ConnectFragment::class.java.simpleName).build()
 
     private var bleDeviceAdapter: BleDeviceAdapter? = null
@@ -123,11 +121,12 @@ class ConnectFragment : BaseFragment<FragmentConnectBinding, ConnectViewModel>()
             // 设备连接事件
             is ConnectEvent.ConnectDeviceEvent -> {
                 when (event.status) {
-                    EventStatus.START -> when (event.connectType) {
-                        InstaCameraManager.CONNECT_TYPE_WIFI -> showLoading(getString(R.string.loading_connecting_wifi))
-                        InstaCameraManager.CONNECT_TYPE_USB -> showLoading(getString(R.string.loading_connecting_usb))
-                        InstaCameraManager.CONNECT_TYPE_BLE -> showLoading(getString(R.string.loading_connecting_ble))
-                    }
+                    EventStatus.START ->
+                        when (event.connectType) {
+                            InstaCameraManager.CONNECT_TYPE_WIFI -> showLoading(getString(R.string.loading_connecting_wifi))
+                            InstaCameraManager.CONNECT_TYPE_USB -> showLoading(getString(R.string.loading_connecting_usb))
+                            InstaCameraManager.CONNECT_TYPE_BLE -> showLoading(getString(R.string.loading_connecting_ble))
+                        }
 
                     EventStatus.SUCCESS -> {
                         if (event.connectType == InstaCameraManager.CONNECT_TYPE_BLE) {
@@ -169,14 +168,15 @@ class ConnectFragment : BaseFragment<FragmentConnectBinding, ConnectViewModel>()
 
                     EventStatus.FAILED -> {
                         hideLoading()
-                        toast(getString(
+                        toast(
+                            getString(
                                 when (event.connectType) {
                                     InstaCameraManager.CONNECT_TYPE_BLE -> R.string.toast_ble_connect_failed
                                     InstaCameraManager.CONNECT_TYPE_USB -> R.string.toast_usb_connect_failed
                                     else -> R.string.toast_wifi_connect_failed
                                 },
-                                event.errorCode
-                            )
+                                event.errorCode,
+                            ),
                         )
                     }
 
@@ -245,7 +245,10 @@ class ConnectFragment : BaseFragment<FragmentConnectBinding, ConnectViewModel>()
     }
 
     @SuppressLint("SetTextI18n")
-    private fun batteryUpdate(batteryLevel: Int, isCharging: Boolean) {
+    private fun batteryUpdate(
+        batteryLevel: Int,
+        isCharging: Boolean,
+    ) {
         binding.tvCameraBatteryLevelValue.text = "$batteryLevel%"
         if (isCharging) {
             binding.tvCameraChargeStatusValue.setText(R.string.text_camera_charging)

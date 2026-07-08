@@ -21,33 +21,38 @@ val screenWidth: Int = screenSize().width
 val screenHeight: Int = screenSize().height
 
 val Float.px
-    get() = TypedValue.applyDimension(
-        TypedValue.COMPLEX_UNIT_DIP,
-        this,
-        Resources.getSystem().displayMetrics
-    )
+    get() =
+        TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_DIP,
+            this,
+            Resources.getSystem().displayMetrics,
+        )
 
 val Float.dp
     get() = dp2px(this)
 
 fun dp2px(dp: Float): Int {
-    //SHARP AQUOS sense4 lite SH-RM15 出现转换完结果为0，防一下异常情况
+    // SHARP AQUOS sense4 lite SH-RM15 出现转换完结果为0，防一下异常情况
     val px = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp, MediaModule.getApplication().resources.displayMetrics)
     return (if (px > 0) px else dp).toInt()
 }
 
 fun px2dp(px: Float): Int {
-    //SHARP AQUOS sense4 lite SH-RM15 出现转换完结果为0，防一下异常情况
-    val scale = MediaModule.getApplication().resources.displayMetrics.density
+    // SHARP AQUOS sense4 lite SH-RM15 出现转换完结果为0，防一下异常情况
+    val scale =
+        MediaModule
+            .getApplication()
+            .resources.displayMetrics.density
     return (if (scale > 0) (px / scale + 0.5f) else px).toInt()
 }
 
 fun sp2px(sp: Float): Int {
-    //SHARP AQUOS sense4 lite SH-RM15 出现转换完结果为0，防一下异常情况
-    val px = TypedValue.applyDimension(
-        TypedValue.COMPLEX_UNIT_SP,
-        sp,
-        MediaModule.getApplication().resources.displayMetrics
-    )
+    // SHARP AQUOS sense4 lite SH-RM15 出现转换完结果为0，防一下异常情况
+    val px =
+        TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_SP,
+            sp,
+            MediaModule.getApplication().resources.displayMetrics,
+        )
     return (if (px > 0) px else sp).toInt()
 }

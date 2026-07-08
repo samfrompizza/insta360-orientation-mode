@@ -10,11 +10,11 @@ import android.view.Surface
 import com.elvishew.xlog.Logger
 import com.elvishew.xlog.XLog
 import kotlin.math.acos
+import kotlin.math.asin
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
-import kotlin.math.asin
 
 /**
  * Контроллер работы с гироскопом на основе кватернионов.
@@ -36,7 +36,7 @@ import kotlin.math.asin
 class GyroOrientationController(
     context: Context,
     private val getDisplayRotation: () -> Int,
-    private val applyOrientation: (yawDeg: Float, pitchDeg: Float) -> Unit
+    private val applyOrientation: (yawDeg: Float, pitchDeg: Float) -> Unit,
 ) : SensorEventListener {
     private val logger: Logger = XLog.tag(GyroOrientationController::class.java.simpleName).build()
     private val sensorManager: SensorManager =
@@ -57,6 +57,7 @@ class GyroOrientationController(
         var invertYaw = false
         var invertPitch = true
     }
+
     private var lastRawYawDeg = 0f
     private var lastRawPitchDeg = 0f
     private var lastRawRollDeg = 0f
@@ -109,7 +110,9 @@ class GyroOrientationController(
         lastEulerPitch = 0f
         lastEulerRoll = 0f
         calibrated = true
-        logger.d("Gyro calibrated: rawYaw=$lastRawYawDeg rawPitch=$lastRawPitchDeg q=(${calibrationQuaternion.w}, ${calibrationQuaternion.x}, ${calibrationQuaternion.y}, ${calibrationQuaternion.z})")
+        logger.d(
+            "Gyro calibrated: rawYaw=$lastRawYawDeg rawPitch=$lastRawPitchDeg q=(${calibrationQuaternion.w}, ${calibrationQuaternion.x}, ${calibrationQuaternion.y}, ${calibrationQuaternion.z})",
+        )
     }
 
     fun setzOrientationEnabled(enabled: Boolean) {
@@ -129,36 +132,41 @@ class GyroOrientationController(
         updateRawFromEvent(event)
 
         when (getDisplayRotation()) {
-            Surface.ROTATION_0 -> SensorManager.remapCoordinateSystem(
-                rotMat,
-                SensorManager.AXIS_X,
-                SensorManager.AXIS_Z,
-                remapped
-            )
-            Surface.ROTATION_90 -> SensorManager.remapCoordinateSystem(
-                rotMat,
-                SensorManager.AXIS_Z,
-                SensorManager.AXIS_MINUS_X,
-                remapped
-            )
-            Surface.ROTATION_180 -> SensorManager.remapCoordinateSystem(
-                rotMat,
-                SensorManager.AXIS_MINUS_X,
-                SensorManager.AXIS_MINUS_Z,
-                remapped
-            )
-            Surface.ROTATION_270 -> SensorManager.remapCoordinateSystem(
-                rotMat,
-                SensorManager.AXIS_MINUS_Z,
-                SensorManager.AXIS_X,
-                remapped
-            )
-            else -> SensorManager.remapCoordinateSystem(
-                rotMat,
-                SensorManager.AXIS_X,
-                SensorManager.AXIS_Z,
-                remapped
-            )
+            Surface.ROTATION_0 ->
+                SensorManager.remapCoordinateSystem(
+                    rotMat,
+                    SensorManager.AXIS_X,
+                    SensorManager.AXIS_Z,
+                    remapped,
+                )
+            Surface.ROTATION_90 ->
+                SensorManager.remapCoordinateSystem(
+                    rotMat,
+                    SensorManager.AXIS_Z,
+                    SensorManager.AXIS_MINUS_X,
+                    remapped,
+                )
+            Surface.ROTATION_180 ->
+                SensorManager.remapCoordinateSystem(
+                    rotMat,
+                    SensorManager.AXIS_MINUS_X,
+                    SensorManager.AXIS_MINUS_Z,
+                    remapped,
+                )
+            Surface.ROTATION_270 ->
+                SensorManager.remapCoordinateSystem(
+                    rotMat,
+                    SensorManager.AXIS_MINUS_Z,
+                    SensorManager.AXIS_X,
+                    remapped,
+                )
+            else ->
+                SensorManager.remapCoordinateSystem(
+                    rotMat,
+                    SensorManager.AXIS_X,
+                    SensorManager.AXIS_Z,
+                    remapped,
+                )
         }
 
         currentQuaternion = Quaternion.fromRotationMatrix(remapped)
@@ -167,15 +175,16 @@ class GyroOrientationController(
         // the device's "forward" direction (out of back of phone) into world
         // spherical coordinates.
         val displayRot = getDisplayRotation()
-        val fwdRemapped = when (displayRot) {
-            // Forward = out of back of phone = -Z in natural device frame.
-            // In remapped coordinates (-Z_natural) maps to:
-            Surface.ROTATION_0   -> floatArrayOf(0f, -1f, 0f)  // -Z → -remapped_Y
-            Surface.ROTATION_90  -> floatArrayOf(-1f, 0f, 0f)  // -Z → -remapped_X
-            Surface.ROTATION_180 -> floatArrayOf(0f, 1f, 0f)   // -Z → +remapped_Y
-            Surface.ROTATION_270 -> floatArrayOf(1f, 0f, 0f)   // -Z → +remapped_X
-            else                 -> floatArrayOf(0f, -1f, 0f)
-        }
+        val fwdRemapped =
+            when (displayRot) {
+                // Forward = out of back of phone = -Z in natural device frame.
+                // In remapped coordinates (-Z_natural) maps to:
+                Surface.ROTATION_0 -> floatArrayOf(0f, -1f, 0f) // -Z → -remapped_Y
+                Surface.ROTATION_90 -> floatArrayOf(-1f, 0f, 0f) // -Z → -remapped_X
+                Surface.ROTATION_180 -> floatArrayOf(0f, 1f, 0f) // -Z → +remapped_Y
+                Surface.ROTATION_270 -> floatArrayOf(1f, 0f, 0f) // -Z → +remapped_X
+                else -> floatArrayOf(0f, -1f, 0f)
+            }
 
         // R * fwd_remapped = forward direction in world frame
         val r = remapped
@@ -205,11 +214,12 @@ class GyroOrientationController(
 
             smoothedQuaternion = Quaternion.slerp(smoothedQuaternion, relativeQuaternion, smoothingAlpha)
 
-            val (yaw, pitch, roll) = smoothedQuaternion.toEulerAngles(
-                previousYaw = lastEulerYaw,
-                previousPitch = lastEulerPitch,
-                previousRoll = lastEulerRoll
-            )
+            val (yaw, pitch, roll) =
+                smoothedQuaternion.toEulerAngles(
+                    previousYaw = lastEulerYaw,
+                    previousPitch = lastEulerPitch,
+                    previousRoll = lastEulerRoll,
+                )
 
             lastEulerYaw = yaw
             lastEulerPitch = pitch
@@ -231,11 +241,12 @@ class GyroOrientationController(
         } else {
             // Not calibrated yet — still extract Euler angles from the raw quaternion
             // so view rotation works even before the user presses calibrate.
-            val (yaw, pitch, roll) = currentQuaternion.toEulerAngles(
-                previousYaw = lastEulerYaw,
-                previousPitch = lastEulerPitch,
-                previousRoll = lastEulerRoll
-            )
+            val (yaw, pitch, roll) =
+                currentQuaternion.toEulerAngles(
+                    previousYaw = lastEulerYaw,
+                    previousPitch = lastEulerPitch,
+                    previousRoll = lastEulerRoll,
+                )
             lastEulerYaw = yaw
             lastEulerPitch = pitch
             lastEulerRoll = roll
@@ -246,7 +257,10 @@ class GyroOrientationController(
         }
     }
 
-    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+    override fun onAccuracyChanged(
+        sensor: Sensor?,
+        accuracy: Int,
+    ) {
         // no-op
     }
 
@@ -259,9 +273,13 @@ class GyroOrientationController(
     }
 
     fun getLastRawYawDeg(): Float = lastRawYawDeg
+
     fun getLastRawPitchDeg(): Float = lastRawPitchDeg
+
     fun getLastRawRollDeg(): Float = lastRawRollDeg
+
     fun getSmoothedYaw(): Float = smoothedYaw
+
     fun getSmoothedPitch(): Float = smoothedPitch
 
     /** Raw (unscaled) Euler yaw from the smoothed relative quaternion. Updated every sensor event. */
@@ -299,6 +317,7 @@ class GyroOrientationController(
     }
 
     fun getCurrentQuaternion(): Quaternion = currentQuaternion.copy()
+
     fun getSmoothedQuaternion(): Quaternion = smoothedQuaternion.copy()
 
     /** The full current quaternion (before calibration offset), suitable for debug logging. */
@@ -308,12 +327,13 @@ class GyroOrientationController(
      * Внутренний класс для работы с кватернионами (w, x, y, z)
      */
     data class Quaternion(
-        val w: Float,  // скаляр
-        val x: Float,  // i
-        val y: Float,  // j
-        val z: Float   // k
+        val w: Float, // скаляр
+        val x: Float, // i
+        val y: Float, // j
+        val z: Float, // k
     ) {
         fun magnitude(): Float = sqrt(w * w + x * x + y * y + z * z)
+
         fun normalize(): Quaternion {
             val mag = magnitude()
             return if (mag > 0) {
@@ -322,6 +342,7 @@ class GyroOrientationController(
                 Quaternion(1f, 0f, 0f, 0f)
             }
         }
+
         fun copy(): Quaternion = Quaternion(w, x, y, z)
 
         // conjugate(w + xi + yj + zk) = w - xi - yj - zk
@@ -336,8 +357,7 @@ class GyroOrientationController(
             return Quaternion(w, x, y, z).normalize()
         }
 
-        fun dot(other: Quaternion): Float =
-            this.w * other.w + this.x * other.x + this.y * other.y + this.z * other.z
+        fun dot(other: Quaternion): Float = this.w * other.w + this.x * other.x + this.y * other.y + this.z * other.z
 
         /**
          * ZYX convention
@@ -351,33 +371,38 @@ class GyroOrientationController(
         fun toEulerAngles(
             previousYaw: Float? = null,
             previousPitch: Float? = null,
-            previousRoll: Float? = null
+            previousRoll: Float? = null,
         ): Triple<Float, Float, Float> {
             val q = this.normalize()
 
             val sinPitch = (2.0f * (q.w * q.y - q.z * q.x)).coerceIn(-1f, 1f)
 
-            var pitch = if (sinPitch >= 1.0f) {
-                90f
-            } else if (sinPitch <= -1.0f) {
-                -90f
-            } else {
-                Math.toDegrees(asin(sinPitch.toDouble())).toFloat()
-            }
+            var pitch =
+                if (sinPitch >= 1.0f) {
+                    90f
+                } else if (sinPitch <= -1.0f) {
+                    -90f
+                } else {
+                    Math.toDegrees(asin(sinPitch.toDouble())).toFloat()
+                }
 
-            var yaw = Math.toDegrees(
-                atan2(
-                    2.0 * (q.w * q.z + q.x * q.y).toDouble(),
-                    1.0 - 2.0 * (q.y * q.y + q.z * q.z).toDouble()
-                )
-            ).toFloat()
+            var yaw =
+                Math
+                    .toDegrees(
+                        atan2(
+                            2.0 * (q.w * q.z + q.x * q.y).toDouble(),
+                            1.0 - 2.0 * (q.y * q.y + q.z * q.z).toDouble(),
+                        ),
+                    ).toFloat()
 
-            var roll = Math.toDegrees(
-                atan2(
-                    2.0 * (q.w * q.x + q.y * q.z).toDouble(),
-                    1.0 - 2.0 * (q.x * q.x + q.y * q.y).toDouble()
-                )
-            ).toFloat()
+            var roll =
+                Math
+                    .toDegrees(
+                        atan2(
+                            2.0 * (q.w * q.x + q.y * q.z).toDouble(),
+                            1.0 - 2.0 * (q.x * q.x + q.y * q.y).toDouble(),
+                        ),
+                    ).toFloat()
 
             if (previousYaw != null) yaw = unwrapToNearest(yaw, previousYaw)
             if (previousPitch != null) pitch = unwrapToNearest(pitch, previousPitch)
@@ -392,7 +417,10 @@ class GyroOrientationController(
             return x - 180f
         }
 
-        private fun unwrapToNearest(angle: Float, reference: Float): Float {
+        private fun unwrapToNearest(
+            angle: Float,
+            reference: Float,
+        ): Float {
             var a = wrap180(angle)
             var diff = a - reference
             if (diff > 180f) a -= 360f
@@ -409,43 +437,44 @@ class GyroOrientationController(
             fun fromRotationMatrix(mat: FloatArray): Quaternion {
                 val trace = mat[0] + mat[4] + mat[8]
 
-                val result: Quaternion = when {
-                    trace > 0 -> {
-                        val s = 0.5f / sqrt(trace + 1.0f)
-                        val w = 0.25f / s
-                        val x = (mat[7] - mat[5]) * s
-                        val y = (mat[2] - mat[6]) * s
-                        val z = (mat[3] - mat[1]) * s
-                        Quaternion(w, x, y, z)
+                val result: Quaternion =
+                    when {
+                        trace > 0 -> {
+                            val s = 0.5f / sqrt(trace + 1.0f)
+                            val w = 0.25f / s
+                            val x = (mat[7] - mat[5]) * s
+                            val y = (mat[2] - mat[6]) * s
+                            val z = (mat[3] - mat[1]) * s
+                            Quaternion(w, x, y, z)
+                        }
+                        // m00 — наибольший диагональный элемент
+                        mat[0] > mat[4] && mat[0] > mat[8] -> {
+                            val s = 2.0f * sqrt(1.0f + mat[0] - mat[4] - mat[8])
+                            val w = (mat[7] - mat[5]) / s // (m21 - m12) / s
+                            val x = 0.25f * s
+                            val y = (mat[1] + mat[3]) / s // (m01 + m10) / s
+                            val z = (mat[2] + mat[6]) / s // (m02 + m20) / s
+                            Quaternion(w, x, y, z)
+                        }
+                        // m11 — наибольший диагональный элемент
+                        mat[4] > mat[8] -> {
+                            val s = 2.0f * sqrt(1.0f + mat[4] - mat[0] - mat[8])
+                            val w = (mat[2] - mat[6]) / s // (m02 - m20) / s
+                            val x = (mat[1] + mat[3]) / s // (m01 + m10) / s
+                            val y = 0.25f * s
+                            val z = (mat[5] + mat[7]) / s // (m12 + m21) / s
+                            Quaternion(w, x, y, z)
+                        }
+                        // m22 — наибольший диагональный элемент
+                        else -> {
+                            val s = 2.0f * sqrt(1.0f + mat[8] - mat[0] - mat[4])
+                            val w = (mat[3] - mat[1]) / s // (m10 - m01) / s
+                            val x = (mat[2] + mat[6]) / s // (m02 + m20) / s
+                            val y = (mat[5] + mat[7]) / s // (m12 + m21) / s
+                            val z = 0.25f * s
+                            Quaternion(w, x, y, z)
+                        }
                     }
-                    // m00 — наибольший диагональный элемент
-                    mat[0] > mat[4] && mat[0] > mat[8] -> {
-                        val s = 2.0f * sqrt(1.0f + mat[0] - mat[4] - mat[8])
-                        val w = (mat[7] - mat[5]) / s  // (m21 - m12) / s
-                        val x = 0.25f * s
-                        val y = (mat[1] + mat[3]) / s  // (m01 + m10) / s
-                        val z = (mat[2] + mat[6]) / s  // (m02 + m20) / s
-                        Quaternion(w, x, y, z)
-                    }
-                    // m11 — наибольший диагональный элемент
-                    mat[4] > mat[8] -> {
-                        val s = 2.0f * sqrt(1.0f + mat[4] - mat[0] - mat[8])
-                        val w = (mat[2] - mat[6]) / s  // (m02 - m20) / s
-                        val x = (mat[1] + mat[3]) / s  // (m01 + m10) / s
-                        val y = 0.25f * s
-                        val z = (mat[5] + mat[7]) / s  // (m12 + m21) / s
-                        Quaternion(w, x, y, z)
-                    }
-                    // m22 — наибольший диагональный элемент
-                    else -> {
-                        val s = 2.0f * sqrt(1.0f + mat[8] - mat[0] - mat[4])
-                        val w = (mat[3] - mat[1]) / s  // (m10 - m01) / s
-                        val x = (mat[2] + mat[6]) / s  // (m02 + m20) / s
-                        val y = (mat[5] + mat[7]) / s  // (m12 + m21) / s
-                        val z = 0.25f * s
-                        Quaternion(w, x, y, z)
-                    }
-                }
 
                 return result.normalize()
             }
@@ -459,18 +488,23 @@ class GyroOrientationController(
              * @param t Параметр интерполяции [0, 1]: 0 = q1, 1 = q2
              * @return Интерполированный кватернион
              */
-            fun slerp(q1: Quaternion, q2: Quaternion, t: Float): Quaternion {
+            fun slerp(
+                q1: Quaternion,
+                q2: Quaternion,
+                t: Float,
+            ): Quaternion {
                 val a = q1.normalize()
                 val b = q2.normalize()
 
                 var dotProduct = a.dot(b)
 
-                val q2Final = if (dotProduct < 0.0f) {
-                    dotProduct = -dotProduct
-                    Quaternion(-b.w, -b.x, -b.y, -b.z)
-                } else {
-                    b
-                }
+                val q2Final =
+                    if (dotProduct < 0.0f) {
+                        dotProduct = -dotProduct
+                        Quaternion(-b.w, -b.x, -b.y, -b.z)
+                    } else {
+                        b
+                    }
 
                 dotProduct = dotProduct.coerceIn(-1.0f, 1.0f)
 

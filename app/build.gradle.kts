@@ -1,17 +1,25 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     kotlin("kapt")
+    id("org.jlleitschuh.gradle.ktlint")
+    id("io.gitlab.arturbosch.detekt")
 }
 
+val localProps =
+    Properties().apply {
+        load(rootProject.file("local.properties").inputStream())
+    }
 android {
     namespace = "com.arashivision.sdk.demo"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.arashivision.sdk.demo"
         minSdk = 29
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 58
         versionName = libs.versions.insta.get()
         multiDexEnabled = true
@@ -24,22 +32,19 @@ android {
 
     packaging {
         resources {
-            excludes += listOf(
-                "META-INF/rxjava.properties"
-            )
-
-            pickFirsts += listOf(
-                "lib/arm64-v8a/libc++_shared.so"
-            )
+            pickFirsts +=
+                listOf(
+                    "lib/arm64-v8a/libc++_shared.so",
+                )
         }
     }
 
     signingConfigs {
         create("release") {
             storeFile = file("G:\\camerasdk\\sdkdemo2\\app\\sdk.jks")
-            storePassword = "insta360"
-            keyAlias = "insta360"
-            keyPassword = "insta360"
+            storePassword = localProps.getProperty("signing.storePassword")
+            keyAlias = localProps.getProperty("signing.keyAlias")
+            keyPassword = localProps.getProperty("signing.keyPassword")
         }
     }
 
@@ -48,7 +53,8 @@ android {
             isMinifyEnabled = false
             signingConfig = signingConfigs.getByName("release")
             proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
             )
         }
     }
@@ -56,7 +62,7 @@ android {
     applicationVariants.configureEach {
         outputs.all {
             if (this is com.android.build.gradle.internal.api.BaseVariantOutputImpl) {
-                outputFileName = "insta_sdk_demo_${buildType.name}_${versionName}.apk"
+                outputFileName = "insta_sdk_demo_${buildType.name}_$versionName.apk"
             }
         }
     }
@@ -100,13 +106,11 @@ dependencies {
     implementation(libs.xlog)
     implementation(libs.filepicker)
 
-    implementation("androidx.media3:media3-common:1.5.1")
-    implementation("androidx.media3:media3-exoplayer:1.5.1")
+    implementation("androidx.media3:media3-common:1.6.1")
+    implementation("androidx.media3:media3-exoplayer:1.6.1")
 
     implementation(libs.insta.camera)
     implementation(libs.insta.media)
-
-
 
     implementation(files("libs/glide_transformations.jar"))
 
@@ -114,4 +118,14 @@ dependencies {
 
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+}
+
+ktlint {
+    version = "1.5.0"
+    android = true
+}
+
+detekt {
+    config = files("$rootDir/detekt-config.yml")
+    baseline = file("$rootDir/detekt-baseline.xml")
 }

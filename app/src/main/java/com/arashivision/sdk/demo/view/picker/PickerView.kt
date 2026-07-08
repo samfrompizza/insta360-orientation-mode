@@ -20,7 +20,6 @@ import com.arashivision.sdk.demo.R
 import com.arashivision.sdk.demo.databinding.DialogFragmentPlayerSettingBinding
 import com.arashivision.sdk.demo.ext.dp
 
-
 class PickerView : FrameLayout {
     companion object {
         private const val ANIMATION_DURATION: Long = 300L // 动画持续时间(毫秒)
@@ -29,51 +28,63 @@ class PickerView : FrameLayout {
 
     private val showTranslateAnimation: Animation by lazy {
         TranslateAnimation(
-            Animation.RELATIVE_TO_SELF, 0f,
-            Animation.RELATIVE_TO_SELF, 0f,
-            Animation.RELATIVE_TO_SELF, 1f,
-            Animation.RELATIVE_TO_SELF, 0f
+            Animation.RELATIVE_TO_SELF,
+            0f,
+            Animation.RELATIVE_TO_SELF,
+            0f,
+            Animation.RELATIVE_TO_SELF,
+            1f,
+            Animation.RELATIVE_TO_SELF,
+            0f,
         ).apply {
             duration = ANIMATION_DURATION
-            setAnimationListener(object : Animation.AnimationListener {
-                override fun onAnimationStart(animation: Animation) {
-                    isAnimating = true
-                }
+            setAnimationListener(
+                object : Animation.AnimationListener {
+                    override fun onAnimationStart(animation: Animation) {
+                        isAnimating = true
+                    }
 
-                override fun onAnimationEnd(animation: Animation) {
-                    isAnimating = false
-                }
+                    override fun onAnimationEnd(animation: Animation) {
+                        isAnimating = false
+                    }
 
-                override fun onAnimationRepeat(animation: Animation) {
-                    // 不需要实现
-                }
-            })
+                    override fun onAnimationRepeat(animation: Animation) {
+                        // 不需要实现
+                    }
+                },
+            )
         }
     }
 
     private val hideTranslateAnimation: Animation by lazy {
         TranslateAnimation(
-            Animation.RELATIVE_TO_SELF, 0f,
-            Animation.RELATIVE_TO_SELF, 0f,
-            Animation.RELATIVE_TO_SELF, 0f,  // 从完全可见
-            Animation.RELATIVE_TO_SELF, 1f// 到底部(完全不可见)
+            Animation.RELATIVE_TO_SELF,
+            0f,
+            Animation.RELATIVE_TO_SELF,
+            0f,
+            Animation.RELATIVE_TO_SELF,
+            0f, // 从完全可见
+            Animation.RELATIVE_TO_SELF,
+            1f, // 到底部(完全不可见)
         ).apply {
             duration = ANIMATION_DURATION
-            setAnimationListener(object : Animation.AnimationListener {
-                override fun onAnimationStart(animation: Animation) {
-                    isAnimating = true
-                }
+            setAnimationListener(
+                object : Animation.AnimationListener {
+                    override fun onAnimationStart(animation: Animation) {
+                        isAnimating = true
+                    }
 
-                override fun onAnimationEnd(animation: Animation) {
-                    isAnimating = false
-                    setFullScreen(false)
-                    visibility = GONE
-                }
+                    override fun onAnimationEnd(animation: Animation) {
+                        isAnimating = false
+                        setFullScreen(false)
+                        visibility = GONE
+                    }
 
-                override fun onAnimationRepeat(animation: Animation) {
-                    // 不需要实现
-                }
-            })
+                    override fun onAnimationRepeat(animation: Animation) {
+                        // 不需要实现
+                    }
+                },
+            )
         }
     }
 
@@ -96,7 +107,7 @@ class PickerView : FrameLayout {
     constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(
         context,
         attrs,
-        defStyleAttr
+        defStyleAttr,
     )
 
     private var binding: DialogFragmentPlayerSettingBinding =
@@ -120,22 +131,24 @@ class PickerView : FrameLayout {
             LinearLayoutManager(
                 context,
                 RecyclerView.VERTICAL,
-                false
-            )
+                false,
+            ),
         )
 
-        binding.rvPlayerSetting.addItemDecoration(object : RecyclerView.ItemDecoration() {
-            override fun getItemOffsets(
-                outRect: Rect,
-                view: View,
-                parent: RecyclerView,
-                state: RecyclerView.State
-            ) {
-                super.getItemOffsets(outRect, view, parent, state)
-                val position: Int = parent.getChildAdapterPosition(view)
-                if (position != 0) outRect.top = 20f.dp
-            }
-        })
+        binding.rvPlayerSetting.addItemDecoration(
+            object : RecyclerView.ItemDecoration() {
+                override fun getItemOffsets(
+                    outRect: Rect,
+                    view: View,
+                    parent: RecyclerView,
+                    state: RecyclerView.State,
+                ) {
+                    super.getItemOffsets(outRect, view, parent, state)
+                    val position: Int = parent.getChildAdapterPosition(view)
+                    if (position != 0) outRect.top = 20f.dp
+                }
+            },
+        )
 
         setOnClickListener {
             if (isAnimating) return@setOnClickListener
@@ -191,32 +204,33 @@ class PickerView : FrameLayout {
         val fadeIn = AlphaAnimation(0.2f, 1.0f)
         fadeIn.duration = ANIMATION_DURATION
 
-        fadeIn.setAnimationListener(object : Animation.AnimationListener {
-            override fun onAnimationStart(animation: Animation?) {
-                visibility = VISIBLE
-                isAnimating = false
-            }
+        fadeIn.setAnimationListener(
+            object : Animation.AnimationListener {
+                override fun onAnimationStart(animation: Animation?) {
+                    visibility = VISIBLE
+                    isAnimating = false
+                }
 
-            override fun onAnimationEnd(animation: Animation?) {
+                override fun onAnimationEnd(animation: Animation?) {
+                }
 
-            }
+                override fun onAnimationRepeat(animation: Animation?) {
+                }
+            },
+        )
 
-            override fun onAnimationRepeat(animation: Animation?) {
+        fadeOut.setAnimationListener(
+            object : Animation.AnimationListener {
+                override fun onAnimationStart(animation: Animation?) {}
 
-            }
+                override fun onAnimationEnd(animation: Animation?) {
+                    visibility = INVISIBLE
+                    postDelayed({ startAnimation(fadeIn) }, DEFAULT_TRANSPARENT_DURATION)
+                }
 
-        })
-
-        fadeOut.setAnimationListener(object : Animation.AnimationListener {
-            override fun onAnimationStart(animation: Animation?) {}
-
-            override fun onAnimationEnd(animation: Animation?) {
-                visibility = INVISIBLE
-                postDelayed({ startAnimation(fadeIn) }, DEFAULT_TRANSPARENT_DURATION)
-            }
-
-            override fun onAnimationRepeat(animation: Animation?) {}
-        })
+                override fun onAnimationRepeat(animation: Animation?) {}
+            },
+        )
         startAnimation(fadeOut)
         isAnimating = true
     }
@@ -247,9 +261,7 @@ class PickerView : FrameLayout {
         binding.tvApply.text = apply
     }
 
-    private fun isFullScreen(): Boolean {
-        return binding.root.layoutParams.height == ViewGroup.LayoutParams.MATCH_PARENT
-    }
+    private fun isFullScreen(): Boolean = binding.root.layoutParams.height == ViewGroup.LayoutParams.MATCH_PARENT
 
     private fun setFullScreen(full: Boolean) {
         if (isFullScreen() == full) return
@@ -291,5 +303,4 @@ class PickerView : FrameLayout {
     fun setImmediateEffectiveTransparent(enable: Boolean) {
         immediateEffectiveTransparent = enable
     }
-
 }

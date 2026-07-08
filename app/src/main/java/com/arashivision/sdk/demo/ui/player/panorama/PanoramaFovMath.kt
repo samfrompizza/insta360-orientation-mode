@@ -13,12 +13,11 @@ import kotlin.math.sqrt
  * the right of the current gaze, positive pitch delta = target is above the current gaze).
  */
 object PanoramaFovMath {
-
     fun resolveTarget(
         gaze: PanoramaDirection,
         target: PanoramaDirection,
         horizontalFovRad: Double,
-        verticalFovRad: Double
+        verticalFovRad: Double,
     ): TargetFovState {
         require(horizontalFovRad > 0.0 && horizontalFovRad <= FULL_TURN_RAD) {
             "horizontalFovRad must be in (0, 2*PI]"
@@ -29,15 +28,16 @@ object PanoramaFovMath {
 
         val yawDeltaRad = wrapToMinusPiPlusPi(target.yawRad - gaze.yawRad)
         val pitchDeltaRad = target.pitchRad - gaze.pitchRad
-        val insideFov = abs(yawDeltaRad) <= horizontalFovRad / 2.0 &&
-            abs(pitchDeltaRad) <= verticalFovRad / 2.0
+        val insideFov =
+            abs(yawDeltaRad) <= horizontalFovRad / 2.0 &&
+                abs(pitchDeltaRad) <= verticalFovRad / 2.0
 
         return TargetFovState(
             isInsideFov = insideFov,
             yawDeltaRad = yawDeltaRad,
             pitchDeltaRad = pitchDeltaRad,
             // Canvas coordinates have +Y downward, so an upward pitch delta becomes negative Y.
-            arrowAngleRad = if (insideFov) null else atan2(-pitchDeltaRad, yawDeltaRad)
+            arrowAngleRad = if (insideFov) null else atan2(-pitchDeltaRad, yawDeltaRad),
         )
     }
 
@@ -59,7 +59,7 @@ object PanoramaFovMath {
         gaze: PanoramaDirection,
         target: PanoramaDirection,
         horizontalFovRad: Double,
-        verticalFovRad: Double
+        verticalFovRad: Double,
     ): TargetFovState {
         require(horizontalFovRad > 0.0 && horizontalFovRad <= FULL_TURN_RAD) {
             "horizontalFovRad must be in (0, 2*PI]"
@@ -79,15 +79,16 @@ object PanoramaFovMath {
         val horizontalLen = sqrt(localTarget.x * localTarget.x + localTarget.y * localTarget.y)
         val localPitchRad = atan2(localTarget.z, horizontalLen)
 
-        val insideFov = abs(localYawRad) <= horizontalFovRad / 2.0 &&
-            abs(localPitchRad) <= verticalFovRad / 2.0
+        val insideFov =
+            abs(localYawRad) <= horizontalFovRad / 2.0 &&
+                abs(localPitchRad) <= verticalFovRad / 2.0
 
         return TargetFovState(
             isInsideFov = insideFov,
             yawDeltaRad = localYawRad,
             pitchDeltaRad = localPitchRad,
             // Canvas coordinates have +Y downward, so an upward pitch delta becomes negative Y.
-            arrowAngleRad = if (insideFov) null else atan2(-localPitchRad, localYawRad)
+            arrowAngleRad = if (insideFov) null else atan2(-localPitchRad, localYawRad),
         )
     }
 
@@ -106,5 +107,5 @@ data class TargetFovState(
     val yawDeltaRad: Double,
     val pitchDeltaRad: Double,
     /** Screen-space arrow angle: 0 points right, -PI/2 points up, +PI/2 points down. */
-    val arrowAngleRad: Double?
+    val arrowAngleRad: Double?,
 )

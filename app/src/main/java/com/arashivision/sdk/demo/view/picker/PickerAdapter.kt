@@ -10,14 +10,17 @@ import com.zhy.view.flowlayout.TagAdapter
 import com.zhy.view.flowlayout.TagFlowLayout
 
 class PickerAdapter : BaseAdapter<ItemSettingSelectBinding, PickData>() {
-
     private var mOnItemSelectListener: ((position: Int, data: Any) -> Unit)? = null
 
     fun setOnItemSelectListener(onSecondItemSelectListener: (position: Int, data: Any) -> Unit) {
         this.mOnItemSelectListener = onSecondItemSelectListener
     }
 
-    override fun bind(binding: ItemSettingSelectBinding, data: PickData, position: Int) {
+    override fun bind(
+        binding: ItemSettingSelectBinding,
+        data: PickData,
+        position: Int,
+    ) {
         binding.tvName.text = data.title
         val adapter = PlayerSettingTagAdapter(data.options.map { it.first })
         binding.flowLayout.adapter = adapter
@@ -52,21 +55,31 @@ class PickerAdapter : BaseAdapter<ItemSettingSelectBinding, PickData>() {
         }
     }
 
-
-    internal class PlayerSettingTagAdapter(datas: List<String>) : TagAdapter<String>(datas) {
-
-        override fun getView(parent: FlowLayout, position: Int, data: String): View {
+    internal class PlayerSettingTagAdapter(
+        datas: List<String>,
+    ) : TagAdapter<String>(datas) {
+        override fun getView(
+            parent: FlowLayout,
+            position: Int,
+            data: String,
+        ): View {
             val bind = ItemSettingValueBinding.inflate(LayoutInflater.from(parent.context), parent, false)
             bind.tvSettingValue.text = data
             return bind.root
         }
 
-        override fun onSelected(position: Int, view: View) {
+        override fun onSelected(
+            position: Int,
+            view: View,
+        ) {
             super.onSelected(position, view)
             view.isSelected = true
         }
 
-        override fun unSelected(position: Int, view: View) {
+        override fun unSelected(
+            position: Int,
+            view: View,
+        ) {
             super.unSelected(position, view)
             view.isSelected = false
         }

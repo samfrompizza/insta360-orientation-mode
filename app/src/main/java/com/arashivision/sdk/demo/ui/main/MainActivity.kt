@@ -13,7 +13,6 @@ import com.arashivision.sdk.demo.ui.main.MainEvent.PermissionGrantedEvent
 import com.arashivision.sdk.demo.ui.setting.SettingFragment
 
 class MainActivity : BaseActivity<ActivityMainBinding, MainViewModel>() {
-
     private val mFragments: MutableList<Fragment> = ArrayList()
 
     public override fun onCreate(savedInstanceState: Bundle?) {

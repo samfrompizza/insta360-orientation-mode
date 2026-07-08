@@ -11,7 +11,6 @@ import com.elvishew.xlog.XLog
 
 @SuppressLint("NotifyDataSetChanged")
 abstract class BaseAdapter<T : ViewBinding, K> : RecyclerView.Adapter<BaseAdapter.ViewHolder<T>>() {
-
     private val logger: Logger = XLog.tag(BaseAdapter::class.java.simpleName).build()
 
     private var itemClickListener: ((data: K, position: Int) -> Unit)? = null
@@ -33,7 +32,10 @@ abstract class BaseAdapter<T : ViewBinding, K> : RecyclerView.Adapter<BaseAdapte
         notifyDataSetChanged()
     }
 
-    fun addData(index: Int, data: K) {
+    fun addData(
+        index: Int,
+        data: K,
+    ) {
         dataList.add(index, data)
         notifyDataSetChanged()
     }
@@ -56,12 +58,18 @@ abstract class BaseAdapter<T : ViewBinding, K> : RecyclerView.Adapter<BaseAdapte
         this.itemLongClickListener = listener
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder<T> {
+    override fun onCreateViewHolder(
+        parent: ViewGroup,
+        viewType: Int,
+    ): ViewHolder<T> {
         val binding = ViewBindingUtils.createBinding<T>(this.javaClass, LayoutInflater.from(parent.context), 0, parent)
         return ViewHolder(binding)
     }
 
-    override fun onBindViewHolder(holder: ViewHolder<T>, position: Int) {
+    override fun onBindViewHolder(
+        holder: ViewHolder<T>,
+        position: Int,
+    ) {
         bind(holder.binding, dataList[position], position)
         holder.binding.root.setOnClickListener {
             itemClickListener?.invoke(dataList[position], position)
@@ -72,11 +80,15 @@ abstract class BaseAdapter<T : ViewBinding, K> : RecyclerView.Adapter<BaseAdapte
         }
     }
 
-    protected abstract fun bind(binding: T, data: K, position: Int)
+    protected abstract fun bind(
+        binding: T,
+        data: K,
+        position: Int,
+    )
 
     override fun getItemCount(): Int = dataList.size
 
-
-    class ViewHolder<V : ViewBinding>(var binding: V) : RecyclerView.ViewHolder(binding.root)
-
+    class ViewHolder<V : ViewBinding>(
+        var binding: V,
+    ) : RecyclerView.ViewHolder(binding.root)
 }

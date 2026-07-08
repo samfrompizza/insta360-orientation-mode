@@ -17,13 +17,11 @@ import io.reactivex.disposables.Disposable
 import kotlinx.coroutines.launch
 
 abstract class BasePreferenceFragment<V : BaseViewModel> : PreferenceFragmentCompat() {
-
     private val logger: Logger = XLog.tag(BasePreferenceFragment::class.java.simpleName).build()
 
     protected open lateinit var binding: FragmentSettingBinding
     protected open lateinit var viewModel: V
     protected open var disposable: Disposable? = null
-
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -36,7 +34,11 @@ abstract class BasePreferenceFragment<V : BaseViewModel> : PreferenceFragmentCom
         ImmersionBar.with(this).init()
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?,
+    ): View {
         logger.d("[lifecycle] " + javaClass.simpleName + " onCreateView")
         val view = super.onCreateView(inflater, container, savedInstanceState)
         binding = FragmentSettingBinding.inflate(inflater, container, false)
@@ -45,7 +47,10 @@ abstract class BasePreferenceFragment<V : BaseViewModel> : PreferenceFragmentCom
         return binding.root
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+    override fun onViewCreated(
+        view: View,
+        savedInstanceState: Bundle?,
+    ) {
         super.onViewCreated(view, savedInstanceState)
         logger.d("[lifecycle] " + javaClass.simpleName + " onViewCreated")
         initView()
@@ -120,8 +125,9 @@ abstract class BasePreferenceFragment<V : BaseViewModel> : PreferenceFragmentCom
         }
     }
 
-
-    protected fun showLoading(@StringRes id: Int) {
+    protected fun showLoading(
+        @StringRes id: Int,
+    ) {
         val fragmentActivity = requireActivity()
         if (fragmentActivity is BaseActivity<*, *>) {
             fragmentActivity.showLoading(id)
@@ -142,14 +148,19 @@ abstract class BasePreferenceFragment<V : BaseViewModel> : PreferenceFragmentCom
         }
     }
 
-    protected fun toast(@StringRes id: Int) {
+    protected fun toast(
+        @StringRes id: Int,
+    ) {
         val fragmentActivity = requireActivity()
         if (fragmentActivity is BaseActivity<*, *>) {
             fragmentActivity.toast(id)
         }
     }
 
-    protected fun toast(@StringRes id: Int, longTime: Boolean) {
+    protected fun toast(
+        @StringRes id: Int,
+        longTime: Boolean,
+    ) {
         val fragmentActivity = requireActivity()
         if (fragmentActivity is BaseActivity<*, *>) {
             fragmentActivity.toast(id, longTime)
@@ -163,7 +174,10 @@ abstract class BasePreferenceFragment<V : BaseViewModel> : PreferenceFragmentCom
         }
     }
 
-    protected fun toast(message: String?, longTime: Boolean) {
+    protected fun toast(
+        message: String?,
+        longTime: Boolean,
+    ) {
         val fragmentActivity = requireActivity()
         if (fragmentActivity is BaseActivity<*, *>) {
             fragmentActivity.toast(message, longTime)

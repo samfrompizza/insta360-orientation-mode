@@ -1,11 +1,10 @@
 package com.arashivision.sdk.demo.ui.player.panorama
 
-import kotlin.math.PI
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import kotlin.math.PI
 
 class EquirectangularProjectionTest {
-
     @Test
     fun centerMapsToZeroYawPitchForwardVectorAndIdentityQuaternion() {
         val direction = EquirectangularProjection.fromPixel(x = WIDTH / 2.0, y = HEIGHT / 2.0, WIDTH, HEIGHT)
@@ -76,13 +75,19 @@ class EquirectangularProjectionTest {
         assertVectorEquals(direction.unitVector, rotatedForward)
     }
 
-    private fun assertVectorEquals(expected: UnitVector3, actual: UnitVector3) {
+    private fun assertVectorEquals(
+        expected: UnitVector3,
+        actual: UnitVector3,
+    ) {
         assertEquals(expected.x, actual.x, EPSILON)
         assertEquals(expected.y, actual.y, EPSILON)
         assertEquals(expected.z, actual.z, EPSILON)
     }
 
-    private fun assertQuaternionEquals(expected: UnitQuaternion, actual: UnitQuaternion) {
+    private fun assertQuaternionEquals(
+        expected: UnitQuaternion,
+        actual: UnitQuaternion,
+    ) {
         assertEquals(expected.x, actual.x, EPSILON)
         assertEquals(expected.y, actual.y, EPSILON)
         assertEquals(expected.z, actual.z, EPSILON)

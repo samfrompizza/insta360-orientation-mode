@@ -1,7 +1,6 @@
 package com.arashivision.sdk.demo.ui.capture
 
 import androidx.lifecycle.viewModelScope
-import com.arashivision.camera.options.CaptureResolution
 import com.arashivision.graphicpath.render.source.AssetInfo
 import com.arashivision.insta360.basemedia.asset.WindowCropInfo
 import com.arashivision.sdk.demo.base.BaseViewModel
@@ -21,7 +20,6 @@ import com.arashivision.sdkcamera.camera.callback.ILiveStatusListener
 import com.arashivision.sdkcamera.camera.callback.IPreviewStatusListener
 import com.arashivision.sdkcamera.camera.model.CaptureMode
 import com.arashivision.sdkcamera.camera.model.CaptureSetting
-import com.arashivision.sdkcamera.camera.model.RecordResolution
 import com.arashivision.sdkcamera.camera.model.SensorMode
 import com.arashivision.sdkmedia.player.capture.CaptureParamsBuilderV2
 import com.arashivision.sdkmedia.player.capture.InstaCapturePlayerView
@@ -33,8 +31,10 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import java.util.Objects
 import kotlin.coroutines.resume
 
-class CaptureViewModel : BaseViewModel(), IPreviewStatusListener, ICaptureStatusListener {
-
+class CaptureViewModel :
+    BaseViewModel(),
+    IPreviewStatusListener,
+    ICaptureStatusListener {
     private val logger: Logger = XLog.tag(CaptureViewModel::class.java.simpleName).build()
 
     private var openPreviewStreamListener: ((Boolean) -> Unit)? = null
@@ -45,12 +45,15 @@ class CaptureViewModel : BaseViewModel(), IPreviewStatusListener, ICaptureStatus
         private set
 
     val isSingleClickAction: Boolean
-        get() = cameraOfflineData.currentCaptureMode.let {
-            it.isPhotoMode && it !in listOf(
-                CaptureMode.INTERVAL_SHOOTING,
-                CaptureMode.STARLAPSE_SHOOTING
-            )
-        }
+        get() =
+            cameraOfflineData.currentCaptureMode.let {
+                it.isPhotoMode &&
+                    it !in
+                    listOf(
+                        CaptureMode.INTERVAL_SHOOTING,
+                        CaptureMode.STARLAPSE_SHOOTING,
+                    )
+            }
 
     private var isLiving = false
 
@@ -66,90 +69,135 @@ class CaptureViewModel : BaseViewModel(), IPreviewStatusListener, ICaptureStatus
     fun getCaptureSettingSupportValueList(captureSetting: CaptureSetting): List<Any> {
         val captureMode = cameraOfflineData.currentCaptureMode
         return when (captureSetting) {
-            CaptureSetting.EXPOSURE -> instaCameraManager.getSupportExposureList(captureMode)
-                .sortedBy { it.nativeValue }
+            CaptureSetting.EXPOSURE ->
+                instaCameraManager
+                    .getSupportExposureList(captureMode)
+                    .sortedBy { it.nativeValue }
 
-            CaptureSetting.EV -> instaCameraManager.getSupportEVList(captureMode)
-                .sortedBy { it.nativeValue }
+            CaptureSetting.EV ->
+                instaCameraManager
+                    .getSupportEVList(captureMode)
+                    .sortedBy { it.nativeValue }
 
-            CaptureSetting.EV_INTERVAL -> instaCameraManager.getSupportEVIntervalList(captureMode)
-                .sortedBy { it.nativeValue }
+            CaptureSetting.EV_INTERVAL ->
+                instaCameraManager
+                    .getSupportEVIntervalList(captureMode)
+                    .sortedBy { it.nativeValue }
 
-            CaptureSetting.SHUTTER -> instaCameraManager.getSupportShutterList(captureMode)
-                .sortedBy { it.nativeValue }
+            CaptureSetting.SHUTTER ->
+                instaCameraManager
+                    .getSupportShutterList(captureMode)
+                    .sortedBy { it.nativeValue }
 
-            CaptureSetting.SHUTTER_MODE -> instaCameraManager.getSupportShutterModeList(captureMode)
-                .sortedBy { it.nativeValue }
+            CaptureSetting.SHUTTER_MODE ->
+                instaCameraManager
+                    .getSupportShutterModeList(captureMode)
+                    .sortedBy { it.nativeValue }
 
-            CaptureSetting.ISO -> instaCameraManager.getSupportISOList(captureMode)
-                .sortedBy { it.nativeValue }
+            CaptureSetting.ISO ->
+                instaCameraManager
+                    .getSupportISOList(captureMode)
+                    .sortedBy { it.nativeValue }
 
-            CaptureSetting.ISO_TOP_LIMIT -> instaCameraManager.getSupportISOTopLimitList(captureMode)
-                .sortedBy { it.nativeValue }
+            CaptureSetting.ISO_TOP_LIMIT ->
+                instaCameraManager
+                    .getSupportISOTopLimitList(captureMode)
+                    .sortedBy { it.nativeValue }
 
-            CaptureSetting.RECORD_RESOLUTION -> instaCameraManager.getSupportRecordResolutionList(
-                captureMode
-            ).sortedBy { it.nativeValue }
+            CaptureSetting.RECORD_RESOLUTION ->
+                instaCameraManager
+                    .getSupportRecordResolutionList(
+                        captureMode,
+                    ).sortedBy { it.nativeValue }
 
-            CaptureSetting.PHOTO_RESOLUTION -> instaCameraManager.getSupportPhotoResolutionList(
-                captureMode
-            ).sortedBy { it.nativeValue }
+            CaptureSetting.PHOTO_RESOLUTION ->
+                instaCameraManager
+                    .getSupportPhotoResolutionList(
+                        captureMode,
+                    ).sortedBy { it.nativeValue }
 
-            CaptureSetting.WB -> instaCameraManager.getSupportWBList(captureMode)
-                .sortedBy { it.nativeValue }
+            CaptureSetting.WB ->
+                instaCameraManager
+                    .getSupportWBList(captureMode)
+                    .sortedBy { it.nativeValue }
 
-            CaptureSetting.AEB -> instaCameraManager.getSupportAEBList(captureMode)
-                .sortedBy { it.nativeValue }
+            CaptureSetting.AEB ->
+                instaCameraManager
+                    .getSupportAEBList(captureMode)
+                    .sortedBy { it.nativeValue }
 
-            CaptureSetting.INTERVAL -> instaCameraManager.getSupportIntervalList(captureMode)
-                .sortedBy { it.nativeValue }
+            CaptureSetting.INTERVAL ->
+                instaCameraManager
+                    .getSupportIntervalList(captureMode)
+                    .sortedBy { it.nativeValue }
 
-            CaptureSetting.GAMMA_MODE -> instaCameraManager.getSupportGammaModeList(captureMode)
-                .sortedBy { it.nativeValue }
+            CaptureSetting.GAMMA_MODE ->
+                instaCameraManager
+                    .getSupportGammaModeList(captureMode)
+                    .sortedBy { it.nativeValue }
 
-            CaptureSetting.RAW_TYPE -> instaCameraManager.getSupportRawTypeList(captureMode)
-                .sortedBy { it.nativeValue }
+            CaptureSetting.RAW_TYPE ->
+                instaCameraManager
+                    .getSupportRawTypeList(captureMode)
+                    .sortedBy { it.nativeValue }
 
-            CaptureSetting.RECORD_DURATION -> instaCameraManager.getSupportRecordDurationList(
-                captureMode
-            ).sortedBy { it.nativeValue }
+            CaptureSetting.RECORD_DURATION ->
+                instaCameraManager
+                    .getSupportRecordDurationList(
+                        captureMode,
+                    ).sortedBy { it.nativeValue }
 
-            CaptureSetting.DARK_EIS_ENABLE -> instaCameraManager.getSupportDarkEisList(captureMode)
-                .sortedBy { it.nativeValue }
+            CaptureSetting.DARK_EIS_ENABLE ->
+                instaCameraManager
+                    .getSupportDarkEisList(captureMode)
+                    .sortedBy { it.nativeValue }
 
-            CaptureSetting.PANO_EXPOSURE_MODE -> instaCameraManager.getSupportPanoExposureList(
-                captureMode
-            ).sortedBy { it.nativeValue }
+            CaptureSetting.PANO_EXPOSURE_MODE ->
+                instaCameraManager
+                    .getSupportPanoExposureList(
+                        captureMode,
+                    ).sortedBy { it.nativeValue }
 
-            CaptureSetting.BURST_CAPTURE -> instaCameraManager.getSupportBurstCaptureList(
-                captureMode
-            ).sortedBy { it.time }
+            CaptureSetting.BURST_CAPTURE ->
+                instaCameraManager
+                    .getSupportBurstCaptureList(
+                        captureMode,
+                    ).sortedBy { it.time }
 
-            CaptureSetting.INTERNAL_SPLICING -> instaCameraManager.getSupportInternalSplicingList(
-                captureMode
-            ).sortedBy { it.nativeValue }
+            CaptureSetting.INTERNAL_SPLICING ->
+                instaCameraManager
+                    .getSupportInternalSplicingList(
+                        captureMode,
+                    ).sortedBy { it.nativeValue }
 
-            CaptureSetting.HDR_STATUS -> instaCameraManager.getSupportHdrStatusList(captureMode)
-                .sortedBy { it.nativeValue }
+            CaptureSetting.HDR_STATUS ->
+                instaCameraManager
+                    .getSupportHdrStatusList(captureMode)
+                    .sortedBy { it.nativeValue }
 
-            CaptureSetting.PHOTO_HDR_TYPE -> instaCameraManager.getSupportPhotoHdrTypeList(
-                captureMode
-            ).sortedBy { it.nativeValue }
+            CaptureSetting.PHOTO_HDR_TYPE ->
+                instaCameraManager
+                    .getSupportPhotoHdrTypeList(
+                        captureMode,
+                    ).sortedBy { it.nativeValue }
 
-            CaptureSetting.LIVE_BITRATE -> instaCameraManager.getSupportLiveBitrateList(captureMode)
-                .sortedBy { it.nativeValue }
+            CaptureSetting.LIVE_BITRATE ->
+                instaCameraManager
+                    .getSupportLiveBitrateList(captureMode)
+                    .sortedBy { it.nativeValue }
 
-            CaptureSetting.I_LOG -> instaCameraManager.getSupportILogStatusList(captureMode)
-                .sortedBy { it.nativeValue }
+            CaptureSetting.I_LOG ->
+                instaCameraManager
+                    .getSupportILogStatusList(captureMode)
+                    .sortedBy { it.nativeValue }
         }
     }
 
-    fun getCaptureParams(): CaptureParamsBuilderV2 {
-        return CaptureParamsBuilderV2().apply {
+    fun getCaptureParams(): CaptureParamsBuilderV2 =
+        CaptureParamsBuilderV2().apply {
             this.stabCacheFrameNum = Pref.getStabCacheFrameNum()
             this.setStabType(InstaStabType.STAB_TYPE_OFF)
         }
-    }
 
     private fun initCapture() {
         logger.d("initCapture function invoke")
@@ -191,7 +239,6 @@ class CaptureViewModel : BaseViewModel(), IPreviewStatusListener, ICaptureStatus
             logger.d("initCapture create CameraOfflineData object")
             cameraOfflineData = CameraOfflineData()
 
-
             // 开启预览流
             emitEvent(CaptureEvent.InitCaptureEvent(EventStatus.PROGRESS, CaptureEvent.InitStep.OPEN_PREVIEW_STREAM))
             val openPreviewStreamResult = openPreviewStream()
@@ -209,7 +256,13 @@ class CaptureViewModel : BaseViewModel(), IPreviewStatusListener, ICaptureStatus
             // 开启预览流之后可能导致某些参数发生变化，需要重新获取相机参数
             fetchCameraOptions()
 
-            emitEvent(CaptureEvent.InitCaptureEvent(EventStatus.SUCCESS, captureModeList = instaCameraManager.supportCaptureMode, currentCaptureMode = cameraOfflineData.currentCaptureMode))
+            emitEvent(
+                CaptureEvent.InitCaptureEvent(
+                    EventStatus.SUCCESS,
+                    captureModeList = instaCameraManager.supportCaptureMode,
+                    currentCaptureMode = cameraOfflineData.currentCaptureMode,
+                ),
+            )
         }
     }
 
@@ -263,7 +316,10 @@ class CaptureViewModel : BaseViewModel(), IPreviewStatusListener, ICaptureStatus
                     emitEvent(CaptureEvent.CameraLiveEvent(CaptureEvent.LiveStatus.PUSH_FINISHED))
                 }
 
-                override fun onLivePushError(error: Int, desc: String?) {
+                override fun onLivePushError(
+                    error: Int,
+                    desc: String?,
+                ) {
                     logger.d("onLivePushError  error=$error   desc=$desc")
                     isLiving = false
                     emitEvent(CaptureEvent.CameraLiveEvent(CaptureEvent.LiveStatus.PUSH_ERROR))
@@ -272,7 +328,7 @@ class CaptureViewModel : BaseViewModel(), IPreviewStatusListener, ICaptureStatus
                 override fun onLiveFpsUpdate(fps: Int) {
                     logger.d("onLiveFpsUpdate")
                 }
-            }
+            },
         )
     }
 
@@ -294,13 +350,15 @@ class CaptureViewModel : BaseViewModel(), IPreviewStatusListener, ICaptureStatus
         when {
             currentCaptureMode.isLiveMode && !isLiving -> startLive()
             currentCaptureMode.isLiveMode && isLiving -> stopLive()
-            !currentCaptureMode.isLiveMode && !instaCameraManager.isCameraWorking -> startRecord(
-                currentCaptureMode
-            )
+            !currentCaptureMode.isLiveMode && !instaCameraManager.isCameraWorking ->
+                startRecord(
+                    currentCaptureMode,
+                )
 
-            !currentCaptureMode.isLiveMode && instaCameraManager.isCameraWorking -> stopRecord(
-                currentCaptureMode
-            )
+            !currentCaptureMode.isLiveMode && instaCameraManager.isCameraWorking ->
+                stopRecord(
+                    currentCaptureMode,
+                )
 
             else -> {}
         }
@@ -372,10 +430,11 @@ class CaptureViewModel : BaseViewModel(), IPreviewStatusListener, ICaptureStatus
                 // 批量设置
                 beginSettingOptions()
                 getSupportCaptureSettingList(cameraOfflineData.currentCaptureMode).forEach { setting ->
-                    val value = cameraOfflineData.getCaptureSetting(
-                        cameraOfflineData.currentCaptureMode,
-                        setting
-                    )
+                    val value =
+                        cameraOfflineData.getCaptureSetting(
+                            cameraOfflineData.currentCaptureMode,
+                            setting,
+                        )
                     logger.d("$setting = $value")
                     setCaptureSettingValue(cameraOfflineData.currentCaptureMode, setting, value)
                 }
@@ -389,8 +448,8 @@ class CaptureViewModel : BaseViewModel(), IPreviewStatusListener, ICaptureStatus
         }
     }
 
-    private suspend fun openPreviewStream(): Boolean {
-        return suspendCancellableCoroutine {
+    private suspend fun openPreviewStream(): Boolean =
+        suspendCancellableCoroutine {
             logger.d("openPreviewStream function invoke")
             openPreviewStreamListener = { success ->
                 logger.d("openPreviewStream result : $success")
@@ -400,7 +459,6 @@ class CaptureViewModel : BaseViewModel(), IPreviewStatusListener, ICaptureStatus
             }
             instaCameraManager.startPreviewStream(InstaCameraManager.PREVIEW_TYPE_NORMAL)
         }
-    }
 
     private suspend fun checkCameraSensorMode(): Boolean {
         logger.d("checkCameraSensorMode function invoke")
@@ -410,24 +468,33 @@ class CaptureViewModel : BaseViewModel(), IPreviewStatusListener, ICaptureStatus
             return true
         }
         return suspendCancellableCoroutine {
-            instaCameraManager.switchPanoramaSensorMode(object : ICameraOperateCallback {
-                override fun onSuccessful() = it.resume(true)
-                override fun onFailed() = it.resume(false)
-                override fun onCameraConnectError() = it.resume(false)
-            })
+            instaCameraManager.switchPanoramaSensorMode(
+                object : ICameraOperateCallback {
+                    override fun onSuccessful() = it.resume(true)
+
+                    override fun onFailed() = it.resume(false)
+
+                    override fun onCameraConnectError() = it.resume(false)
+                },
+            )
         }
     }
 
     private suspend fun fetchCameraOptions(): Boolean {
         logger.d("fetchCameraOptions function invoke")
         isFetchingOptions = true
-        val result = suspendCancellableCoroutine {
-            instaCameraManager.fetchCameraOptions(object : ICameraOperateCallback {
-                override fun onSuccessful() = it.resume(true)
-                override fun onFailed() = it.resume(false)
-                override fun onCameraConnectError() = it.resume(false)
-            })
-        }
+        val result =
+            suspendCancellableCoroutine {
+                instaCameraManager.fetchCameraOptions(
+                    object : ICameraOperateCallback {
+                        override fun onSuccessful() = it.resume(true)
+
+                        override fun onFailed() = it.resume(false)
+
+                        override fun onCameraConnectError() = it.resume(false)
+                    },
+                )
+            }
         isFetchingOptions = false
         return result
     }
@@ -437,21 +504,23 @@ class CaptureViewModel : BaseViewModel(), IPreviewStatusListener, ICaptureStatus
         NetworkManager.cameraNet?.let { connectivityManager.bindProcessToNetwork(it) } ?: return false
         return suspendCancellableCoroutine {
             logger.d("initCameraSupportConfig function invoke")
-            instaCameraManager.initCameraSupportConfig(object : ICaptureSupportConfigCallback {
-                override fun onComplete() {
-                    logger.d("initCameraSupportConfig success")
-                    // http通信结束，解除相机网络绑定
-                    connectivityManager.bindProcessToNetwork(null)
-                    it.resume(true)
-                }
+            instaCameraManager.initCameraSupportConfig(
+                object : ICaptureSupportConfigCallback {
+                    override fun onComplete() {
+                        logger.d("initCameraSupportConfig success")
+                        // http通信结束，解除相机网络绑定
+                        connectivityManager.bindProcessToNetwork(null)
+                        it.resume(true)
+                    }
 
-                override fun onFailed(s: String) {
-                    logger.d("initCameraSupportConfig failed : $s")
-                    // http通信结束，解除相机网络绑定
-                    connectivityManager.bindProcessToNetwork(null)
-                    it.resume(false)
-                }
-            })
+                    override fun onFailed(s: String) {
+                        logger.d("initCameraSupportConfig failed : $s")
+                        // http通信结束，解除相机网络绑定
+                        connectivityManager.bindProcessToNetwork(null)
+                        it.resume(false)
+                    }
+                },
+            )
         }
     }
 
@@ -460,8 +529,10 @@ class CaptureViewModel : BaseViewModel(), IPreviewStatusListener, ICaptureStatus
         instaCameraManager.setPreviewStatusChangedListener(null)
     }
 
-
-    override fun onCameraStatusChanged(enabled: Boolean, connectType: Int) {
+    override fun onCameraStatusChanged(
+        enabled: Boolean,
+        connectType: Int,
+    ) {
         if (connectType == InstaCameraManager.CONNECT_TYPE_WIFI && !enabled) {
             emitEvent(CameraWiFiDisconnectEvent)
         }
@@ -518,7 +589,9 @@ class CaptureViewModel : BaseViewModel(), IPreviewStatusListener, ICaptureStatus
             if (instaCameraManager.supportConfig.supportNewCaptureControlFlow()) {
                 return@launch
             }
-            if (cameraOfflineData.currentCaptureMode.isVideoMode || cameraOfflineData.currentCaptureMode in arrayOf(CaptureMode.INTERVAL_SHOOTING, CaptureMode.STARLAPSE_SHOOTING)) {
+            if (cameraOfflineData.currentCaptureMode.isVideoMode ||
+                cameraOfflineData.currentCaptureMode in arrayOf(CaptureMode.INTERVAL_SHOOTING, CaptureMode.STARLAPSE_SHOOTING)
+            ) {
                 reopenPreviewStream()
                 emitEvent(CaptureEvent.RestartPlayerViewEvent)
             } else {
@@ -565,12 +638,13 @@ class CaptureViewModel : BaseViewModel(), IPreviewStatusListener, ICaptureStatus
         if (!isPreviewStreamParamsChanged) return
 
         emitEvent(CaptureEvent.CameraPreviewStreamParamsChangedEvent)
-
     }
 
     fun cameraPreviewStreamParamsChanged(playerView: InstaCapturePlayerView) {
         // 预览编码格式改变则重启解码器和播放器
-        if (isStreamOpened && instaCameraManager.isH265StreamEncode != (instaCameraManager.videoEncodeType == InstaCameraManager.ENCODE_265)) {
+        if (isStreamOpened &&
+            instaCameraManager.isH265StreamEncode != (instaCameraManager.videoEncodeType == InstaCameraManager.ENCODE_265)
+        ) {
             instaCameraManager.setStreamEncode()
             emitEvent(CaptureEvent.RestartPlayerViewEvent)
             return
@@ -599,16 +673,24 @@ class CaptureViewModel : BaseViewModel(), IPreviewStatusListener, ICaptureStatus
             // WindowCropInfo参数变化刷新Offset
             val shouldUpdateWindowCrop = shouldUpdateWindowCrop(playerView, assetInfo, stabOffset)
 
-            val windowCropInfo = if (shouldUpdateWindowCrop) { createWindowCropInfo(assetInfo) } else null
+            val windowCropInfo =
+                if (shouldUpdateWindowCrop) {
+                    createWindowCropInfo(assetInfo)
+                } else {
+                    null
+                }
 
             val offsetData = if (shouldUpdateWindowCrop) InstaCapturePlayerView.getPlayerOffsetData(assetInfo) else null
 
             // 预览分辨率改变则更新播放器分辨率
-            val resolution = instaCameraManager.curFirstStreamResolution?.takeIf {
-                it.width != playerView.previewWidth || it.height != playerView.previewHeight || it.fps != playerView.previewFps
-            }
+            val resolution =
+                instaCameraManager.curFirstStreamResolution?.takeIf {
+                    it.width != playerView.previewWidth || it.height != playerView.previewHeight || it.fps != playerView.previewFps
+                }
 
-            logger.d("cameraPreviewStreamParamsChanged   windowCropInfo=$windowCropInfo   offsetData=$offsetData   stabOffset=$stabOffset   resolution=$resolution")
+            logger.d(
+                "cameraPreviewStreamParamsChanged   windowCropInfo=$windowCropInfo   offsetData=$offsetData   stabOffset=$stabOffset   resolution=$resolution",
+            )
             emitEvent(CaptureEvent.UpdatePlayerViewParamsEvent(windowCropInfo, offsetData, stabOffset, resolution))
         }
     }
@@ -616,22 +698,26 @@ class CaptureViewModel : BaseViewModel(), IPreviewStatusListener, ICaptureStatus
     /**
      * 检查窗口裁剪信息是否需要更新
      */
-    private fun shouldUpdateWindowCrop(playerView: InstaCapturePlayerView, assetInfo: AssetInfo, stabOffset: String): Boolean {
+    private fun shouldUpdateWindowCrop(
+        playerView: InstaCapturePlayerView,
+        assetInfo: AssetInfo,
+        stabOffset: String,
+    ): Boolean {
         val cropInfo = playerView.windowCropInfo ?: return true
-        return assetInfo.cropWindowSrcWidth != cropInfo.srcWidth
-                || assetInfo.cropWindowSrcHeight != cropInfo.srcHeight
-                || assetInfo.cropWindowDstWidth != cropInfo.desWidth
-                || assetInfo.cropWindowDstHeight != cropInfo.desHeight
-                || assetInfo.cropOffsetX != cropInfo.offsetX
-                || assetInfo.cropOffsetY != cropInfo.offsetY
-                || !Objects.equals(stabOffset, playerView.stabOffset)
+        return assetInfo.cropWindowSrcWidth != cropInfo.srcWidth ||
+            assetInfo.cropWindowSrcHeight != cropInfo.srcHeight ||
+            assetInfo.cropWindowDstWidth != cropInfo.desWidth ||
+            assetInfo.cropWindowDstHeight != cropInfo.desHeight ||
+            assetInfo.cropOffsetX != cropInfo.offsetX ||
+            assetInfo.cropOffsetY != cropInfo.offsetY ||
+            !Objects.equals(stabOffset, playerView.stabOffset)
     }
 
     /**
      * 创建窗口裁剪信息对象
      */
-    private fun createWindowCropInfo(assetInfo: AssetInfo): WindowCropInfo {
-        return WindowCropInfo().apply {
+    private fun createWindowCropInfo(assetInfo: AssetInfo): WindowCropInfo =
+        WindowCropInfo().apply {
             srcWidth = assetInfo.cropWindowSrcWidth
             srcHeight = assetInfo.cropWindowSrcHeight
             desWidth = assetInfo.cropWindowDstWidth
@@ -639,11 +725,10 @@ class CaptureViewModel : BaseViewModel(), IPreviewStatusListener, ICaptureStatus
             offsetX = assetInfo.cropOffsetX
             offsetY = assetInfo.cropOffsetY
         }
-    }
 
     private fun isPreviewFileTypeChange(playerView: InstaCapturePlayerView): Boolean {
         val isFlowStateOn = instaCameraManager.isFlowstateOn(cameraOfflineData.currentCaptureMode)
-        return instaCameraManager.supportConfig.getPreviewFileType(cameraOfflineData.currentCaptureMode, isFlowStateOn) != playerView.fileType
+        return instaCameraManager.supportConfig.getPreviewFileType(cameraOfflineData.currentCaptureMode, isFlowStateOn) !=
+            playerView.fileType
     }
-
 }

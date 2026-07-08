@@ -3,33 +3,9 @@ package com.arashivision.sdk.demo.capture
 import com.arashivision.sdk.demo.ext.getCaptureSettingValue
 import com.arashivision.sdk.demo.ext.instaCameraManager
 import com.arashivision.sdk.demo.ext.setCaptureSettingValue
-import com.arashivision.sdkcamera.camera.InstaCameraManager.IDependChecker
-import com.arashivision.sdkcamera.camera.model.AEB
-import com.arashivision.sdkcamera.camera.model.BurstCapture
 import com.arashivision.sdkcamera.camera.model.CaptureMode
 import com.arashivision.sdkcamera.camera.model.CaptureSetting
 import com.arashivision.sdkcamera.camera.model.CaptureSetting.*
-import com.arashivision.sdkcamera.camera.model.DarkEisType
-import com.arashivision.sdkcamera.camera.model.EV
-import com.arashivision.sdkcamera.camera.model.EVInterval
-import com.arashivision.sdkcamera.camera.model.Exposure
-import com.arashivision.sdkcamera.camera.model.GammaMode
-import com.arashivision.sdkcamera.camera.model.HdrStatus
-import com.arashivision.sdkcamera.camera.model.ILogStatus
-import com.arashivision.sdkcamera.camera.model.ISO
-import com.arashivision.sdkcamera.camera.model.ISOTopLimit
-import com.arashivision.sdkcamera.camera.model.InternalSplicing
-import com.arashivision.sdkcamera.camera.model.Interval
-import com.arashivision.sdkcamera.camera.model.LiveBitrate
-import com.arashivision.sdkcamera.camera.model.PanoExposureMode
-import com.arashivision.sdkcamera.camera.model.PhotoResolution
-import com.arashivision.sdkcamera.camera.model.RawType
-import com.arashivision.sdkcamera.camera.model.RecordDuration
-import com.arashivision.sdkcamera.camera.model.RecordResolution
-import com.arashivision.sdkcamera.camera.model.Shutter
-import com.arashivision.sdkcamera.camera.model.ShutterMode
-import com.arashivision.sdkcamera.camera.model.WB
-import com.arashivision.sdkcamera.camera.model.proto.PhotoHdrType
 import com.elvishew.xlog.Logger
 import com.elvishew.xlog.XLog
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -41,7 +17,6 @@ import kotlin.coroutines.resume
  * 2. 适配旧的拍摄流程（即X3以及X3之前的相机）
  */
 class CameraOfflineData {
-
     private val logger: Logger = XLog.tag(CameraOfflineData::class.java.simpleName).build()
 
     private val dataMap = mutableMapOf<CaptureMode, MutableMap<CaptureSetting, Any>>()
@@ -64,16 +39,15 @@ class CameraOfflineData {
         // 矫正：获取当前相机中设置的数值是否符合支持列表中的配置要求，如果不符合则取默认值
         instaCameraManager.supportCaptureMode.filterNotNull().forEach { captureMode ->
             val data: MutableMap<CaptureSetting, Any> = dataMap.getOrDefault(captureMode, mutableMapOf())
-            instaCameraManager.getSupportCaptureSettingList(captureMode).filterNotNull().forEach {
-                captureSetting -> data[captureSetting] = getCaptureSetting(captureMode, captureSetting)
+            instaCameraManager.getSupportCaptureSettingList(captureMode).filterNotNull().forEach { captureSetting ->
+                data[captureSetting] = getCaptureSetting(captureMode, captureSetting)
             }
             dataMap[captureMode] = data
         }
     }
 
-
-    suspend fun setCaptureMode(captureMode: CaptureMode): Boolean {
-        return suspendCancellableCoroutine {
+    suspend fun setCaptureMode(captureMode: CaptureMode): Boolean =
+        suspendCancellableCoroutine {
             instaCameraManager.setCaptureMode(captureMode) { code ->
                 if (code == 0) {
                     currentCaptureMode = captureMode
@@ -81,12 +55,11 @@ class CameraOfflineData {
                 it.resume(code == 0)
             }
         }
-    }
 
     fun setCaptureSetting(
         captureSetting: CaptureSetting,
         value: Any,
-        checker: ((checks: List<CaptureSetting>) -> Unit)? = null
+        checker: ((checks: List<CaptureSetting>) -> Unit)? = null,
     ) {
         setCaptureSetting(currentCaptureMode, captureSetting, value, checker)
     }
@@ -95,7 +68,7 @@ class CameraOfflineData {
         captureMode: CaptureMode,
         captureSetting: CaptureSetting,
         value: Any,
-        checker: ((checks: List<CaptureSetting>) -> Unit)? = null
+        checker: ((checks: List<CaptureSetting>) -> Unit)? = null,
     ) {
         setCaptureSettingValue(captureMode, captureSetting, value) { checks ->
             checks.add(captureSetting)
@@ -108,18 +81,17 @@ class CameraOfflineData {
         }
     }
 
-    fun getCaptureSetting(captureSetting: CaptureSetting): Any {
-        return getCaptureSetting(currentCaptureMode, captureSetting)
-    }
+    fun getCaptureSetting(captureSetting: CaptureSetting): Any = getCaptureSetting(currentCaptureMode, captureSetting)
 
-    fun getCaptureSetting(captureMode: CaptureMode, captureSetting: CaptureSetting): Any {
-        return dataMap[captureMode]?.get(captureSetting) ?: run {
+    fun getCaptureSetting(
+        captureMode: CaptureMode,
+        captureSetting: CaptureSetting,
+    ): Any =
+        dataMap[captureMode]?.get(captureSetting) ?: run {
             val value = getCaptureSettingValue(captureMode, captureSetting)
             val data = dataMap.getOrDefault(captureMode, mutableMapOf())
             data[captureSetting] = value
             dataMap[captureMode] = data
             value
         }
-    }
-    
 }

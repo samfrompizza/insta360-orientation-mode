@@ -3,13 +3,10 @@ package com.arashivision.sdk.demo.util
 import android.os.Environment
 import com.arashivision.sdk.demo.InstaApp
 
-
 object StorageUtils {
-
     private val sRootPathCache: String by lazy {
         InstaApp.instance.getExternalFilesDir("")?.absolutePath ?: ""
     }
-
 
     val logCacheDir: String
         get() = "$sRootPathCache/log"
@@ -35,5 +32,4 @@ object StorageUtils {
 
     val pureShotStitchDir: String
         get() = "${Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)}/insta360/stitch/pure_shot/"
-
 }

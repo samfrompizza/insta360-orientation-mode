@@ -9,23 +9,27 @@ import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.ParameterizedType
 
 object ViewBindingUtils {
-
     @Suppress("UNCHECKED_CAST")
-    fun <T> createBinding(cls: Class<*>, layoutInflater: LayoutInflater?, index: Int, viewGroup: ViewGroup?): T {
+    fun <T> createBinding(
+        cls: Class<*>,
+        layoutInflater: LayoutInflater?,
+        index: Int,
+        viewGroup: ViewGroup?,
+    ): T {
         try {
             val tClass = getParameterizedTypeClass(cls, index)
             return viewGroup?.let {
-                val method = tClass.getMethod(
-                    "inflate",
-                    LayoutInflater::class.java,
-                    ViewGroup::class.java,
-                    Boolean::class.javaPrimitiveType
-                )
+                val method =
+                    tClass.getMethod(
+                        "inflate",
+                        LayoutInflater::class.java,
+                        ViewGroup::class.java,
+                        Boolean::class.javaPrimitiveType,
+                    )
                 method.invoke(null, layoutInflater, viewGroup, false) as T
             } ?: run {
                 val method = tClass.getMethod("inflate", LayoutInflater::class.java)
                 method.invoke(null, layoutInflater) as T
-
             }
         } catch (e: NoSuchMethodException) {
             throw RuntimeException(e)
@@ -37,7 +41,10 @@ object ViewBindingUtils {
     }
 
     @Suppress("UNCHECKED_CAST")
-    fun <T : ViewModel> createViewModel(owner: ViewModelStoreOwner, index: Int): T {
+    fun <T : ViewModel> createViewModel(
+        owner: ViewModelStoreOwner,
+        index: Int,
+    ): T {
         try {
             val tClass = getParameterizedTypeClass(owner.javaClass, index) as Class<T>
             return ViewModelProvider(owner)[tClass]
@@ -46,7 +53,10 @@ object ViewBindingUtils {
         }
     }
 
-    private fun getParameterizedTypeClass(cls: Class<*>, index: Int): Class<*> {
+    private fun getParameterizedTypeClass(
+        cls: Class<*>,
+        index: Int,
+    ): Class<*> {
         val parameterizedType = cls.genericSuperclass as ParameterizedType
         val actualTypeArguments = parameterizedType.actualTypeArguments
         val tClass = actualTypeArguments[index] as Class<*>

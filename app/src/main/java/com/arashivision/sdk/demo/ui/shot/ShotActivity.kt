@@ -18,11 +18,9 @@ import com.arashivision.sdk.demo.ui.capture.getCaptureSettingNameResId
 import com.arashivision.sdk.demo.ui.capture.getCaptureSettingValueName
 import com.arashivision.sdk.demo.util.LocationManager
 import com.arashivision.sdk.demo.view.picker.PickData
-import com.arashivision.sdkcamera.camera.InstaCameraManager
 import com.arashivision.sdkcamera.camera.model.CaptureSetting
 
 class ShotActivity : BaseActivity<ActivityShotBinding, ShotViewModel>() {
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         LocationManager.registerLocation(this)
@@ -33,7 +31,6 @@ class ShotActivity : BaseActivity<ActivityShotBinding, ShotViewModel>() {
         binding.btnWork.text = getString(R.string.shot_capture_start)
 
         binding.tvCaptureMode.text = getCaptureModeTextResId(viewModel.currentCaptureMode)?.let { id -> getString(id) }
-
     }
 
     override fun initListener() {
@@ -57,7 +54,10 @@ class ShotActivity : BaseActivity<ActivityShotBinding, ShotViewModel>() {
         binding.tvCaptureSetting.setOnClickListener { showCaptureSettingView() }
 
         binding.pickCaptureSetting.setOnItemClickListener { position, data ->
-            val supportCaptureSettingList: List<CaptureSetting> = instaCameraManager.getSupportCaptureSettingList(viewModel.currentCaptureMode)
+            val supportCaptureSettingList: List<CaptureSetting> =
+                instaCameraManager.getSupportCaptureSettingList(
+                    viewModel.currentCaptureMode,
+                )
             val captureSetting: CaptureSetting = supportCaptureSettingList[position]
             setCaptureSettingValue(viewModel.currentCaptureMode, captureSetting, data) {
                 binding.pickCaptureSetting.setData(viewModel.supportCaptureSettings.map { getCaptureSettingData(it) })
@@ -156,9 +156,10 @@ class ShotActivity : BaseActivity<ActivityShotBinding, ShotViewModel>() {
     private fun showCaptureModePopupMenu() {
         val popup = PopupMenu(this, binding.tvSelectCaptureMode)
 
-        val texts: List<String> = viewModel.captureModeList.mapNotNull {
-            getCaptureModeTextResId(it)?.let { id -> getString(id) }
-        }
+        val texts: List<String> =
+            viewModel.captureModeList.mapNotNull {
+                getCaptureModeTextResId(it)?.let { id -> getString(id) }
+            }
 
         texts.forEachIndexed { index, s ->
             popup.menu.add(0, index, index, s)
@@ -176,10 +177,12 @@ class ShotActivity : BaseActivity<ActivityShotBinding, ShotViewModel>() {
     }
 
     private fun showCaptureSettingView() {
-        binding.pickCaptureSetting.setData(viewModel.supportCaptureSettings.map {
-            println("showCaptureSettingView  ===>$it")
-            getCaptureSettingData(it)
-        })
+        binding.pickCaptureSetting.setData(
+            viewModel.supportCaptureSettings.map {
+                println("showCaptureSettingView  ===>$it")
+                getCaptureSettingData(it)
+            },
+        )
         binding.pickCaptureSetting.setImmediateEffectiveTransparent(false)
         binding.pickCaptureSetting.show()
     }

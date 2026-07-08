@@ -8,24 +8,25 @@ import com.arashivision.sdk.demo.base.EventStatus
 import com.arashivision.sdkcamera.camera.model.CaptureMode
 
 interface CaptureEvent : BaseEvent {
-
     object CameraWiFiDisconnectEvent : CaptureEvent
 
     enum class InitStep {
         CHECK_SENSOR,
         INIT_SUPPORT_CONFIG,
         FETCH_CAMERA_OPTIONS,
-        OPEN_PREVIEW_STREAM
+        OPEN_PREVIEW_STREAM,
     }
 
     data class InitCaptureEvent(
         var status: EventStatus,
         var step: InitStep? = null,
         var captureModeList: List<CaptureMode>? = null,
-        var currentCaptureMode: CaptureMode? = null
+        var currentCaptureMode: CaptureMode? = null,
     ) : CaptureEvent
 
-    data class SwitchCaptureModeEvent(var status: EventStatus) : CaptureEvent
+    data class SwitchCaptureModeEvent(
+        var status: EventStatus,
+    ) : CaptureEvent
 
     object CameraPreviewStreamParamsChangedEvent : CaptureEvent
 
@@ -35,9 +36,8 @@ interface CaptureEvent : BaseEvent {
         var windowCropInfo: WindowCropInfo? = null,
         var offsetData: OffsetData? = null,
         var stabOffset: String? = null,
-        var streamResolution: StreamResolution? = null
+        var streamResolution: StreamResolution? = null,
     ) : CaptureEvent
-
 
     enum class CaptureStatus {
         SD_DISABLE,
@@ -47,7 +47,7 @@ interface CaptureEvent : BaseEvent {
         FINISH,
         RECORD_TIME,
         CAPTURE_COUNT,
-        ERROR
+        ERROR,
     }
 
     // 相机拍摄事件
@@ -56,7 +56,7 @@ interface CaptureEvent : BaseEvent {
         var recordTime: Long = -1,
         var videoTime: Long = -1,
         var captureCount: Int = -1,
-        var errorCode: Int = -1
+        var errorCode: Int = -1,
     ) : CaptureEvent
 
     enum class LiveStatus {
@@ -68,6 +68,7 @@ interface CaptureEvent : BaseEvent {
         PUSH_ERROR,
     }
 
-    class CameraLiveEvent(var status: LiveStatus) : CaptureEvent
+    class CameraLiveEvent(
+        var status: LiveStatus,
+    ) : CaptureEvent
 }
-

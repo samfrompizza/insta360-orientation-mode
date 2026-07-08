@@ -14,17 +14,13 @@ import com.arashivision.sdk.demo.util.ViewBindingUtils.createViewModel
 import com.elvishew.xlog.Logger
 import com.elvishew.xlog.XLog
 import com.gyf.immersionbar.ImmersionBar
-import io.reactivex.disposables.Disposable
 import kotlinx.coroutines.launch
 
 abstract class BaseFragment<T : ViewBinding, V : BaseViewModel> : Fragment() {
-
     private val logger: Logger = XLog.tag(BaseFragment::class.java.simpleName).build()
 
     protected open lateinit var binding: T
     protected open lateinit var viewModel: V
-    protected open var disposable: Disposable? = null
-
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -37,14 +33,21 @@ abstract class BaseFragment<T : ViewBinding, V : BaseViewModel> : Fragment() {
         ImmersionBar.with(this).init()
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?,
+    ): View {
         logger.d("[lifecycle] " + javaClass.simpleName + " onCreateView")
         this.binding = createBinding(javaClass, inflater, 0, container)
         this.viewModel = createViewModel(this, 1)
         return binding.root
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+    override fun onViewCreated(
+        view: View,
+        savedInstanceState: Bundle?,
+    ) {
         super.onViewCreated(view, savedInstanceState)
         logger.d("[lifecycle] " + javaClass.simpleName + " onViewCreated")
         initView()
@@ -90,9 +93,6 @@ abstract class BaseFragment<T : ViewBinding, V : BaseViewModel> : Fragment() {
     }
 
     override fun onDestroyView() {
-        if (this.disposable != null && !disposable!!.isDisposed) {
-            disposable!!.dispose()
-        }
         super.onDestroyView()
         logger.d("[lifecycle] " + javaClass.simpleName + " onDestroyView")
     }
@@ -119,8 +119,9 @@ abstract class BaseFragment<T : ViewBinding, V : BaseViewModel> : Fragment() {
         }
     }
 
-
-    protected fun showLoading(@StringRes id: Int) {
+    protected fun showLoading(
+        @StringRes id: Int,
+    ) {
         val fragmentActivity = requireActivity()
         if (fragmentActivity is BaseActivity<*, *>) {
             fragmentActivity.showLoading(id)
@@ -141,14 +142,19 @@ abstract class BaseFragment<T : ViewBinding, V : BaseViewModel> : Fragment() {
         }
     }
 
-    protected fun toast(@StringRes id: Int) {
+    protected fun toast(
+        @StringRes id: Int,
+    ) {
         val fragmentActivity = requireActivity()
         if (fragmentActivity is BaseActivity<*, *>) {
             fragmentActivity.toast(id)
         }
     }
 
-    protected fun toast(@StringRes id: Int, longTime: Boolean) {
+    protected fun toast(
+        @StringRes id: Int,
+        longTime: Boolean,
+    ) {
         val fragmentActivity = requireActivity()
         if (fragmentActivity is BaseActivity<*, *>) {
             fragmentActivity.toast(id, longTime)
@@ -162,7 +168,10 @@ abstract class BaseFragment<T : ViewBinding, V : BaseViewModel> : Fragment() {
         }
     }
 
-    protected fun toast(message: String?, longTime: Boolean) {
+    protected fun toast(
+        message: String?,
+        longTime: Boolean,
+    ) {
         val fragmentActivity = requireActivity()
         if (fragmentActivity is BaseActivity<*, *>) {
             fragmentActivity.toast(message, longTime)

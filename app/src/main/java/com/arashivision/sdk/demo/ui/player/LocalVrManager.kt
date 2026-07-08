@@ -28,7 +28,7 @@ class LocalVrManager(
     private val activity: Activity,
     private val sourceView: View,
     private val leftEyeImage: ImageView,
-    private val overlaysToHide: List<View>
+    private val overlaysToHide: List<View>,
 ) {
     private val logger = XLog.tag("LocalVrManager").build()
 
@@ -102,17 +102,18 @@ class LocalVrManager(
         val sizePx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, sizeDp.toFloat(), activity.resources.displayMetrics).toInt()
         val marginPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, marginDp.toFloat(), activity.resources.displayMetrics).toInt()
 
-        val btn = ImageButton(activity).apply {
-            setImageResource(android.R.drawable.ic_menu_manage)
-            setBackgroundResource(android.R.color.transparent)
-            scaleType = ImageView.ScaleType.CENTER_INSIDE
-            alpha = 0.85f
-            layoutParams = ViewGroup.MarginLayoutParams(sizePx, sizePx)
-            x = (parent.width - sizePx - marginPx).coerceAtLeast(0).toFloat()
-            y = marginPx.toFloat()
-            visibility = View.GONE
-            setOnClickListener { showVrSettingsDialog() }
-        }
+        val btn =
+            ImageButton(activity).apply {
+                setImageResource(android.R.drawable.ic_menu_manage)
+                setBackgroundResource(android.R.color.transparent)
+                scaleType = ImageView.ScaleType.CENTER_INSIDE
+                alpha = 0.85f
+                layoutParams = ViewGroup.MarginLayoutParams(sizePx, sizePx)
+                x = (parent.width - sizePx - marginPx).coerceAtLeast(0).toFloat()
+                y = marginPx.toFloat()
+                visibility = View.GONE
+                setOnClickListener { showVrSettingsDialog() }
+            }
         parent.addView(btn)
         vrSettingsButton = btn
     }
@@ -130,31 +131,41 @@ class LocalVrManager(
     fun showVrSettingsDialog() {
         if (!isVrMode) return
 
-        val dialogRoot = LinearLayout(activity).apply {
-            orientation = LinearLayout.VERTICAL
-            val pad = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 12f, activity.resources.displayMetrics).toInt()
-            setPadding(pad, pad, pad, pad)
-        }
+        val dialogRoot =
+            LinearLayout(activity).apply {
+                orientation = LinearLayout.VERTICAL
+                val pad = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 12f, activity.resources.displayMetrics).toInt()
+                setPadding(pad, pad, pad, pad)
+            }
 
         val scaleLabel = TextView(activity).apply { text = "Scale (size): ${"%.2f".format(eyeScale)}" }
-        val scaleSeek = SeekBar(activity).apply {
-            max = 100
-            progress = ((eyeScale - 0.5f) * 100).toInt().coerceIn(0, 100)
-        }
+        val scaleSeek =
+            SeekBar(activity).apply {
+                max = 100
+                progress = ((eyeScale - 0.5f) * 100).toInt().coerceIn(0, 100)
+            }
 
         val spacingLabel = TextView(activity).apply { text = "Spacing (px): $eyeSpacingPx" }
-        val spacingSeek = SeekBar(activity).apply {
-            val maxDp = 200
-            val maxPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, maxDp.toFloat(), activity.resources.displayMetrics).toInt()
-            max = maxPx * 2
-            progress = (eyeSpacingPx + maxPx).coerceIn(0, max)
-        }
+        val spacingSeek =
+            SeekBar(activity).apply {
+                val maxDp = 200
+                val maxPx =
+                    TypedValue
+                        .applyDimension(
+                            TypedValue.COMPLEX_UNIT_DIP,
+                            maxDp.toFloat(),
+                            activity.resources.displayMetrics,
+                        ).toInt()
+                max = maxPx * 2
+                progress = (eyeSpacingPx + maxPx).coerceIn(0, max)
+            }
 
         val sensLabel = TextView(activity).apply { text = "Sensitivity: ${"%.2f".format(GyroOrientationController.sensivity)}" }
-        val sensSeek = SeekBar(activity).apply {
-            max = 200
-            progress = (GyroOrientationController.sensivity * 100f).toInt().coerceIn(0, max)
-        }
+        val sensSeek =
+            SeekBar(activity).apply {
+                max = 200
+                progress = (GyroOrientationController.sensivity * 100f).toInt().coerceIn(0, max)
+            }
 
         dialogRoot.addView(scaleLabel)
         dialogRoot.addView(scaleSeek)
@@ -163,40 +174,72 @@ class LocalVrManager(
         dialogRoot.addView(sensLabel)
         dialogRoot.addView(sensSeek)
 
-        AlertDialog.Builder(activity)
+        AlertDialog
+            .Builder(activity)
             .setTitle("VR: Adjust eyes")
             .setView(dialogRoot)
             .setPositiveButton("OK", null)
-            .create().also { dialog ->
-                scaleSeek.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-                    override fun onProgressChanged(sb: SeekBar?, progress: Int, fromUser: Boolean) {
-                        eyeScale = 0.5f + progress / 100f
-                        scaleLabel.text = "Scale (size): ${"%.2f".format(eyeScale)}"
-                        applyVrAdjustments()
-                    }
-                    override fun onStartTrackingTouch(sb: SeekBar?) = Unit
-                    override fun onStopTrackingTouch(sb: SeekBar?) = Unit
-                })
-                spacingSeek.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-                    override fun onProgressChanged(sb: SeekBar?, progress: Int, fromUser: Boolean) {
-                        val maxDp = 200
-                        val maxPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, maxDp.toFloat(), activity.resources.displayMetrics).toInt()
-                        eyeSpacingPx = progress - maxPx
-                        spacingLabel.text = "Spacing (px): $eyeSpacingPx"
-                        applyVrAdjustments()
-                    }
-                    override fun onStartTrackingTouch(sb: SeekBar?) = Unit
-                    override fun onStopTrackingTouch(sb: SeekBar?) = Unit
-                })
-                sensSeek.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-                    override fun onProgressChanged(sb: SeekBar?, progress: Int, fromUser: Boolean) {
-                        val newSens = progress.toFloat() / 100f
-                        GyroOrientationController.sensivity = newSens
-                        sensLabel.text = "Sensitivity: ${"%.2f".format(newSens)}"
-                    }
-                    override fun onStartTrackingTouch(sb: SeekBar?) = Unit
-                    override fun onStopTrackingTouch(sb: SeekBar?) = Unit
-                })
+            .create()
+            .also { dialog ->
+                scaleSeek.setOnSeekBarChangeListener(
+                    object : SeekBar.OnSeekBarChangeListener {
+                        override fun onProgressChanged(
+                            sb: SeekBar?,
+                            progress: Int,
+                            fromUser: Boolean,
+                        ) {
+                            eyeScale = 0.5f + progress / 100f
+                            scaleLabel.text = "Scale (size): ${"%.2f".format(eyeScale)}"
+                            applyVrAdjustments()
+                        }
+
+                        override fun onStartTrackingTouch(sb: SeekBar?) = Unit
+
+                        override fun onStopTrackingTouch(sb: SeekBar?) = Unit
+                    },
+                )
+                spacingSeek.setOnSeekBarChangeListener(
+                    object : SeekBar.OnSeekBarChangeListener {
+                        override fun onProgressChanged(
+                            sb: SeekBar?,
+                            progress: Int,
+                            fromUser: Boolean,
+                        ) {
+                            val maxDp = 200
+                            val maxPx =
+                                TypedValue
+                                    .applyDimension(
+                                        TypedValue.COMPLEX_UNIT_DIP,
+                                        maxDp.toFloat(),
+                                        activity.resources.displayMetrics,
+                                    ).toInt()
+                            eyeSpacingPx = progress - maxPx
+                            spacingLabel.text = "Spacing (px): $eyeSpacingPx"
+                            applyVrAdjustments()
+                        }
+
+                        override fun onStartTrackingTouch(sb: SeekBar?) = Unit
+
+                        override fun onStopTrackingTouch(sb: SeekBar?) = Unit
+                    },
+                )
+                sensSeek.setOnSeekBarChangeListener(
+                    object : SeekBar.OnSeekBarChangeListener {
+                        override fun onProgressChanged(
+                            sb: SeekBar?,
+                            progress: Int,
+                            fromUser: Boolean,
+                        ) {
+                            val newSens = progress.toFloat() / 100f
+                            GyroOrientationController.sensivity = newSens
+                            sensLabel.text = "Sensitivity: ${"%.2f".format(newSens)}"
+                        }
+
+                        override fun onStartTrackingTouch(sb: SeekBar?) = Unit
+
+                        override fun onStopTrackingTouch(sb: SeekBar?) = Unit
+                    },
+                )
                 dialog.show()
             }
     }
@@ -214,7 +257,11 @@ class LocalVrManager(
         val right = parentLinear.getChildAt(1)
         val half = eyeSpacingPx / 2
 
-        fun setMarginStartEnd(view: View, start: Int? = null, end: Int? = null) {
+        fun setMarginStartEnd(
+            view: View,
+            start: Int? = null,
+            end: Int? = null,
+        ) {
             val lp = view.layoutParams
             when (lp) {
                 is LinearLayout.LayoutParams -> {
@@ -259,6 +306,7 @@ class LocalVrManager(
         stopCopyLoop()
         startCopyLoop()
     }
+
     private fun startCopyLoop() {
         if (copying) return
         val width = sourceView.width
@@ -271,59 +319,61 @@ class LocalVrManager(
         reusableBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         copying = true
 
-        copyRunnable = object : Runnable {
-            override fun run() {
-                try {
-                    val srcSurface = findSurfaceView(sourceView)
-                    val srcTexture = if (srcSurface == null) findTextureView(sourceView) else null
+        copyRunnable =
+            object : Runnable {
+                override fun run() {
+                    try {
+                        val srcSurface = findSurfaceView(sourceView)
+                        val srcTexture = if (srcSurface == null) findTextureView(sourceView) else null
 
-                    if (srcSurface != null) {
-                        val surface = srcSurface.holder.surface
-                        if (surface != null && surface.isValid) {
-                            pixelCopyInProgress = true
-                            PixelCopy.request(surface, reusableBitmap!!, { result ->
-                                pixelCopyInProgress = false
-                                if (result == PixelCopy.SUCCESS) {
-                                    processAndSetBitmap(reusableBitmap)
-                                }
-                                if (copying) handler.postDelayed(this, copyIntervalMs)
-                            }, handler)
-                            return
+                        if (srcSurface != null) {
+                            val surface = srcSurface.holder.surface
+                            if (surface != null && surface.isValid) {
+                                pixelCopyInProgress = true
+                                PixelCopy.request(surface, reusableBitmap!!, { result ->
+                                    pixelCopyInProgress = false
+                                    if (result == PixelCopy.SUCCESS) {
+                                        processAndSetBitmap(reusableBitmap)
+                                    }
+                                    if (copying) handler.postDelayed(this, copyIntervalMs)
+                                }, handler)
+                                return
+                            }
                         }
-                    }
 
-                    if (srcTexture != null) {
-                        val bmp = srcTexture.getBitmap(width, height)
-                        processAndSetBitmap(bmp)
-                        bmp?.recycle()
-                    }
-                } catch (t: Throwable) {
-                    logger.e("copy loop error: ${t.message}")
-                } finally {
-                    if (copying && !pixelCopyInProgress) {
-                        handler.postDelayed(this, copyIntervalMs)
+                        if (srcTexture != null) {
+                            val bmp = srcTexture.getBitmap(width, height)
+                            processAndSetBitmap(bmp)
+                            bmp?.recycle()
+                        }
+                    } catch (t: Throwable) {
+                        logger.e("copy loop error: ${t.message}")
+                    } finally {
+                        if (copying && !pixelCopyInProgress) {
+                            handler.postDelayed(this, copyIntervalMs)
+                        }
                     }
                 }
             }
-        }
 
         handler.post(copyRunnable!!)
     }
 
     private fun processAndSetBitmap(bmp: Bitmap?) {
         bmp ?: return
-        val finalBmp = if (bmp.hasAlpha()) {
-            if (compositeBitmap == null || compositeBitmap!!.width != bmp.width || compositeBitmap!!.height != bmp.height) {
-                compositeBitmap?.recycle()
-                compositeBitmap = Bitmap.createBitmap(bmp.width, bmp.height, Bitmap.Config.ARGB_8888)
+        val finalBmp =
+            if (bmp.hasAlpha()) {
+                if (compositeBitmap == null || compositeBitmap!!.width != bmp.width || compositeBitmap!!.height != bmp.height) {
+                    compositeBitmap?.recycle()
+                    compositeBitmap = Bitmap.createBitmap(bmp.width, bmp.height, Bitmap.Config.ARGB_8888)
+                }
+                val canvas = Canvas(compositeBitmap!!)
+                canvas.drawColor(Color.BLACK)
+                canvas.drawBitmap(bmp, 0f, 0f, null)
+                compositeBitmap
+            } else {
+                bmp
             }
-            val canvas = Canvas(compositeBitmap!!)
-            canvas.drawColor(Color.BLACK)
-            canvas.drawBitmap(bmp, 0f, 0f, null)
-            compositeBitmap
-        } else {
-            bmp
-        }
         leftEyeImage.setImageBitmap(finalBmp)
         leftEyeImage.invalidate()
     }

@@ -1,23 +1,23 @@
 package com.arashivision.sdk.demo.ui.player.panorama
 
-import kotlin.math.PI
-import kotlin.math.abs
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import kotlin.math.PI
+import kotlin.math.abs
 
 class PanoramaFovMathTest {
-
     @Test
     fun targetAtGazeDirectionIsInsideFovAndHasNoArrow() {
-        val state = PanoramaFovMath.resolveTarget(
-            gaze = direction(yaw = 0.0, pitch = 0.0),
-            target = direction(yaw = 0.0, pitch = 0.0),
-            horizontalFovRad = HALF_PI,
-            verticalFovRad = HALF_PI
-        )
+        val state =
+            PanoramaFovMath.resolveTarget(
+                gaze = direction(yaw = 0.0, pitch = 0.0),
+                target = direction(yaw = 0.0, pitch = 0.0),
+                horizontalFovRad = HALF_PI,
+                verticalFovRad = HALF_PI,
+            )
 
         assertTrue(state.isInsideFov)
         assertEquals(0.0, state.yawDeltaRad, EPSILON)
@@ -27,12 +27,13 @@ class PanoramaFovMathTest {
 
     @Test
     fun targetOutsideRightSidePointsArrowRight() {
-        val state = PanoramaFovMath.resolveTarget(
-            gaze = direction(yaw = 0.0, pitch = 0.0),
-            target = direction(yaw = HALF_PI, pitch = 0.0),
-            horizontalFovRad = HALF_PI,
-            verticalFovRad = HALF_PI
-        )
+        val state =
+            PanoramaFovMath.resolveTarget(
+                gaze = direction(yaw = 0.0, pitch = 0.0),
+                target = direction(yaw = HALF_PI, pitch = 0.0),
+                horizontalFovRad = HALF_PI,
+                verticalFovRad = HALF_PI,
+            )
 
         assertFalse(state.isInsideFov)
         assertEquals(HALF_PI, state.yawDeltaRad, EPSILON)
@@ -41,12 +42,13 @@ class PanoramaFovMathTest {
 
     @Test
     fun targetOutsideAbovePointsArrowUp() {
-        val state = PanoramaFovMath.resolveTarget(
-            gaze = direction(yaw = 0.0, pitch = 0.0),
-            target = direction(yaw = 0.0, pitch = HALF_PI),
-            horizontalFovRad = HALF_PI,
-            verticalFovRad = HALF_PI
-        )
+        val state =
+            PanoramaFovMath.resolveTarget(
+                gaze = direction(yaw = 0.0, pitch = 0.0),
+                target = direction(yaw = 0.0, pitch = HALF_PI),
+                horizontalFovRad = HALF_PI,
+                verticalFovRad = HALF_PI,
+            )
 
         assertFalse(state.isInsideFov)
         assertEquals(-HALF_PI, state.arrowAngleRad ?: Double.NaN, EPSILON)
@@ -54,12 +56,13 @@ class PanoramaFovMathTest {
 
     @Test
     fun yawDeltaWrapsAcrossPanoramaSeam() {
-        val state = PanoramaFovMath.resolveTarget(
-            gaze = direction(yaw = Math.toRadians(170.0), pitch = 0.0),
-            target = direction(yaw = Math.toRadians(-170.0), pitch = 0.0),
-            horizontalFovRad = Math.toRadians(60.0),
-            verticalFovRad = HALF_PI
-        )
+        val state =
+            PanoramaFovMath.resolveTarget(
+                gaze = direction(yaw = Math.toRadians(170.0), pitch = 0.0),
+                target = direction(yaw = Math.toRadians(-170.0), pitch = 0.0),
+                horizontalFovRad = Math.toRadians(60.0),
+                verticalFovRad = HALF_PI,
+            )
 
         assertTrue(state.isInsideFov)
         assertEquals(Math.toRadians(20.0), state.yawDeltaRad, EPSILON)
@@ -69,12 +72,13 @@ class PanoramaFovMathTest {
 
     @Test
     fun quat_targetAtGazeDirectionIsInsideFovAndHasNoArrow() {
-        val state = PanoramaFovMath.resolveTargetQuat(
-            gaze = direction(yaw = 0.0, pitch = 0.0),
-            target = direction(yaw = 0.0, pitch = 0.0),
-            horizontalFovRad = HALF_PI,
-            verticalFovRad = HALF_PI
-        )
+        val state =
+            PanoramaFovMath.resolveTargetQuat(
+                gaze = direction(yaw = 0.0, pitch = 0.0),
+                target = direction(yaw = 0.0, pitch = 0.0),
+                horizontalFovRad = HALF_PI,
+                verticalFovRad = HALF_PI,
+            )
 
         assertTrue(state.isInsideFov)
         assertEquals(0.0, state.yawDeltaRad, EPSILON)
@@ -84,12 +88,13 @@ class PanoramaFovMathTest {
 
     @Test
     fun quat_targetOutsideRightSidePointsArrowRight() {
-        val state = PanoramaFovMath.resolveTargetQuat(
-            gaze = direction(yaw = 0.0, pitch = 0.0),
-            target = direction(yaw = HALF_PI, pitch = 0.0),
-            horizontalFovRad = HALF_PI,
-            verticalFovRad = HALF_PI
-        )
+        val state =
+            PanoramaFovMath.resolveTargetQuat(
+                gaze = direction(yaw = 0.0, pitch = 0.0),
+                target = direction(yaw = HALF_PI, pitch = 0.0),
+                horizontalFovRad = HALF_PI,
+                verticalFovRad = HALF_PI,
+            )
 
         assertFalse(state.isInsideFov)
         assertEquals(HALF_PI, state.yawDeltaRad, EPSILON)
@@ -98,12 +103,13 @@ class PanoramaFovMathTest {
 
     @Test
     fun quat_targetOutsideAbovePointsArrowUp() {
-        val state = PanoramaFovMath.resolveTargetQuat(
-            gaze = direction(yaw = 0.0, pitch = 0.0),
-            target = direction(yaw = 0.0, pitch = HALF_PI),
-            horizontalFovRad = HALF_PI,
-            verticalFovRad = HALF_PI
-        )
+        val state =
+            PanoramaFovMath.resolveTargetQuat(
+                gaze = direction(yaw = 0.0, pitch = 0.0),
+                target = direction(yaw = 0.0, pitch = HALF_PI),
+                horizontalFovRad = HALF_PI,
+                verticalFovRad = HALF_PI,
+            )
 
         assertFalse(state.isInsideFov)
         assertEquals(-HALF_PI, state.arrowAngleRad ?: Double.NaN, EPSILON)
@@ -111,12 +117,13 @@ class PanoramaFovMathTest {
 
     @Test
     fun quat_yawDeltaWrapsAcrossPanoramaSeam() {
-        val state = PanoramaFovMath.resolveTargetQuat(
-            gaze = direction(yaw = Math.toRadians(170.0), pitch = 0.0),
-            target = direction(yaw = Math.toRadians(-170.0), pitch = 0.0),
-            horizontalFovRad = Math.toRadians(60.0),
-            verticalFovRad = HALF_PI
-        )
+        val state =
+            PanoramaFovMath.resolveTargetQuat(
+                gaze = direction(yaw = Math.toRadians(170.0), pitch = 0.0),
+                target = direction(yaw = Math.toRadians(-170.0), pitch = 0.0),
+                horizontalFovRad = Math.toRadians(60.0),
+                verticalFovRad = HALF_PI,
+            )
 
         // The shortest arc from 170° to -170° is 20° across the seam
         assertTrue(state.isInsideFov)
@@ -127,35 +134,41 @@ class PanoramaFovMathTest {
     fun quat_targetBehindViewerIsOutsideFov() {
         // Gaze at (0,0), target behind near yaw=PI. Should be outside FOV with
         // a valid arrow angle — either near 0 (right turn around) or near PI (left turn).
-        val state = PanoramaFovMath.resolveTargetQuat(
-            gaze = direction(yaw = 0.0, pitch = 0.0),
-            target = direction(yaw = Math.toRadians(179.0), pitch = 0.0),
-            horizontalFovRad = HALF_PI,
-            verticalFovRad = HALF_PI
-        )
+        val state =
+            PanoramaFovMath.resolveTargetQuat(
+                gaze = direction(yaw = 0.0, pitch = 0.0),
+                target = direction(yaw = Math.toRadians(179.0), pitch = 0.0),
+                horizontalFovRad = HALF_PI,
+                verticalFovRad = HALF_PI,
+            )
 
         assertFalse(state.isInsideFov)
         val angle = state.arrowAngleRad ?: error("Expected arrow angle")
         // For a target at yaw≈PI (179°), the shortest yaw delta is +179° → arrow points right (≈0).
-        assertTrue("Arrow should point roughly right (angle ≈ 0), got angle=$angle",
-            abs(angle) < 0.1)
+        assertTrue(
+            "Arrow should point roughly right (angle ≈ 0), got angle=$angle",
+            abs(angle) < 0.1,
+        )
     }
 
     @Test
     fun quat_targetUpAndRightPointsArrowUpRight() {
         // Target at yaw=45°, pitch=30° — should produce an up-right arrow angle.
-        val state = PanoramaFovMath.resolveTargetQuat(
-            gaze = direction(yaw = 0.0, pitch = 0.0),
-            target = direction(yaw = Math.toRadians(45.0), pitch = Math.toRadians(30.0)),
-            horizontalFovRad = Math.toRadians(30.0),  // small FOV so it's outside
-            verticalFovRad = Math.toRadians(30.0)
-        )
+        val state =
+            PanoramaFovMath.resolveTargetQuat(
+                gaze = direction(yaw = 0.0, pitch = 0.0),
+                target = direction(yaw = Math.toRadians(45.0), pitch = Math.toRadians(30.0)),
+                horizontalFovRad = Math.toRadians(30.0), // small FOV so it's outside
+                verticalFovRad = Math.toRadians(30.0),
+            )
 
         assertFalse(state.isInsideFov)
         val angle = state.arrowAngleRad ?: error("Expected arrow angle")
         // Should be between -PI/2 (up) and 0 (right)
-        assertTrue("Arrow should point up-right, got angle=$angle",
-            angle < 0.0 && angle > -HALF_PI)
+        assertTrue(
+            "Arrow should point up-right, got angle=$angle",
+            angle < 0.0 && angle > -HALF_PI,
+        )
     }
 
     @Test
@@ -175,8 +188,10 @@ class PanoramaFovMathTest {
         }
     }
 
-    private fun direction(yaw: Double, pitch: Double): PanoramaDirection =
-        EquirectangularProjection.fromYawPitch(yaw, pitch)
+    private fun direction(
+        yaw: Double,
+        pitch: Double,
+    ): PanoramaDirection = EquirectangularProjection.fromYawPitch(yaw, pitch)
 
     private companion object {
         const val EPSILON = 1e-9

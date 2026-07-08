@@ -1,33 +1,32 @@
 package com.arashivision.sdk.demo.ui.capture
 
 import android.app.Activity
-import android.graphics.Bitmap as AndroidBitmap
+import android.app.AlertDialog
 import android.graphics.Canvas
 import android.graphics.Color
-import androidx.core.view.drawToBitmap
 import android.os.Handler
 import android.os.Looper
+import android.util.TypedValue
+import android.view.Gravity
 import android.view.PixelCopy
 import android.view.SurfaceView
 import android.view.TextureView
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewGroup.MarginLayoutParams
+import android.widget.FrameLayout
+import android.widget.ImageButton
 import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.SeekBar
+import android.widget.TextView
+import androidx.core.view.drawToBitmap
 import com.arashivision.sdk.demo.ext.instaCameraManager
 import com.arashivision.sdkmedia.player.capture.InstaCapturePlayerView
 import com.arashivision.sdkmedia.player.listener.PlayerViewListener
 import com.elvishew.xlog.Logger
 import com.elvishew.xlog.XLog
-
-import android.app.AlertDialog
-import android.util.TypedValue
-import android.widget.FrameLayout
-import android.widget.ImageButton
-import android.widget.LinearLayout
-import android.widget.SeekBar
-import android.widget.TextView
-import android.view.Gravity
-import android.view.ViewGroup.MarginLayoutParams
+import android.graphics.Bitmap as AndroidBitmap
 
 /**
 VrManager — отдельный класс, который включает/выключает VR-режим.
@@ -41,7 +40,7 @@ class VrManager(
     private val svCaptureMode: View,
     private val ivCaptureSetting: View,
     private val btnCalibrate: View,
-    private val calibrateGyro: () -> Unit = {}
+    private val calibrateGyro: () -> Unit = {},
 ) {
     private val logger: Logger = XLog.tag("VrManager").build()
     var isVrMode: Boolean = false
@@ -86,38 +85,43 @@ class VrManager(
             return
         }
         try {
-            vrContainer = FrameLayout(activity).apply {
-                layoutParams = ViewGroup.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.MATCH_PARENT
-                )
-            }
+            vrContainer =
+                FrameLayout(activity).apply {
+                    layoutParams =
+                        ViewGroup.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                        )
+                }
             rootContainer.addView(vrContainer)
         } catch (e: Exception) {
             logger.e("Failed to create/add vrContainer: ${e.message}")
             return
         }
 
-        val contentLinear = LinearLayout(activity).apply {
-            orientation = LinearLayout.HORIZONTAL
-            layoutParams = FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT
-            )
-        }
+        val contentLinear =
+            LinearLayout(activity).apply {
+                orientation = LinearLayout.HORIZONTAL
+                layoutParams =
+                    FrameLayout.LayoutParams(
+                        FrameLayout.LayoutParams.MATCH_PARENT,
+                        FrameLayout.LayoutParams.MATCH_PARENT,
+                    )
+            }
         vrContainer?.addView(contentLinear)
 
         try {
-            leftVrImage = ImageView(activity).apply {
-                val lp = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f)
-                lp.marginEnd = 0
-                lp.marginStart = 0
-                layoutParams = lp
-                scaleType = ImageView.ScaleType.FIT_CENTER
-                setBackgroundColor(Color.BLACK)
-                isClickable = false
-                isFocusable = false
-            }
+            leftVrImage =
+                ImageView(activity).apply {
+                    val lp = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f)
+                    lp.marginEnd = 0
+                    lp.marginStart = 0
+                    layoutParams = lp
+                    scaleType = ImageView.ScaleType.FIT_CENTER
+                    setBackgroundColor(Color.BLACK)
+                    isClickable = false
+                    isFocusable = false
+                }
             contentLinear.addView(leftVrImage)
             logger.d("Left ImageView added")
         } catch (e: Exception) {
@@ -125,39 +129,45 @@ class VrManager(
         }
 
         try {
-            rightVrPlayer = InstaCapturePlayerView(activity).apply {
-                setLifecycle((activity as? androidx.fragment.app.FragmentActivity)?.lifecycle)
-                val lp = LinearLayout.LayoutParams(
-                    0,
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    1f
-                )
-                lp.marginStart = 0
-                lp.marginEnd = 0
-                layoutParams = lp
-                keepScreenOn = true
-            }
+            rightVrPlayer =
+                InstaCapturePlayerView(activity).apply {
+                    setLifecycle((activity as? androidx.fragment.app.FragmentActivity)?.lifecycle)
+                    val lp =
+                        LinearLayout.LayoutParams(
+                            0,
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            1f,
+                        )
+                    lp.marginStart = 0
+                    lp.marginEnd = 0
+                    layoutParams = lp
+                    keepScreenOn = true
+                }
             contentLinear.addView(rightVrPlayer)
-            rightVrPlayer?.setPlayerViewListener(object : PlayerViewListener {
-                override fun onFirstFrameRender() {
-                    logger.i("rightVrPlayer:onFirstFrameRender")
-                    startCopyLoop()
-                }
-                override fun onLoadingFinish() {
-                    try {
-                        instaCameraManager.setPipeline(rightVrPlayer!!.pipeline)
-                    } catch (e: Exception) {
-                        logger.e("Failed to set pipeline to right player: ${e.message}")
+            rightVrPlayer?.setPlayerViewListener(
+                object : PlayerViewListener {
+                    override fun onFirstFrameRender() {
+                        logger.i("rightVrPlayer:onFirstFrameRender")
+                        startCopyLoop()
                     }
-                }
-                override fun onReleaseCameraPipeline() {
-                    try {
-                        instaCameraManager.setPipeline(null)
-                    } catch (e: Exception) {
-                        logger.e("Failed to release pipeline: ${e.message}")
+
+                    override fun onLoadingFinish() {
+                        try {
+                            instaCameraManager.setPipeline(rightVrPlayer!!.pipeline)
+                        } catch (e: Exception) {
+                            logger.e("Failed to set pipeline to right player: ${e.message}")
+                        }
                     }
-                }
-            })
+
+                    override fun onReleaseCameraPipeline() {
+                        try {
+                            instaCameraManager.setPipeline(null)
+                        } catch (e: Exception) {
+                            logger.e("Failed to release pipeline: ${e.message}")
+                        }
+                    }
+                },
+            )
 
             try {
                 val params = (activity as? CaptureActivity)?.viewModel?.getCaptureParams()
@@ -173,18 +183,25 @@ class VrManager(
         try {
             val sizeDp = 44
             val sizePx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, sizeDp.toFloat(), activity.resources.displayMetrics).toInt()
-            val settingsBtn = ImageButton(activity).apply {
-                setImageResource(android.R.drawable.ic_menu_manage)
-                setBackgroundResource(android.R.color.transparent)
-                scaleType = ImageView.ScaleType.CENTER_INSIDE
-                val flp = FrameLayout.LayoutParams(sizePx, sizePx)
-                flp.gravity = Gravity.END or Gravity.TOP
-                val marginDp = 12
-                val marginPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, marginDp.toFloat(), activity.resources.displayMetrics).toInt()
-                flp.setMargins(marginPx, marginPx, marginPx, marginPx)
-                layoutParams = flp
-                alpha = 0.85f
-            }
+            val settingsBtn =
+                ImageButton(activity).apply {
+                    setImageResource(android.R.drawable.ic_menu_manage)
+                    setBackgroundResource(android.R.color.transparent)
+                    scaleType = ImageView.ScaleType.CENTER_INSIDE
+                    val flp = FrameLayout.LayoutParams(sizePx, sizePx)
+                    flp.gravity = Gravity.END or Gravity.TOP
+                    val marginDp = 12
+                    val marginPx =
+                        TypedValue
+                            .applyDimension(
+                                TypedValue.COMPLEX_UNIT_DIP,
+                                marginDp.toFloat(),
+                                activity.resources.displayMetrics,
+                            ).toInt()
+                    flp.setMargins(marginPx, marginPx, marginPx, marginPx)
+                    layoutParams = flp
+                    alpha = 0.85f
+                }
             vrContainer?.addView(settingsBtn)
             settingsBtn.setOnClickListener {
                 showVrSettingsDialog()
@@ -279,7 +296,10 @@ class VrManager(
         logger.i("disableVrMode: finished")
     }
 
-    fun applyOrientation(yawDeg: Float, pitchDeg: Float) {
+    fun applyOrientation(
+        yawDeg: Float,
+        pitchDeg: Float,
+    ) {
         lastYawDeg = yawDeg
         lastPitchDeg = pitchDeg
         try {
@@ -301,7 +321,10 @@ class VrManager(
         }
     }
 
-    fun setOrientationSnapshot(yawDeg: Float, pitchDeg: Float) {
+    fun setOrientationSnapshot(
+        yawDeg: Float,
+        pitchDeg: Float,
+    ) {
         lastYawDeg = yawDeg
         lastPitchDeg = pitchDeg
     }
@@ -330,6 +353,7 @@ class VrManager(
 
     // --------- copy loop (bitmap from right player -> left ImageView) ---------
     private var pixelCopyInProgress = false
+
     private fun findSurfaceView(v: View): SurfaceView? {
         if (v is SurfaceView) return v
         if (v is ViewGroup) {
@@ -340,6 +364,7 @@ class VrManager(
         }
         return null
     }
+
     private fun findTextureView(v: View): TextureView? {
         if (v is TextureView) return v
         if (v is ViewGroup) {
@@ -350,6 +375,7 @@ class VrManager(
         }
         return null
     }
+
     private fun startCopyLoop() {
         if (copying) {
             logger.d("startCopyLoop: already copying")
@@ -364,92 +390,97 @@ class VrManager(
         val width = src.width
         val height = src.height
         if (width <= 0 || height <= 0) {
-            logger.w("Invalid src dimensions: ${width}x${height} - aborting copy loop")
+            logger.w("Invalid src dimensions: ${width}x$height - aborting copy loop")
             return
         }
         reusableBitmap = AndroidBitmap.createBitmap(width, height, AndroidBitmap.Config.ARGB_8888)
         copying = true
-        copyRunnable = object : Runnable {
-            override fun run() {
-                try {
-                    val renderView = findSurfaceView(src) ?: findTextureView(src)
-                    if (renderView == null) {
-                        logger.e("No SurfaceView or TextureView found in src - falling back to drawToBitmap")
-                        var bmp: AndroidBitmap? = null
-                        try {
-                            bmp = src.drawToBitmap()
-                            if (!(bmp.width > 0 && bmp.height > 0)) {
-                                logger.w("drawToBitmap returned empty bitmap w=${bmp.width} h=${bmp.height}")
-                                bmp.recycle()
-                                bmp = null
-                            }
-                        } catch (e: Exception) {
-                            logger.w("drawToBitmap exception: ${e.message}")
-                        }
-                        processAndSetBitmap(bmp, dst)
-                        bmp?.recycle()
-                    } else {
-                        var bmp: AndroidBitmap? = null
-                        if (renderView is SurfaceView) {
-                            val surface = renderView.holder.surface
-                            if (surface == null || !surface.isValid) {
-                                logger.e("Invalid surface for PixelCopy")
-                            } else {
-                                pixelCopyInProgress = true
-                                PixelCopy.request(surface, reusableBitmap!!, { result ->
-                                    pixelCopyInProgress = false
-                                    if (result == PixelCopy.SUCCESS) {
-                                        bmp = reusableBitmap
-                                        processAndSetBitmap(bmp, dst)
-                                    } else {
-                                        logger.e("PixelCopy failed with code: $result")
-                                    }
-                                    if (copying) handler.postDelayed(this, copyIntervalMs)
-                                }, handler)
-                                return
-                            }
-                        } else if (renderView is TextureView) {
+        copyRunnable =
+            object : Runnable {
+                override fun run() {
+                    try {
+                        val renderView = findSurfaceView(src) ?: findTextureView(src)
+                        if (renderView == null) {
+                            logger.e("No SurfaceView or TextureView found in src - falling back to drawToBitmap")
+                            var bmp: AndroidBitmap? = null
                             try {
-                                bmp = renderView.getBitmap(width, height)
+                                bmp = src.drawToBitmap()
+                                if (!(bmp.width > 0 && bmp.height > 0)) {
+                                    logger.w("drawToBitmap returned empty bitmap w=${bmp.width} h=${bmp.height}")
+                                    bmp.recycle()
+                                    bmp = null
+                                }
                             } catch (e: Exception) {
-                                logger.e("TextureView getBitmap failed: ${e.message}")
+                                logger.w("drawToBitmap exception: ${e.message}")
                             }
+                            processAndSetBitmap(bmp, dst)
+                            bmp?.recycle()
+                        } else {
+                            var bmp: AndroidBitmap? = null
+                            if (renderView is SurfaceView) {
+                                val surface = renderView.holder.surface
+                                if (surface == null || !surface.isValid) {
+                                    logger.e("Invalid surface for PixelCopy")
+                                } else {
+                                    pixelCopyInProgress = true
+                                    PixelCopy.request(surface, reusableBitmap!!, { result ->
+                                        pixelCopyInProgress = false
+                                        if (result == PixelCopy.SUCCESS) {
+                                            bmp = reusableBitmap
+                                            processAndSetBitmap(bmp, dst)
+                                        } else {
+                                            logger.e("PixelCopy failed with code: $result")
+                                        }
+                                        if (copying) handler.postDelayed(this, copyIntervalMs)
+                                    }, handler)
+                                    return
+                                }
+                            } else if (renderView is TextureView) {
+                                try {
+                                    bmp = renderView.getBitmap(width, height)
+                                } catch (e: Exception) {
+                                    logger.e("TextureView getBitmap failed: ${e.message}")
+                                }
+                            }
+                            processAndSetBitmap(bmp, dst)
+                            bmp?.recycle()
                         }
-                        processAndSetBitmap(bmp, dst)
-                        bmp?.recycle()
-                    }
-                } catch (t: Throwable) {
-                    logger.e("copy loop throwable: ${t.message}")
-                } finally {
-                    if (copying && !pixelCopyInProgress) {
-                        handler.postDelayed(this, copyIntervalMs)
+                    } catch (t: Throwable) {
+                        logger.e("copy loop throwable: ${t.message}")
+                    } finally {
+                        if (copying && !pixelCopyInProgress) {
+                            handler.postDelayed(this, copyIntervalMs)
+                        }
                     }
                 }
             }
-        }
         handler.post(copyRunnable!!)
         logger.i("Copy loop started (interval=${copyIntervalMs}ms)")
     }
 
-    private fun processAndSetBitmap(bmp: AndroidBitmap?, dst: ImageView) {
+    private fun processAndSetBitmap(
+        bmp: AndroidBitmap?,
+        dst: ImageView,
+    ) {
         if (bmp == null) return
         try {
-            val finalBmp = if (bmp.hasAlpha()) {
-                if (compositeBitmap == null || compositeBitmap!!.width != bmp.width || compositeBitmap!!.height != bmp.height) {
-                    compositeBitmap?.recycle()
-                    compositeBitmap = AndroidBitmap.createBitmap(bmp.width, bmp.height, AndroidBitmap.Config.ARGB_8888)
+            val finalBmp =
+                if (bmp.hasAlpha()) {
+                    if (compositeBitmap == null || compositeBitmap!!.width != bmp.width || compositeBitmap!!.height != bmp.height) {
+                        compositeBitmap?.recycle()
+                        compositeBitmap = AndroidBitmap.createBitmap(bmp.width, bmp.height, AndroidBitmap.Config.ARGB_8888)
+                    }
+                    val canvas = Canvas(compositeBitmap!!)
+                    canvas.drawColor(Color.BLACK)
+                    canvas.drawBitmap(bmp, 0f, 0f, null)
+                    compositeBitmap
+                } else {
+                    logger.d("Using original bitmap (opaque)")
+                    bmp
                 }
-                val canvas = Canvas(compositeBitmap!!)
-                canvas.drawColor(Color.BLACK)
-                canvas.drawBitmap(bmp, 0f, 0f, null)
-                compositeBitmap
-            } else {
-                logger.d("Using original bitmap (opaque)")
-                bmp
-            }
             dst.setImageBitmap(finalBmp)
             dst.invalidate()
-            //logger.i("setImageBitmap OK. dst.visible=${dst.visibility == View.VISIBLE} dst.alpha=${dst.alpha} bmp.size=${finalBmp?.width}x${finalBmp?.height}")
+            // logger.i("setImageBitmap OK. dst.visible=${dst.visibility == View.VISIBLE} dst.alpha=${dst.alpha} bmp.size=${finalBmp?.width}x${finalBmp?.height}")
         } catch (e: Exception) {
             logger.e("processAndSetBitmap failed: ${e.message}")
         }
@@ -471,49 +502,62 @@ class VrManager(
 
     fun showVrSettingsDialog() {
         if (!isVrMode) return
-        val dialogRoot = LinearLayout(activity).apply {
-            orientation = LinearLayout.VERTICAL
-            val pad = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 12f, activity.resources.displayMetrics).toInt()
-            setPadding(pad, pad, pad, pad)
-        }
+        val dialogRoot =
+            LinearLayout(activity).apply {
+                orientation = LinearLayout.VERTICAL
+                val pad = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 12f, activity.resources.displayMetrics).toInt()
+                setPadding(pad, pad, pad, pad)
+            }
 
-        val scaleLabel = TextView(activity).apply {
-            text = "Scale (size): ${"%.2f".format(eyeScale)}"
-            layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-        }
-        val scaleSeek = SeekBar(activity).apply {
-            max = 100
-            progress = ((eyeScale - 0.5f) * 100).toInt().coerceIn(0, 100)
-            layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-        }
+        val scaleLabel =
+            TextView(activity).apply {
+                text = "Scale (size): ${"%.2f".format(eyeScale)}"
+                layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            }
+        val scaleSeek =
+            SeekBar(activity).apply {
+                max = 100
+                progress = ((eyeScale - 0.5f) * 100).toInt().coerceIn(0, 100)
+                layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            }
 
-        val spacingLabel = TextView(activity).apply {
-            text = "Spacing (px): $eyeSpacingPx"
-            val lp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-            lp.topMargin = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 8f, activity.resources.displayMetrics).toInt()
-            layoutParams = lp
-        }
-        val spacingSeek = SeekBar(activity).apply {
-            val maxDp = 200
-            val maxPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, maxDp.toFloat(), activity.resources.displayMetrics).toInt()
-            max = maxPx * 2
-            progress = (eyeSpacingPx + maxPx).coerceIn(0, max)
-            layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-        }
+        val spacingLabel =
+            TextView(activity).apply {
+                text = "Spacing (px): $eyeSpacingPx"
+                val lp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                lp.topMargin = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 8f, activity.resources.displayMetrics).toInt()
+                layoutParams = lp
+            }
+        val spacingSeek =
+            SeekBar(activity).apply {
+                val maxDp = 200
+                val maxPx =
+                    TypedValue
+                        .applyDimension(
+                            TypedValue.COMPLEX_UNIT_DIP,
+                            maxDp.toFloat(),
+                            activity.resources.displayMetrics,
+                        ).toInt()
+                max = maxPx * 2
+                progress = (eyeSpacingPx + maxPx).coerceIn(0, max)
+                layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            }
 
-        val sensLabel = TextView(activity).apply {
-            val currentSens = GyroOrientationController.sensivity
-            text = "Sensitivity: ${"%.2f".format(currentSens)}"
-            val lp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-            lp.topMargin = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 8f, activity.resources.displayMetrics).toInt()
-            layoutParams = lp
-        }
-        val sensSeek = SeekBar(activity).apply {
-            // map 0..200 -> 0.00..2.00 (0.01 step)
-            max = 200
-            progress = ( (GyroOrientationController.sensivity * 100f).toInt() ).coerceIn(0, max) // стартовое положение
-            layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-        }
+        val sensLabel =
+            TextView(activity).apply {
+                val currentSens = GyroOrientationController.sensivity
+                text = "Sensitivity: ${"%.2f".format(currentSens)}"
+                val lp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                lp.topMargin = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 8f, activity.resources.displayMetrics).toInt()
+                layoutParams = lp
+            }
+        val sensSeek =
+            SeekBar(activity).apply {
+                // map 0..200 -> 0.00..2.00 (0.01 step)
+                max = 200
+                progress = ((GyroOrientationController.sensivity * 100f).toInt()).coerceIn(0, max) // стартовое положение
+                layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            }
 
         dialogRoot.addView(scaleLabel)
         dialogRoot.addView(scaleSeek)
@@ -522,44 +566,76 @@ class VrManager(
         dialogRoot.addView(sensLabel)
         dialogRoot.addView(sensSeek)
 
-        val dialog = AlertDialog.Builder(activity)
-            .setTitle("VR: Adjust eyes")
-            .setView(dialogRoot)
-            .setPositiveButton("OK", null)
-            .create()
+        val dialog =
+            AlertDialog
+                .Builder(activity)
+                .setTitle("VR: Adjust eyes")
+                .setView(dialogRoot)
+                .setPositiveButton("OK", null)
+                .create()
 
-        scaleSeek.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(sb: SeekBar?, progress: Int, fromUser: Boolean) {
-                eyeScale = 0.5f + progress.toFloat() / 100f
-                scaleLabel.text = "Scale (size): ${"%.2f".format(eyeScale)}"
-                applyVrAdjustments()
-            }
-            override fun onStartTrackingTouch(sb: SeekBar?) {}
-            override fun onStopTrackingTouch(sb: SeekBar?) {}
-        })
+        scaleSeek.setOnSeekBarChangeListener(
+            object : SeekBar.OnSeekBarChangeListener {
+                override fun onProgressChanged(
+                    sb: SeekBar?,
+                    progress: Int,
+                    fromUser: Boolean,
+                ) {
+                    eyeScale = 0.5f + progress.toFloat() / 100f
+                    scaleLabel.text = "Scale (size): ${"%.2f".format(eyeScale)}"
+                    applyVrAdjustments()
+                }
 
-        spacingSeek.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(sb: SeekBar?, progress: Int, fromUser: Boolean) {
-                val maxDp = 200
-                val maxPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, maxDp.toFloat(), activity.resources.displayMetrics).toInt()
-                eyeSpacingPx = progress - maxPx
-                spacingLabel.text = "Spacing (px): ${eyeSpacingPx}"
-                applyVrAdjustments()
-            }
-            override fun onStartTrackingTouch(sb: SeekBar?) {}
-            override fun onStopTrackingTouch(sb: SeekBar?) {}
-        })
+                override fun onStartTrackingTouch(sb: SeekBar?) {}
 
-        sensSeek.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(sb: SeekBar?, progress: Int, fromUser: Boolean) {
-                val newSens = progress.toFloat() / 100f
-                GyroOrientationController.sensivity = newSens
-                sensLabel.text = "Sensitivity: ${"%.2f".format(newSens)}"
-                applyVrAdjustments()
-            }
-            override fun onStartTrackingTouch(sb: SeekBar?) {}
-            override fun onStopTrackingTouch(sb: SeekBar?) {}
-        })
+                override fun onStopTrackingTouch(sb: SeekBar?) {}
+            },
+        )
+
+        spacingSeek.setOnSeekBarChangeListener(
+            object : SeekBar.OnSeekBarChangeListener {
+                override fun onProgressChanged(
+                    sb: SeekBar?,
+                    progress: Int,
+                    fromUser: Boolean,
+                ) {
+                    val maxDp = 200
+                    val maxPx =
+                        TypedValue
+                            .applyDimension(
+                                TypedValue.COMPLEX_UNIT_DIP,
+                                maxDp.toFloat(),
+                                activity.resources.displayMetrics,
+                            ).toInt()
+                    eyeSpacingPx = progress - maxPx
+                    spacingLabel.text = "Spacing (px): $eyeSpacingPx"
+                    applyVrAdjustments()
+                }
+
+                override fun onStartTrackingTouch(sb: SeekBar?) {}
+
+                override fun onStopTrackingTouch(sb: SeekBar?) {}
+            },
+        )
+
+        sensSeek.setOnSeekBarChangeListener(
+            object : SeekBar.OnSeekBarChangeListener {
+                override fun onProgressChanged(
+                    sb: SeekBar?,
+                    progress: Int,
+                    fromUser: Boolean,
+                ) {
+                    val newSens = progress.toFloat() / 100f
+                    GyroOrientationController.sensivity = newSens
+                    sensLabel.text = "Sensitivity: ${"%.2f".format(newSens)}"
+                    applyVrAdjustments()
+                }
+
+                override fun onStartTrackingTouch(sb: SeekBar?) {}
+
+                override fun onStopTrackingTouch(sb: SeekBar?) {}
+            },
+        )
 
         dialog.show()
     }
@@ -581,7 +657,11 @@ class VrManager(
                 val right = parentLinear.getChildAt(1)
                 val half = (eyeSpacingPx / 2)
 
-                fun setMarginStartEnd(view: View, start: Int? = null, end: Int? = null) {
+                fun setMarginStartEnd(
+                    view: View,
+                    start: Int? = null,
+                    end: Int? = null,
+                ) {
                     val lp = view.layoutParams
                     when (lp) {
                         is LinearLayout.LayoutParams -> {

@@ -12,13 +12,13 @@ import com.arashivision.sdk.demo.util.NetworkManager
 import com.arashivision.sdk.demo.util.StorageUtils
 import com.arashivision.sdk.demo.util.XLogUtils
 import com.arashivision.sdkcamera.InstaCameraSDK
-import com.arashivision.sdkcamera.camera.model.RecordResolution
 import com.arashivision.sdkcamera.log.LogManager
 import com.arashivision.sdkmedia.InstaMediaSDK
 import java.util.function.Function
 
-class InstaApp : Application(), ActivityLifecycleCallbacks {
-
+class InstaApp :
+    Application(),
+    ActivityLifecycleCallbacks {
     var topActivity: Activity? = null
         private set
     var lastActivity: Activity? = null
@@ -42,8 +42,6 @@ class InstaApp : Application(), ActivityLifecycleCallbacks {
         InstaMediaSDK.init(this)
         XLogUtils.init(this)
 
-        // 设置日志缓存路径，如不设置，则不缓存
-        RecordResolution.CAPTURE_3840_1920_100FPS
         LogManager.instance.logRootPath = StorageUtils.logCacheDir
 
         // 开启日志实时抓取
@@ -63,7 +61,10 @@ class InstaApp : Application(), ActivityLifecycleCallbacks {
         unregisterActivityLifecycleCallbacks(this)
     }
 
-    override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
+    override fun onActivityCreated(
+        activity: Activity,
+        savedInstanceState: Bundle?,
+    ) {
     }
 
     override fun onActivityStarted(activity: Activity) {
@@ -95,7 +96,10 @@ class InstaApp : Application(), ActivityLifecycleCallbacks {
     override fun onActivityStopped(activity: Activity) {
     }
 
-    override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {
+    override fun onActivitySaveInstanceState(
+        activity: Activity,
+        outState: Bundle,
+    ) {
     }
 
     override fun onActivityDestroyed(activity: Activity) {
