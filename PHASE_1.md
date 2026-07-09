@@ -134,6 +134,30 @@ interface BaseEvent {
 
 ---
 
+## 1.6 CaptureConst.kt: единицы измерения → strings.xml
+
+В `getCaptureSettingValueName()` были вручную склеены строки с суффиксами вроде `"MAX"`, `"fps"`, `"K"`, `"Mbps"`, `"s"`, `"min"`, `"h"`, `"m"`. Это делало код неготовым к мультиязычности.
+
+**Что изменилось:**
+
+| Формат | Было | Стало |
+|--------|------|-------|
+| ISO Top | `nativeValue.toString() + "MAX"` | `getString(R.string.capture_iso_max_format, value)` |
+| Resolution | `"${w}x${h} ${fps}fps"` | `getString(R.string.capture_resolution_format, w, h, fps)` |
+| Photo res | `"${w}x${h}"` | `getString(R.string.capture_photo_resolution_format, w, h)` |
+| WB | `nativeValue.toString() + "K"` | `getString(R.string.capture_wb_format, value)` |
+| Bitrate | `nativeValue.toString() + "Mbps"` | `getString(R.string.capture_live_bitrate_format, value)` |
+| Interval | `format(timeS) + "s"` / `+ "min"` | `getString(R.string.capture_interval_seconds/minutes, ...)` |
+| Duration | `"${h}h"`, `"${m}m"`, `"${s}s"` | `getString(R.string.capture_duration_hours/minutes/seconds, ...)` |
+
+Добавлено 10 строковых ресурсов. Код теперь готов к локализации — все видимые пользователю строки в `strings.xml`, а не в Kotlin-коде.
+
+### Файлы:
+- `app/src/main/res/values/strings.xml` — +10 format string ресурсов
+- `app/src/main/java/.../ui/capture/CaptureConst.kt` — 7 ветвей `when` переписаны с конкатенации на `context.getString()`
+
+---
+
 ## 1.7 Launch modes: singleInstance → singleTop
 
 В `AndroidManifest.xml` режимы запуска `MainActivity` и `CaptureActivity` изменены с `singleInstance` на `singleTop`.
@@ -153,12 +177,6 @@ interface BaseEvent {
 - **`CaptureActivity.gyroController` / `vrManager`**: `lateinit var` → `by lazy { ... }`. Теперь гироскоп и VR-менеджер создаются при первом обращении к ним, автоматически. Исчезла необходимость проверять `.isInitialized` — этого свойства больше нет.
 
 - **`BaseActivity.viewModel` / `BaseFragment.viewModel`**: `lateinit var` → `by lazy`. ViewModel создаётся при первом обращении, не надо вызывать `createViewModel()`.
-
----
-
-## Что НЕ вошло в Фазу 1
-
-- **CaptureConst.kt → strings.xml** (пункт 1.6). Это ~300 строк маппинга строк, которые надо перенести в ресурсы. Отложено на Фазу 2 — это безопасная, но объёмная работа, не влияющая на стабильность.
 
 ---
 
