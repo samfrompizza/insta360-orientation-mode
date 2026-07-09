@@ -3,6 +3,7 @@ import java.util.Properties
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.hilt.android.gradle.plugin)
     kotlin("kapt")
     id("org.jlleitschuh.gradle.ktlint")
     id("io.gitlab.arturbosch.detekt")
@@ -83,6 +84,9 @@ android {
 
 dependencies {
 
+    implementation(project(":domain"))
+    implementation(project(":core:math"))
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.constraintlayout)
@@ -113,6 +117,9 @@ dependencies {
     implementation(libs.insta.media)
 
     implementation(files("libs/glide_transformations.jar"))
+
+    implementation(libs.hilt.android)
+    kapt(libs.hilt.compiler)
 
     testImplementation("junit:junit:4.13.2")
 

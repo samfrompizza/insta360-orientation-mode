@@ -14,8 +14,10 @@ import com.arashivision.sdk.demo.util.XLogUtils
 import com.arashivision.sdkcamera.InstaCameraSDK
 import com.arashivision.sdkcamera.log.LogManager
 import com.arashivision.sdkmedia.InstaMediaSDK
+import dagger.hilt.android.HiltAndroidApp
 import java.util.function.Function
 
+@HiltAndroidApp
 class InstaApp :
     Application(),
     ActivityLifecycleCallbacks {

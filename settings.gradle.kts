@@ -39,3 +39,20 @@ dependencyResolutionManagement {
 
 rootProject.name = "sdkdemo2"
 include(":app")
+
+include(":core:math")
+include(":core:sensor-fusion")
+include(":core:detection")
+include(":core:vr")
+
+include(":data:camera")
+include(":data:media")
+include(":data:sensor")
+
+include(":domain")
+
+include(":feature:capture")
+include(":feature:player")
+include(":feature:connect")
+include(":feature:shot")
+include(":feature:settings")

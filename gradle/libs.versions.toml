@@ -20,6 +20,8 @@ coroutines = "1.6.4"
 lifecycle = "2.6.2"
 xlog = "1.11.1"
 filepicker = "3.0.1"
+hilt = "2.51.1"
+hiltNavigationCompose = "1.2.0"
 androidx-junit = "1.1.5"
 androidx-espresso-core = "3.5.1"
 
@@ -49,10 +51,14 @@ glide-compiler = { group = "com.github.bumptech.glide", name = "compiler", versi
 filepicker = { group = "com.github.arteaprogramar", name = "Android-MaterialFilePicker", version.ref = "filepicker" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "androidx-junit" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "androidx-espresso-core" }
+hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
+hilt-compiler = { group = "com.google.dagger", name = "hilt-android-compiler", version.ref = "hilt" }
 
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
+android-library = { id = "com.android.library", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 jetbrains-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "jetbrainsKotlinJvm" }
+hilt-android-gradle-plugin = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 
