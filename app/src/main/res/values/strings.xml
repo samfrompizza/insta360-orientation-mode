@@ -344,4 +344,15 @@
     <string name="capture_settings_button">Настройки захвата</string>
     <string name="desc_calibrate_button">Откалибровать гироскоп</string>
     <string name="arrow_icon">Значок со стрелкой</string>
+
+    <string name="capture_iso_max_format">%1$d MAX</string>
+    <string name="capture_resolution_format">%1$dx%2$d %3$d fps</string>
+    <string name="capture_photo_resolution_format">%1$dx%2$d</string>
+    <string name="capture_wb_format">%1$dK</string>
+    <string name="capture_live_bitrate_format">%1$d Mbps</string>
+    <string name="capture_interval_seconds">%1$ss</string>
+    <string name="capture_interval_minutes">%1$smin</string>
+    <string name="capture_duration_hours">%1$dh</string>
+    <string name="capture_duration_minutes">%1$dm</string>
+    <string name="capture_duration_seconds">%1$ds</string>
 </resources>

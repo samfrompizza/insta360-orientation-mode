@@ -165,7 +165,7 @@ fun getCaptureSettingValueName(
         CaptureSetting.ISO_TOP_LIMIT -> {
             val isoTopLimit = value as ISOTopLimit
             if (isoTopLimit.nativeValue > 0) {
-                isoTopLimit.nativeValue.toString() + "MAX"
+                context.getString(R.string.capture_iso_max_format, isoTopLimit.nativeValue)
             } else {
                 context.getString(R.string.auto)
             }
@@ -173,12 +173,17 @@ fun getCaptureSettingValueName(
 
         CaptureSetting.RECORD_RESOLUTION -> {
             val resolution: RecordResolution = value as RecordResolution
-            resolution.width.toString() + "x" + resolution.height + " " + resolution.fps + "fps"
+            context.getString(
+                R.string.capture_resolution_format,
+                resolution.width,
+                resolution.height,
+                resolution.fps,
+            )
         }
 
         CaptureSetting.PHOTO_RESOLUTION -> {
             val resolution = value as PhotoResolution
-            resolution.width.toString() + "x" + resolution.height
+            context.getString(R.string.capture_photo_resolution_format, resolution.width, resolution.height)
         }
 
         CaptureSetting.WB -> {
@@ -186,7 +191,7 @@ fun getCaptureSettingValueName(
             if (wb.nativeValue == WB.WB_AUTO.nativeValue) {
                 context.getString(R.string.auto)
             } else {
-                wb.nativeValue.toString() + "K"
+                context.getString(R.string.capture_wb_format, wb.nativeValue)
             }
         }
 
@@ -198,9 +203,9 @@ fun getCaptureSettingValueName(
             if (timeS == 0.0) {
                 context.getString(R.string.off)
             } else if (timeS < 60) {
-                decimalFormat.format(timeS) + "s"
+                context.getString(R.string.capture_interval_seconds, decimalFormat.format(timeS))
             } else {
-                decimalFormat.format(timeS / 60.0) + "min"
+                context.getString(R.string.capture_interval_minutes, decimalFormat.format(timeS / 60.0))
             }
         }
 
@@ -229,13 +234,13 @@ fun getCaptureSettingValueName(
                 val second: Int = recordDuration.nativeValue % 60
                 var time = ""
                 if (hour != 0) {
-                    time = "${hour}h"
+                    time = context.getString(R.string.capture_duration_hours, hour)
                 }
                 if (minute != 0) {
-                    time = "$time${minute}m"
+                    time = "$time${context.getString(R.string.capture_duration_minutes, minute)}"
                 }
                 if (second != 0) {
-                    time = "$time${second}s"
+                    time = "$time${context.getString(R.string.capture_duration_seconds, second)}"
                 }
                 time
             }
@@ -295,7 +300,7 @@ fun getCaptureSettingValueName(
 
         CaptureSetting.LIVE_BITRATE -> {
             val liveBitrate: LiveBitrate = value as LiveBitrate
-            liveBitrate.nativeValue.toString() + "Mbps"
+            context.getString(R.string.capture_live_bitrate_format, liveBitrate.nativeValue)
         }
 
         CaptureSetting.I_LOG -> {
