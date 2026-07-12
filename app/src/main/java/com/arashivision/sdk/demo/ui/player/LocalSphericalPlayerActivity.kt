@@ -19,15 +19,16 @@ import androidx.media3.exoplayer.ExoPlayer
 import com.arashivision.sdk.demo.R
 import com.arashivision.sdk.demo.base.BaseActivity
 import com.arashivision.sdk.demo.base.BaseEvent
+import com.arashivision.sdk.demo.core.detection.VideoDetectedObject
+import com.arashivision.sdk.demo.core.detection.VideoDetectionSidecarParser
+import com.arashivision.sdk.demo.core.detection.VideoDetectionTimeline
+import com.arashivision.sdk.demo.core.math.panorama.EquirectangularProjection
+import com.arashivision.sdk.demo.core.math.panorama.PanoramaDirection
+import com.arashivision.sdk.demo.core.math.panorama.PanoramaFovMath
+import com.arashivision.sdk.demo.core.math.panorama.TargetFovState
+import com.arashivision.sdk.demo.core.vr.UnifiedVrManager
+import com.arashivision.sdk.demo.data.sensor.GyroOrientationController
 import com.arashivision.sdk.demo.databinding.ActivityLocalSphericalPlayerBinding
-import com.arashivision.sdk.demo.ui.capture.GyroOrientationController
-import com.arashivision.sdk.demo.ui.player.detection.VideoDetectedObject
-import com.arashivision.sdk.demo.ui.player.detection.VideoDetectionSidecarParser
-import com.arashivision.sdk.demo.ui.player.detection.VideoDetectionTimeline
-import com.arashivision.sdk.demo.ui.player.panorama.EquirectangularProjection
-import com.arashivision.sdk.demo.ui.player.panorama.PanoramaDirection
-import com.arashivision.sdk.demo.ui.player.panorama.PanoramaFovMath
-import com.arashivision.sdk.demo.ui.player.panorama.TargetFovState
 import com.elvishew.xlog.XLog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -44,8 +45,30 @@ class LocalSphericalPlayerActivity :
 
     private var player: ExoPlayer? = null
 
-    private lateinit var gyroController: GyroOrientationController
-    private lateinit var vrManager: LocalVrManager
+    private val gyroController: GyroOrientationController by lazy {
+        GyroOrientationController(
+            context = this,
+            getDisplayRotation = { display?.rotation ?: Surface.ROTATION_0 },
+            applyOrientation = { _, _ -> tryApplyOrientation() },
+        )
+    }
+
+    private val vrSource by lazy {
+        ExoPlayerVrSource(sphericalView = binding.sphericalView)
+    }
+
+    private val vrManager: UnifiedVrManager by lazy {
+        UnifiedVrManager(
+            activity = this,
+            rootContainer = binding.root,
+            vrSource = vrSource,
+            overlaysToHide = listOf(binding.btnPlayPause, binding.ivCaptureSetting, binding.btnCalibrate),
+        ).also { manager ->
+            manager.onVrModeChanged = { isVrMode ->
+                binding.directionArrowOverlay.setVrMode(isVrMode)
+            }
+        }
+    }
 
     private val uiHandler = Handler(Looper.getMainLooper())
     private val detectionParser = VideoDetectionSidecarParser()
@@ -85,23 +108,6 @@ class LocalSphericalPlayerActivity :
         // Our GyroOrientationController is used only for gaze tracking (arrow direction).
         binding.sphericalView.setUseSensorRotation(true)
 
-        gyroController =
-            GyroOrientationController(
-                context = this,
-                getDisplayRotation = { display?.rotation ?: Surface.ROTATION_0 },
-                applyOrientation = { _, _ -> tryApplyOrientation() },
-            )
-
-        vrManager =
-            LocalVrManager(
-                activity = this,
-                sourceView = binding.sphericalView,
-                leftEyeImage = binding.vrLeftEye,
-                overlaysToHide = listOf(binding.btnPlayPause, binding.ivCaptureSetting, binding.btnCalibrate),
-            )
-        vrManager.onVrModeChanged = { isVrMode ->
-            binding.directionArrowOverlay.setVrMode(isVrMode)
-        }
         syncPlayPauseButton()
     }
 
@@ -342,7 +348,7 @@ class LocalSphericalPlayerActivity :
                 "insideFov=${result.isInsideFov} " +
                 "yawDelta=${"%.1f".format(Math.toDegrees(result.yawDeltaRad))}° " +
                 "pitchDelta=${"%.1f".format(Math.toDegrees(result.pitchDeltaRad))}° " +
-                "arrowAngle=${if (result.arrowAngleRad != null) "%.1f".format(Math.toDegrees(result.arrowAngleRad)) + "°" else "HIDDEN"}",
+                "arrowAngle=${result.arrowAngleRad?.let { "%.1f".format(Math.toDegrees(it)) + "°" } ?: "HIDDEN"}",
         )
         logger.d(
             "ARROW_QUAT | " +

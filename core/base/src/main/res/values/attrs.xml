@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="HorizontalOptionSelector">
+        <attr name="textColor" format="color" />
+        <attr name="selectedTextColor" format="color" />
+        <attr name="textSize" format="dimension" />
+        <attr name="padding" format="dimension" />
+    </declare-styleable>
+
+    <declare-styleable name="DiscreteScrollView">
+        <attr name="dsv_orientation" format="enum">
+            <enum name="horizontal" value="0" />
+            <enum name="vertical" value="1" />
+        </attr>
+    </declare-styleable>
+</resources>

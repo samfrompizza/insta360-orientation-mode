@@ -6,21 +6,18 @@ import android.app.Application
 import android.app.Application.ActivityLifecycleCallbacks
 import android.content.Context
 import android.os.Bundle
-import com.arashivision.sdk.demo.pref.Pref
-import com.arashivision.sdk.demo.usb.UsbMgr
-import com.arashivision.sdk.demo.util.NetworkManager
-import com.arashivision.sdk.demo.util.StorageUtils
-import com.arashivision.sdk.demo.util.XLogUtils
-import com.arashivision.sdkcamera.InstaCameraSDK
-import com.arashivision.sdkcamera.log.LogManager
-import com.arashivision.sdkmedia.InstaMediaSDK
+import com.arashivision.sdk.demo.base.AppContext
+import com.arashivision.sdk.demo.di.SdkInitializer
 import dagger.hilt.android.HiltAndroidApp
 import java.util.function.Function
+import javax.inject.Inject
 
 @HiltAndroidApp
 class InstaApp :
     Application(),
     ActivityLifecycleCallbacks {
+    @Inject lateinit var sdkInitializer: SdkInitializer
+
     var topActivity: Activity? = null
         private set
     var lastActivity: Activity? = null
@@ -31,31 +28,23 @@ class InstaApp :
 
     companion object {
         @SuppressLint("StaticFieldLeak")
-        lateinit var instance: InstaApp
-            private set
+        private var _instance: InstaApp? = null
+
+        val instance: InstaApp
+            get() = _instance ?: error("InstaApp has not been initialized")
     }
 
     override fun onCreate() {
         super.onCreate()
-        instance = this
+        _instance = this
+        AppContext.init(this)
         registerActivityLifecycleCallbacks(this)
-        UsbMgr.init(this.applicationContext)
-        InstaCameraSDK.init(this)
-        InstaMediaSDK.init(this)
-        XLogUtils.init(this)
-
-        LogManager.instance.logRootPath = StorageUtils.logCacheDir
-
-        // 开启日志实时抓取
-        if (Pref.getRealTimeCaptureLogs()) LogManager.instance.startLogDumper()
-
-        // 开启Network监听
-        NetworkManager.startNetworkListener()
+        sdkInitializer.init()
     }
 
     override fun attachBaseContext(base: Context) {
         super.attachBaseContext(base)
-        instance = this
+        _instance = this
     }
 
     override fun onTerminate() {

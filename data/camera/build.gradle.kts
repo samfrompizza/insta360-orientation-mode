@@ -1,6 +1,8 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.hilt.android.gradle.plugin)
+    kotlin("kapt")
     id("org.jlleitschuh.gradle.ktlint")
     id("io.gitlab.arturbosch.detekt")
 }
@@ -24,7 +26,13 @@ android {
 
 dependencies {
     implementation(project(":domain"))
+    implementation(project(":core:base"))
+    implementation(project(":core:math"))
     implementation(libs.insta.camera)
     implementation(libs.insta.media)
     implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.xlog)
+    implementation(libs.hilt.android)
+    kapt(libs.hilt.compiler)
 }

@@ -20,7 +20,8 @@ abstract class BasePreferenceFragment<V : BaseViewModel>(
 ) : PreferenceFragmentCompat() {
     private val logger: Logger = XLog.tag(BasePreferenceFragment::class.java.simpleName).build()
 
-    protected lateinit var binding: FragmentSettingBinding
+    private var _binding: FragmentSettingBinding? = null
+    protected val binding: FragmentSettingBinding get() = _binding ?: error("Binding not created yet")
     protected val viewModel: V by lazy { ViewModelProvider(this)[viewModelClass] }
 
     override fun onAttach(context: Context) {
@@ -41,7 +42,7 @@ abstract class BasePreferenceFragment<V : BaseViewModel>(
     ): View {
         logger.d("[lifecycle] " + javaClass.simpleName + " onCreateView")
         val view = super.onCreateView(inflater, container, savedInstanceState)
-        binding = FragmentSettingBinding.inflate(inflater, container, false)
+        _binding = FragmentSettingBinding.inflate(inflater, container, false)
         binding.prefContainer.addView(view)
         return binding.root
     }

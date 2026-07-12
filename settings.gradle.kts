@@ -40,6 +40,7 @@ dependencyResolutionManagement {
 rootProject.name = "sdkdemo2"
 include(":app")
 
+include(":core:base")
 include(":core:math")
 include(":core:sensor-fusion")
 include(":core:detection")

@@ -85,7 +85,19 @@ android {
 dependencies {
 
     implementation(project(":domain"))
+    implementation(project(":core:base"))
     implementation(project(":core:math"))
+    implementation(project(":core:sensor-fusion"))
+    implementation(project(":core:detection"))
+    implementation(project(":core:vr"))
+    implementation(project(":data:camera"))
+    implementation(project(":data:sensor"))
+    implementation(project(":data:media"))
+    implementation(project(":feature:capture"))
+    implementation(project(":feature:player"))
+    implementation(project(":feature:connect"))
+    implementation(project(":feature:shot"))
+    implementation(project(":feature:settings"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)

@@ -3,5 +3,6 @@
 /.idea
 /.kotlin
 /build
+**/build
 gradlew.bat
 local.properties

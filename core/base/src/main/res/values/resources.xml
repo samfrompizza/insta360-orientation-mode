@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="camera_battery_low">Camera battery low</string>
+    <string name="camera_storage_full_soon">Camera storage almost full</string>
+    <string name="camera_battery_charging">Camera battery charging: %1$d%%</string>
+    <string name="camera_battery_stop_charging">Camera battery stopped charging</string>
+    <string name="camera_sd_card_insert">SD card inserted</string>
+    <string name="camera_sd_card_extract">SD card removed</string>
+    <string name="tag_loading">tag_loading</string>
+
+    <color name="transparent">#00000000</color>
+
+    <style name="BaseDialogStyle" parent="Theme.AppCompat.Dialog">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsFloating">true</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:backgroundDimEnabled">true</item>
+    </style>
+
+    <integer name="loading_hide_what">1000</integer>
+    <integer name="loading_show_what">1001</integer>
+</resources>

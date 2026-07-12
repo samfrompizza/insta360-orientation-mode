@@ -16,7 +16,7 @@
         app:layout_constraintTop_toTopOf="parent"
         tools:background="#777777" />
 
-    <com.arashivision.sdk.demo.view.discretescrollview.DiscreteScrollView
+    <com.arashivision.sdk.demo.ui.capture.CaptureModeCarousel
         android:id="@+id/sv_capture_mode"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
@@ -24,7 +24,6 @@
         android:foregroundGravity="center"
         android:overScrollMode="never"
         android:visibility="gone"
-        app:dsv_orientation="horizontal"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />

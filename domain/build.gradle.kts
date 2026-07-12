@@ -15,5 +15,6 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
 
 dependencies {
     implementation(project(":core:math"))
+    implementation(libs.kotlinx.coroutines.core)
     testImplementation("junit:junit:4.13.2")
 }

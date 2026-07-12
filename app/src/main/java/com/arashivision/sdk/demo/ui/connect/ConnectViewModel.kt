@@ -10,7 +10,7 @@ import android.net.wifi.WifiNetworkSpecifier
 import androidx.lifecycle.viewModelScope
 import com.arashivision.insta360.basecamera.camera.CameraType
 import com.arashivision.insta360.basecamera.camera.CameraWifiPrefix
-import com.arashivision.sdk.demo.InstaApp
+import com.arashivision.sdk.demo.base.AppContext
 import com.arashivision.sdk.demo.base.BaseViewModel
 import com.arashivision.sdk.demo.ext.connectedWiFiSsid
 import com.arashivision.sdk.demo.ext.connectivityManager
@@ -302,14 +302,14 @@ class ConnectViewModel : BaseViewModel() {
             InstaCameraManager.CONNECT_TYPE_WIFI, InstaCameraManager.CONNECT_TYPE_USB -> {
                 if (enabled && (isConnectingUsb || isConnectingWiFi)) {
                     emitEvent(ConnectEvent.ConnectDeviceEvent(EventStatus.SUCCESS, connectType))
-                    InstaApp.instance.startService(Intent(InstaApp.instance, ConnectService::class.java))
+                    AppContext.application.startService(Intent(AppContext.application, ConnectService::class.java))
                     connectivityManager.bindProcessToNetwork(NetworkManager.mobileNet)
                     isConnectingUsb = false
                     isConnectingWiFi = false
                 } else if (!enabled) {
-                    // Wi-Fi或者USB断连
+                    // Wi-Fi or USB disconnected
                     emitEvent(ConnectEvent.CameraDisconnectedEvent)
-                    InstaApp.instance.stopService(Intent(InstaApp.instance, ConnectService::class.java))
+                    AppContext.application.stopService(Intent(AppContext.application, ConnectService::class.java))
                 }
             }
         }
