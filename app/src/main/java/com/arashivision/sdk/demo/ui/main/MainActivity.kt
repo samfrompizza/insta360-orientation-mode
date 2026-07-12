@@ -1,8 +1,6 @@
 package com.arashivision.sdk.demo.ui.main
 
 import android.os.Bundle
-import android.view.MenuItem
-import androidx.fragment.app.Fragment
 import com.arashivision.sdk.demo.R
 import com.arashivision.sdk.demo.base.BaseActivity
 import com.arashivision.sdk.demo.base.BaseEvent
@@ -17,7 +15,6 @@ class MainActivity :
         bindingFactory = { ActivityMainBinding.inflate(it) },
         viewModelClass = MainViewModel::class.java,
     ) {
-    private val mFragments: MutableList<Fragment> = ArrayList()
 
     public override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -26,20 +23,9 @@ class MainActivity :
 
     override fun initView() {
         super.initView()
-        mFragments.add(ConnectFragment())
-        mFragments.add(SettingFragment())
-
-        // 默认显示第一个Fragment
-        checkFragment(0)
-    }
-
-    public override fun initListener() {
-        super.initListener()
-        binding.bottomNavigation.setOnItemSelectedListener { item: MenuItem ->
-            when (item.itemId) {
-                else -> checkFragment(0)
-            }
-        }
+        supportFragmentManager.beginTransaction()
+            .add(R.id.fragment_container, ConnectFragment())
+            .commit()
     }
 
     public override fun onEvent(event: BaseEvent) {
@@ -50,22 +36,5 @@ class MainActivity :
         } else if (event is PermissionDeniedEvent) {
             toast(R.string.toast_permission_request_failed, true)
         }
-    }
-
-    fun checkFragment(index: Int): Boolean {
-        if (index < 0 || index >= mFragments.size) return false
-        val fragment = mFragments[index]
-        val supportFragmentManager = supportFragmentManager
-        val transaction = supportFragmentManager.beginTransaction()
-        for (f in supportFragmentManager.fragments) {
-            transaction.hide(f)
-        }
-        if (!supportFragmentManager.fragments.contains(fragment)) {
-            transaction.add(R.id.fragment_container, fragment)
-        } else {
-            transaction.show(fragment)
-        }
-        transaction.commit()
-        return true
     }
 }

@@ -380,6 +380,11 @@ class CaptureActivity :
         yawDeg: Float,
         pitchDeg: Float,
     ) {
+        if (vrManager.isVrMode) {
+            runCatching { vrManager.applyOrientation(yawDeg, pitchDeg) }
+            return
+        }
+
         val pipelinePresent =
             try {
                 binding.capturePlayerView.pipeline != null
@@ -388,38 +393,30 @@ class CaptureActivity :
             }
         if (!pipelinePresent) return
 
-        fun applyTo(
-            obj: Any?,
-            yaw: Float,
-            pitch: Float,
-        ) {
-            if (obj == null) return
-            try {
-                val cls = obj.javaClass
-                try {
-                    val mYaw = cls.getMethod("setYaw", Float::class.javaPrimitiveType)
-                    mYaw.invoke(obj, yaw)
-                } catch (e: NoSuchMethodException) {
-                }
+        applyTo(binding.capturePlayerView, yawDeg, pitchDeg)
+    }
 
-                try {
-                    val mPitch = cls.getMethod("setPitch", Float::class.javaPrimitiveType)
-                    mPitch.invoke(obj, pitch)
-                } catch (e: NoSuchMethodException) {
-                }
-            } catch (e: Exception) {
-                logger.e("applyTo error: ${e.message}")
-            }
-        }
-
+    private fun applyTo(
+        obj: Any?,
+        yaw: Float,
+        pitch: Float,
+    ) {
+        if (obj == null) return
         try {
-            if (vrManager.isVrMode) {
-                vrManager.applyOrientation(yawDeg, pitchDeg)
-            } else {
-                applyTo(binding.capturePlayerView, yawDeg, pitchDeg)
+            val cls = obj.javaClass
+            try {
+                val mYaw = cls.getMethod("setYaw", Float::class.javaPrimitiveType)
+                mYaw.invoke(obj, yaw)
+            } catch (e: NoSuchMethodException) {
+            }
+
+            try {
+                val mPitch = cls.getMethod("setPitch", Float::class.javaPrimitiveType)
+                mPitch.invoke(obj, pitch)
+            } catch (e: NoSuchMethodException) {
             }
         } catch (e: Exception) {
-            logger.e("tryApplyOrientationToPlayer error: ${e.message}")
+            logger.e("applyTo error: ${e.message}")
         }
     }
 }

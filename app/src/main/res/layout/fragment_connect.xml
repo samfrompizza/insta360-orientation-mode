@@ -4,357 +4,401 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white">
+    android:background="@color/paper"
+    android:paddingStart="20dp"
+    android:paddingEnd="20dp"
+    android:paddingTop="48dp"
+    android:paddingBottom="12dp">
 
+    <LinearLayout
+        android:id="@+id/header"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageView
+            android:id="@+id/iv_logo"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:src="@drawable/ic_logo" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:fontFamily="sans-serif"
+            android:letterSpacing="0.03"
+            android:text="Immersive"
+            android:textColor="@color/ink"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+    </LinearLayout>
 
     <TextView
         android:id="@+id/tv_camera_connect_status"
-        style="@style/TextStyle.Main"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="44dp"
-        android:padding="6dp"
-        android:textColor="@color/black"
+        android:layout_marginTop="20dp"
+        android:fontFamily="sans-serif"
+        android:textColor="@color/unselect"
+        android:textSize="13sp"
+        android:letterSpacing="0.04"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        tools:text="@string/text_camera_disconnected" />
-
-
-    <TextView
-        android:id="@+id/tv_connect_wifi"
-        style="@style/TextStyle.Main.Button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="26dp"
-        android:text="@string/button_connect_camera_wifi"
-        app:layout_constraintEnd_toStartOf="@+id/tv_connect_ble"
-        app:layout_constraintHorizontal_chainStyle="spread"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tv_camera_connect_status" />
-
-    <TextView
-        android:id="@+id/tv_connect_ble"
-        style="@style/TextStyle.Main.Button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="26dp"
-        android:text="@string/button_scan_device_by_ble"
-        app:layout_constraintEnd_toStartOf="@+id/tv_connect_usb"
-        app:layout_constraintHorizontal_chainStyle="spread"
-        app:layout_constraintStart_toEndOf="@+id/tv_connect_wifi"
-        app:layout_constraintTop_toBottomOf="@+id/tv_camera_connect_status" />
-
-
-    <TextView
-        android:id="@+id/tv_connect_usb"
-        style="@style/TextStyle.Main.Button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="26dp"
-        android:text="@string/button_connect_camera_usb"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_chainStyle="spread"
-        app:layout_constraintStart_toEndOf="@+id/tv_connect_ble"
-        app:layout_constraintTop_toBottomOf="@+id/tv_camera_connect_status" />
-
-
-
-    <TextView
-        android:id="@+id/tv_enter_local_player"
-        style="@style/TextStyle.Main.Button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:text="@string/button_enter_local_player"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tv_connect_ble" />
+        app:layout_constraintTop_toBottomOf="@+id/header"
+        tools:text="Not Connected" />
 
     <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/ll_camera_info"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_marginTop="20dp"
-        android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tv_enter_local_player"
-        tools:visibility="visible">
+        android:id="@+id/card_connect"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:background="@drawable/card_background"
+        android:padding="16dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tv_camera_connect_status">
 
         <TextView
-            android:id="@+id/tv_camera_model"
-            style="@style/TextStyle.Main"
+            android:id="@+id/label_connection"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:padding="6dp"
-            android:text="@string/text_camera_model"
-            android:textColor="@color/black"
+            android:fontFamily="sans-serif"
+            android:text="Connection"
+            android:textAllCaps="true"
+            android:textColor="@color/ink"
+            android:textSize="11sp"
+            android:letterSpacing="0.06"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
         <TextView
-            android:id="@+id/tv_camera_model_value"
-            style="@style/TextStyle.Main"
-            android:layout_width="wrap_content"
+            android:id="@+id/tv_connect_ble"
+            style="@style/Widget.Immersive.Button"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:padding="6dp"
-            android:textColor="@color/black"
-            app:layout_constraintBottom_toBottomOf="@+id/tv_camera_model"
-            app:layout_constraintStart_toEndOf="@+id/tv_camera_model"
-            app:layout_constraintTop_toTopOf="parent"
-            tools:text="Insta360 X4" />
-
-        <TextView
-            android:id="@+id/tv_camera_serial"
-            style="@style/TextStyle.Main"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:padding="6dp"
-            android:text="@string/text_camera_serial"
-            android:textColor="@color/black"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/tv_camera_model" />
-
-        <TextView
-            android:id="@+id/tv_camera_serial_value"
-            style="@style/TextStyle.Main"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:padding="6dp"
-            android:textColor="@color/black"
-            app:layout_constraintBottom_toBottomOf="@+id/tv_camera_serial"
-            app:layout_constraintStart_toEndOf="@+id/tv_camera_serial"
-            app:layout_constraintTop_toTopOf="@+id/tv_camera_serial"
-            tools:text="XX45866985SDK5849" />
-
-
-        <TextView
-            android:id="@+id/tv_camera_version"
-            style="@style/TextStyle.Main"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:padding="6dp"
-            android:text="@string/text_camera_fw_version"
-            android:textColor="@color/black"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/tv_camera_serial" />
-
-        <TextView
-            android:id="@+id/tv_camera_version_value"
-            style="@style/TextStyle.Main"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:padding="6dp"
-            android:textColor="@color/black"
-            app:layout_constraintBottom_toBottomOf="@+id/tv_camera_version"
-            app:layout_constraintStart_toEndOf="@+id/tv_camera_version"
-            app:layout_constraintTop_toTopOf="@+id/tv_camera_version"
-            tools:text="0.9.12" />
-
-        <TextView
-            android:id="@+id/tv_camera_active"
-            style="@style/TextStyle.Main"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:padding="6dp"
-            android:text="@string/text_camera_active_time"
-            android:textColor="@color/black"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/tv_camera_version" />
-
-        <TextView
-            android:id="@+id/tv_camera_active_value"
-            style="@style/TextStyle.Main"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:padding="6dp"
-            android:textColor="@color/black"
-            app:layout_constraintBottom_toBottomOf="@+id/tv_camera_active"
-            app:layout_constraintStart_toEndOf="@+id/tv_camera_active"
-            app:layout_constraintTop_toTopOf="@+id/tv_camera_active"
-            tools:text="2025-04-03 16:54:12" />
-
-        <TextView
-            android:id="@+id/tv_camera_media_time"
-            style="@style/TextStyle.Main"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:padding="6dp"
-            android:text="@string/text_camera_media_time"
-            android:textColor="@color/black"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/tv_camera_active" />
-
-        <TextView
-            android:id="@+id/tv_camera_media_time_value"
-            style="@style/TextStyle.Main"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:padding="6dp"
-            android:textColor="@color/black"
-            app:layout_constraintBottom_toBottomOf="@+id/tv_camera_media_time"
-            app:layout_constraintStart_toEndOf="@+id/tv_camera_media_time"
-            app:layout_constraintTop_toTopOf="@+id/tv_camera_media_time"
-            tools:text="16:54:12" />
-
-        <TextView
-            android:id="@+id/tv_refresh_media_time"
-            style="@style/TextStyle.Main.Button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:paddingStart="8dp"
-            android:paddingTop="4dp"
-            android:paddingEnd="8dp"
-            android:paddingBottom="4dp"
-            android:text="@string/refresh"
-            android:textSize="12sp"
-            app:layout_constraintBottom_toBottomOf="@+id/tv_camera_media_time_value"
-            app:layout_constraintStart_toEndOf="@+id/tv_camera_media_time_value"
-            app:layout_constraintTop_toTopOf="@+id/tv_camera_media_time_value" />
-
-        <TextView
-            android:id="@+id/tv_camera_battery_level"
-            style="@style/TextStyle.Main"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:padding="6dp"
-            android:text="@string/text_camera_battery_level"
-            android:textColor="@color/black"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/tv_camera_media_time" />
-
-        <TextView
-            android:id="@+id/tv_camera_battery_level_value"
-            style="@style/TextStyle.Main"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:padding="6dp"
-            android:textColor="@color/black"
-            app:layout_constraintBottom_toBottomOf="@+id/tv_camera_battery_level"
-            app:layout_constraintStart_toEndOf="@+id/tv_camera_battery_level"
-            app:layout_constraintTop_toTopOf="@+id/tv_camera_battery_level"
-            tools:text="69%" />
-
-        <TextView
-            android:id="@+id/tv_camera_charge_status"
-            style="@style/TextStyle.Main"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:padding="6dp"
-            android:text="@string/text_camera_charge_status"
-            android:textColor="@color/black"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/tv_camera_battery_level" />
-
-        <TextView
-            android:id="@+id/tv_camera_charge_status_value"
-            style="@style/TextStyle.Main"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:padding="6dp"
-            android:textColor="@color/black"
-            app:layout_constraintBottom_toBottomOf="@+id/tv_camera_charge_status"
-            app:layout_constraintStart_toEndOf="@+id/tv_camera_charge_status"
-            app:layout_constraintTop_toTopOf="@+id/tv_camera_charge_status"
-            tools:text="充电中" />
-
-        <TextView
-            android:id="@+id/tv_camera_sd_status"
-            style="@style/TextStyle.Main"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:padding="6dp"
-            android:text="@string/text_camera_sd_status"
-            android:textColor="@color/black"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/tv_camera_charge_status" />
-
-        <TextView
-            android:id="@+id/tv_camera_sd_status_value"
-            style="@style/TextStyle.Main"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:padding="6dp"
-            android:textColor="@color/black"
-            app:layout_constraintBottom_toBottomOf="@+id/tv_camera_sd_status"
-            app:layout_constraintStart_toEndOf="@+id/tv_camera_sd_status"
-            app:layout_constraintTop_toTopOf="@+id/tv_camera_sd_status"
-            tools:text="已插入" />
-
-
-        <TextView
-            android:id="@+id/tv_camera_sd_total"
-            style="@style/TextStyle.Main"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:padding="6dp"
-            android:text="@string/text_camera_sd_total"
-            android:textColor="@color/black"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/tv_camera_sd_status" />
-
-        <TextView
-            android:id="@+id/tv_camera_sd_total_value"
-            style="@style/TextStyle.Main"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:padding="6dp"
-            android:textColor="@color/black"
-            app:layout_constraintBottom_toBottomOf="@+id/tv_camera_sd_total"
-            app:layout_constraintStart_toEndOf="@+id/tv_camera_sd_total"
-            app:layout_constraintTop_toTopOf="@+id/tv_camera_sd_total"
-            tools:text="64G" />
-
-        <TextView
-            android:id="@+id/tv_camera_sd_free"
-            style="@style/TextStyle.Main"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:padding="6dp"
-            android:text="@string/text_camera_sd_free"
-            android:textColor="@color/black"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/tv_camera_sd_total" />
-
-        <TextView
-            android:id="@+id/tv_camera_sd_free_value"
-            style="@style/TextStyle.Main"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:padding="6dp"
-            android:textColor="@color/black"
-            app:layout_constraintBottom_toBottomOf="@+id/tv_camera_sd_free"
-            app:layout_constraintStart_toEndOf="@+id/tv_camera_sd_free"
-            app:layout_constraintTop_toTopOf="@+id/tv_camera_sd_free"
-            tools:text="23G" />
-
-        <TextView
-            android:id="@+id/tv_enter_capture"
-            style="@style/TextStyle.Main.Button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="6dp"
             android:layout_marginTop="12dp"
-            android:text="@string/button_enter_capture"
+            android:text="@string/button_scan_device_by_ble"
+            app:layout_constraintEnd_toStartOf="@+id/tv_connect_usb"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/tv_camera_sd_free" />
+            app:layout_constraintTop_toBottomOf="@+id/label_connection" />
 
+        <TextView
+            android:id="@+id/tv_connect_usb"
+            style="@style/Widget.Immersive.Button"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="12dp"
+            android:text="@string/button_connect_camera_usb"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/tv_connect_ble"
+            app:layout_constraintTop_toBottomOf="@+id/label_connection" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/card_player"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:background="@drawable/card_background"
+        android:padding="16dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/card_connect">
+
+        <TextView
+            android:id="@+id/label_player"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif"
+            android:text="Offline"
+            android:textAllCaps="true"
+            android:textColor="@color/ink"
+            android:textSize="11sp"
+            android:letterSpacing="0.06"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/tv_enter_local_player"
+            style="@style/Widget.Immersive.Button"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="@string/button_enter_local_player"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/label_player" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rv_ble_devices"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginTop="20dp"
-        android:layout_marginBottom="40dp"
+        android:layout_marginTop="12dp"
         android:orientation="vertical"
         android:overScrollMode="never"
+        android:visibility="gone"
+        android:clipToPadding="false"
+        android:paddingBottom="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/card_player" />
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/ll_camera_info"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="12dp"
+        android:background="@drawable/card_background"
+        android:padding="16dp"
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tv_connect_ble" />
+        app:layout_constraintTop_toBottomOf="@+id/card_player"
+        tools:visibility="visible">
+
+        <androidx.core.widget.NestedScrollView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            app:layout_constraintBottom_toTopOf="@+id/tv_enter_capture"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tv_camera_model"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:padding="4dp"
+                    android:text="@string/text_camera_model"
+                    android:textColor="@color/unselect"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/tv_camera_model_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="4dp"
+                    android:paddingBottom="8dp"
+                    android:textColor="@color/ink"
+                    android:textSize="15sp"
+                    tools:text="Insta360 X4" />
+
+                <TextView
+                    android:id="@+id/tv_camera_serial"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:padding="4dp"
+                    android:text="@string/text_camera_serial"
+                    android:textColor="@color/unselect"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/tv_camera_serial_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="4dp"
+                    android:paddingBottom="8dp"
+                    android:textColor="@color/ink"
+                    android:textSize="15sp"
+                    tools:text="XX45866985SDK5849" />
+
+                <TextView
+                    android:id="@+id/tv_camera_version"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:padding="4dp"
+                    android:text="@string/text_camera_fw_version"
+                    android:textColor="@color/unselect"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/tv_camera_version_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="4dp"
+                    android:paddingBottom="8dp"
+                    android:textColor="@color/ink"
+                    android:textSize="15sp"
+                    tools:text="0.9.12" />
+
+                <TextView
+                    android:id="@+id/tv_camera_active"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:padding="4dp"
+                    android:text="@string/text_camera_active_time"
+                    android:textColor="@color/unselect"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/tv_camera_active_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="4dp"
+                    android:paddingBottom="8dp"
+                    android:textColor="@color/ink"
+                    android:textSize="15sp"
+                    tools:text="2025-04-03 16:54:12" />
+
+                <TextView
+                    android:id="@+id/tv_camera_media_time"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:padding="4dp"
+                    android:text="@string/text_camera_media_time"
+                    android:textColor="@color/unselect"
+                    android:textSize="12sp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:id="@+id/tv_camera_media_time_value"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:paddingStart="4dp"
+                        android:paddingBottom="8dp"
+                        android:textColor="@color/ink"
+                        android:textSize="15sp"
+                        tools:text="16:54:12" />
+
+                    <TextView
+                        android:id="@+id/tv_refresh_media_time"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/btn_secondary_bg"
+                        android:fontFamily="sans-serif"
+                        android:paddingStart="12dp"
+                        android:paddingTop="4dp"
+                        android:paddingEnd="12dp"
+                        android:paddingBottom="4dp"
+                        android:text="@string/refresh"
+                        android:textAllCaps="true"
+                        android:textColor="@color/ink"
+                        android:textSize="11sp" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tv_camera_battery_level"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:padding="4dp"
+                    android:text="@string/text_camera_battery_level"
+                    android:textColor="@color/unselect"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/tv_camera_battery_level_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="4dp"
+                    android:paddingBottom="8dp"
+                    android:textColor="@color/ink"
+                    android:textSize="15sp"
+                    tools:text="69%" />
+
+                <TextView
+                    android:id="@+id/tv_camera_charge_status"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:padding="4dp"
+                    android:text="@string/text_camera_charge_status"
+                    android:textColor="@color/unselect"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/tv_camera_charge_status_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="4dp"
+                    android:paddingBottom="8dp"
+                    android:textColor="@color/ink"
+                    android:textSize="15sp"
+                    tools:text="Charging" />
+
+                <TextView
+                    android:id="@+id/tv_camera_sd_status"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:padding="4dp"
+                    android:text="@string/text_camera_sd_status"
+                    android:textColor="@color/unselect"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/tv_camera_sd_status_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="4dp"
+                    android:paddingBottom="8dp"
+                    android:textColor="@color/ink"
+                    android:textSize="15sp"
+                    tools:text="Inserted" />
+
+                <TextView
+                    android:id="@+id/tv_camera_sd_total"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:padding="4dp"
+                    android:text="@string/text_camera_sd_total"
+                    android:textColor="@color/unselect"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/tv_camera_sd_total_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="4dp"
+                    android:paddingBottom="8dp"
+                    android:textColor="@color/ink"
+                    android:textSize="15sp"
+                    tools:text="64G" />
+
+                <TextView
+                    android:id="@+id/tv_camera_sd_free"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:padding="4dp"
+                    android:text="@string/text_camera_sd_free"
+                    android:textColor="@color/unselect"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/tv_camera_sd_free_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="4dp"
+                    android:paddingBottom="16dp"
+                    android:textColor="@color/ink"
+                    android:textSize="15sp"
+                    tools:text="23G" />
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
+
+        <TextView
+            android:id="@+id/tv_enter_capture"
+            style="@style/Widget.Immersive.Button"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="@string/button_enter_capture"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

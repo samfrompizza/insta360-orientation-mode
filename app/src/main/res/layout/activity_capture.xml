@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/black">
+    android:background="@color/ink">
 
     <com.arashivision.sdkmedia.player.capture.InstaCapturePlayerView
         android:id="@+id/capture_player_view"
@@ -51,7 +51,6 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- calibrate button (manual gyro calibration) -->
     <ImageView
         android:id="@+id/btn_calibrate"
         android:layout_width="32dp"
@@ -121,4 +120,3 @@
         app:layout_constraintTop_toTopOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
-

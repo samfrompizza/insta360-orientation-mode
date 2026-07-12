@@ -1,5 +1,19 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Theme.NewSDKDemo" parent="Theme.AppCompat.DayNight.NoActionBar"/>
+    <style name="Theme.Immersive" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="colorPrimary">@color/ink</item>
+        <item name="colorPrimaryDark">@color/ink</item>
+        <item name="colorAccent">@color/signal_blue</item>
+        <item name="android:colorBackground">@color/paper</item>
+        <item name="android:statusBarColor">@color/paper</item>
+        <item name="android:navigationBarColor">@color/paper</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:textColor">@color/ink</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:fontFamily">sans-serif</item>
+    </style>
 
+    <style name="Theme.Immersive.BottomNav" parent="Widget.Design.BottomNavigationView">
+        <item name="android:background">@color/paper</item>
+        <item name="elevation">0dp</item>
+    </style>
 </resources>

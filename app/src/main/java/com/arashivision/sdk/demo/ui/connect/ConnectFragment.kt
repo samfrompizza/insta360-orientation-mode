@@ -42,17 +42,8 @@ class ConnectFragment :
     override fun initListener() {
         super.initListener()
         this.binding.tvConnectBle.setOnClickListener {
-            // 开始扫描  15秒之后主动结束
             if (!viewModel.isConnected) {
                 viewModel.startBleScan()
-            } else {
-                viewModel.disconnectCamera()
-            }
-        }
-
-        this.binding.tvConnectWifi.setOnClickListener {
-            if (!viewModel.isConnected) {
-                viewModel.connectDeviceByWiFi()
             } else {
                 viewModel.disconnectCamera()
             }
@@ -90,7 +81,6 @@ class ConnectFragment :
     override fun onEvent(event: BaseEvent?) {
         super.onEvent(event)
         when (event) {
-            // 设备蓝牙扫描事件
             is ConnectEvent.ScanDeviceEvent -> {
                 logger.d("      status ==>" + event.status)
                 when (event.status) {
@@ -99,14 +89,12 @@ class ConnectFragment :
                         binding.tvConnectBle.setText(R.string.button_scanning_device_by_ble)
                         binding.tvConnectBle.isEnabled = false
                         binding.rvBleDevices.visibility = View.VISIBLE
-                        binding.tvConnectWifi.isEnabled = false
                         binding.tvConnectUsb.isEnabled = false
                     }
 
                     EventStatus.SUCCESS -> {
                         binding.tvConnectBle.setText(R.string.button_scan_device_by_ble)
                         binding.tvConnectBle.isEnabled = true
-                        binding.tvConnectWifi.isEnabled = true
                         binding.tvConnectUsb.isEnabled = true
                     }
 
@@ -116,13 +104,11 @@ class ConnectFragment :
                         binding.tvConnectBle.setText(R.string.button_scan_device_by_ble)
                         binding.rvBleDevices.visibility = View.GONE
                         binding.tvConnectBle.isEnabled = true
-                        binding.tvConnectWifi.isEnabled = true
                         binding.tvConnectUsb.isEnabled = true
                     }
                 }
             }
 
-            // 设备连接事件
             is ConnectEvent.ConnectDeviceEvent -> {
                 when (event.status) {
                     EventStatus.START ->
@@ -135,31 +121,26 @@ class ConnectFragment :
                     EventStatus.SUCCESS -> {
                         if (event.connectType == InstaCameraManager.CONNECT_TYPE_BLE) {
                             toast(R.string.toast_camera_ble_connected)
-                            // 蓝牙连接只是中间状态，最终的目的是连接上Wi-Fi,因此return
                             if (!viewModel.onlyConnectBle) return
                         }
 
-                        // 连接上Wi-Fi或者USB，才算最终连接成功
                         hideLoading()
                         when (event.connectType) {
                             InstaCameraManager.CONNECT_TYPE_WIFI -> {
                                 binding.tvCameraConnectStatus.text = getString(R.string.text_camera_connected, "(Wi-Fi)")
                                 binding.tvConnectBle.setEnabled(false)
                                 binding.tvConnectUsb.setEnabled(false)
-                                binding.tvConnectWifi.setText(R.string.button_disconnect)
                             }
 
                             InstaCameraManager.CONNECT_TYPE_USB -> {
                                 binding.tvCameraConnectStatus.text = getString(R.string.text_camera_connected, "(USB)")
                                 binding.tvConnectBle.setEnabled(false)
-                                binding.tvConnectWifi.setEnabled(false)
                                 binding.tvConnectUsb.setText(R.string.button_disconnect)
                             }
 
                             InstaCameraManager.CONNECT_TYPE_BLE -> {
                                 binding.tvCameraConnectStatus.text = getString(R.string.text_camera_connected, "(BLE)")
                                 binding.tvConnectUsb.setEnabled(false)
-                                binding.tvConnectWifi.setEnabled(false)
                                 binding.tvConnectBle.setText(R.string.button_disconnect)
                             }
                         }
@@ -188,30 +169,24 @@ class ConnectFragment :
                 }
             }
 
-            // 相机断连事件
             ConnectEvent.CameraDisconnectedEvent -> {
                 binding.tvCameraConnectStatus.text = getString(R.string.text_camera_disconnected)
                 binding.tvCameraConnectStatus.setTextColor(Color.RED)
                 binding.llCameraInfo.visibility = View.GONE
                 binding.tvConnectBle.setText(R.string.button_scan_device_by_ble)
                 binding.tvConnectBle.isEnabled = true
-                binding.tvConnectWifi.setText(R.string.button_connect_camera_wifi)
-                binding.tvConnectWifi.isEnabled = true
                 binding.tvConnectUsb.setText(R.string.button_connect_camera_usb)
                 binding.tvConnectUsb.isEnabled = true
             }
 
-            // 相机电量更新事件
             is BaseEvent.CameraBatteryUpdateEvent -> {
                 batteryUpdate(event.batteryLevel, event.isCharging)
             }
 
-            // 相机SD卡插拔事件
             is BaseEvent.CameraSDCardStateChangedEvent -> {
                 sdCardUpdate(event.enabled)
             }
 
-            // 刷新media time
             is ConnectEvent.RefreshMediaTimeEvent -> {
                 when (event.status) {
                     EventStatus.START -> showLoading()

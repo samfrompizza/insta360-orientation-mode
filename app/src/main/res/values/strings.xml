@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Insta360 SDK</string>
+    <string name="app_name">Immersive</string>
 
 
     <string name="pref_stab_cache_frame_num">Stabilization cache frame number</string>
