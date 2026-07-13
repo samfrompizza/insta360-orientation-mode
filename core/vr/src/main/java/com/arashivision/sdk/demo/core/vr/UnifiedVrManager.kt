@@ -57,7 +57,17 @@ class UnifiedVrManager(
     private var vrSettingsButton: ImageButton? = null
 
     fun toggleVrMode() {
-        if (isVrMode) disableVrMode() else enableVrMode()
+        if (isVrMode) exitVrModeAndRestart() else enableVrMode()
+    }
+
+    fun exitVrModeAndRestart() {
+        if (!isVrMode) return
+        logger.i("exitVrModeAndRestart: restarting activity")
+        isVrMode = false
+        copying = false
+        copyRunnable?.let { handler.removeCallbacks(it) }
+        copyRunnable = null
+        activity.recreate()
     }
 
     fun enableVrMode() {

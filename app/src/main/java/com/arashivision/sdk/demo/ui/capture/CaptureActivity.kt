@@ -335,7 +335,7 @@ class CaptureActivity :
             return
         }
         if (vrManager.isVrMode) {
-            vrManager.disableVrMode()
+            vrManager.exitVrModeAndRestart()
             return
         }
         if (!instaCameraManager.isCameraWorking) super.onBackPressed()
