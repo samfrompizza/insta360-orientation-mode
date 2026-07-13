@@ -32,7 +32,7 @@ class CapturePreviewController(
                 }
 
                 override fun onReleaseCameraPipeline() {
-                    runCatching { instaCameraManager.setPipeline(null) }
+                    logger.d("Main player pipeline released (ignoring)")
                 }
             },
         )

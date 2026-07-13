@@ -32,7 +32,7 @@ class CaptureActivity :
     ) {
     private val logger: Logger = XLog.tag(CaptureActivity::class.java.simpleName).build()
 
-    val gyroController: GyroOrientationController by lazy {
+    private val gyroController: GyroOrientationController by lazy {
         GyroOrientationController(
             context = this,
             getDisplayRotation = { windowManager.defaultDisplay.rotation },
@@ -380,11 +380,6 @@ class CaptureActivity :
         yawDeg: Float,
         pitchDeg: Float,
     ) {
-        if (vrManager.isVrMode) {
-            runCatching { vrManager.applyOrientation(yawDeg, pitchDeg) }
-            return
-        }
-
         val pipelinePresent =
             try {
                 binding.capturePlayerView.pipeline != null
@@ -393,30 +388,38 @@ class CaptureActivity :
             }
         if (!pipelinePresent) return
 
-        applyTo(binding.capturePlayerView, yawDeg, pitchDeg)
-    }
-
-    private fun applyTo(
-        obj: Any?,
-        yaw: Float,
-        pitch: Float,
-    ) {
-        if (obj == null) return
-        try {
-            val cls = obj.javaClass
+        fun applyTo(
+            obj: Any?,
+            yaw: Float,
+            pitch: Float,
+        ) {
+            if (obj == null) return
             try {
-                val mYaw = cls.getMethod("setYaw", Float::class.javaPrimitiveType)
-                mYaw.invoke(obj, yaw)
-            } catch (e: NoSuchMethodException) {
+                val cls = obj.javaClass
+                try {
+                    val mYaw = cls.getMethod("setYaw", Float::class.javaPrimitiveType)
+                    mYaw.invoke(obj, yaw)
+                } catch (e: NoSuchMethodException) {
+                }
+
+                try {
+                    val mPitch = cls.getMethod("setPitch", Float::class.javaPrimitiveType)
+                    mPitch.invoke(obj, pitch)
+                } catch (e: NoSuchMethodException) {
+                }
+            } catch (e: Exception) {
+                logger.e("applyTo error: ${e.message}")
             }
+        }
 
-            try {
-                val mPitch = cls.getMethod("setPitch", Float::class.javaPrimitiveType)
-                mPitch.invoke(obj, pitch)
-            } catch (e: NoSuchMethodException) {
+        try {
+            if (vrManager.isVrMode) {
+                vrManager.applyOrientation(yawDeg, pitchDeg)
+            } else {
+                applyTo(binding.capturePlayerView, yawDeg, pitchDeg)
             }
         } catch (e: Exception) {
-            logger.e("applyTo error: ${e.message}")
+            logger.e("tryApplyOrientationToPlayer error: ${e.message}")
         }
     }
 }

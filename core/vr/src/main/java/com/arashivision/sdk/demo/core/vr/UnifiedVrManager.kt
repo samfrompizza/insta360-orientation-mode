@@ -143,7 +143,7 @@ class UnifiedVrManager(
         contentLinear.post {
             if (!isVrMode) return@post
             applyVrAdjustments()
-            startCopyLoop()
+            handler.postDelayed({ startCopyLoop() }, VR_COPY_START_DELAY_MS)
         }
         logger.i("enableVrMode: finished")
     }
@@ -157,10 +157,16 @@ class UnifiedVrManager(
         vrSource.onVrDisabled()
 
         leftEyeImage?.setImageBitmap(null)
-        reusableBitmap?.recycle()
-        reusableBitmap = null
-        compositeBitmap?.recycle()
-        compositeBitmap = null
+        // Defer bitmap cleanup to avoid racing with in-flight PixelCopy
+        handler.postDelayed(
+            {
+                reusableBitmap?.recycle()
+                reusableBitmap = null
+                compositeBitmap?.recycle()
+                compositeBitmap = null
+            },
+            VR_CLEANUP_DELAY_MS,
+        )
 
         vrContainer?.removeAllViews()
         rootContainer.removeView(vrContainer)
@@ -423,7 +429,7 @@ class UnifiedVrManager(
                                 pixelCopyInProgress = true
                                 PixelCopy.request(surface, reusableBitmap!!, { result ->
                                     pixelCopyInProgress = false
-                                    if (result == PixelCopy.SUCCESS) {
+                                    if (result == PixelCopy.SUCCESS && copying) {
                                         processAndSetBitmap(reusableBitmap, dst)
                                     }
                                     if (copying) handler.postDelayed(this, copyIntervalMs)
@@ -478,8 +484,6 @@ class UnifiedVrManager(
         copying = false
         copyRunnable?.let { handler.removeCallbacks(it) }
         copyRunnable = null
-        reusableBitmap?.recycle()
-        reusableBitmap = null
     }
 
     private fun findSurfaceView(v: View): SurfaceView? {
@@ -500,5 +504,10 @@ class UnifiedVrManager(
             }
         }
         return null
+    }
+
+    companion object {
+        private const val VR_COPY_START_DELAY_MS = 200L
+        private const val VR_CLEANUP_DELAY_MS = 200L
     }
 }

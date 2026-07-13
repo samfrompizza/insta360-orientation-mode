@@ -23,20 +23,9 @@ class CapturePlayerVrSource(
 
     override fun onVrDisabled() {
         mainPlayerView.visibility = View.VISIBLE
-        try {
-            val pipeline = mainPlayerView.pipeline
-            if (pipeline == null) {
-                runCatching {
-                    val params = activity.viewModel.getCaptureParams()
-                    mainPlayerView.prepare(params)
-                }
-            }
-            mainPlayerView.play()
-            runCatching {
-                instaCameraManager.setPipeline(mainPlayerView.pipeline)
-            }
-        } catch (e: Exception) {
-            logger.e("Failed to restore main player: ${e.message}")
+        mainPlayerView.play()
+        runCatching {
+            instaCameraManager.setPipeline(mainPlayerView.pipeline)
         }
         secondPlayerView?.destroy()
         secondPlayerView = null
@@ -85,7 +74,9 @@ class CapturePlayerVrSource(
                 }
 
                 override fun onReleaseCameraPipeline() {
-                    logger.d("Second player pipeline released (ignoring)")
+                    runCatching {
+                        instaCameraManager.setPipeline(null)
+                    }
                 }
             },
         )
@@ -94,12 +85,6 @@ class CapturePlayerVrSource(
             secondPlayerView?.prepare(params)
         }
         secondPlayerView?.play()
-
-        runCatching {
-            val yaw = activity.gyroController.getSmoothedYaw()
-            val pitch = activity.gyroController.getSmoothedPitch()
-            applyOrientation(yaw, pitch)
-        }
     }
 
     companion object {
