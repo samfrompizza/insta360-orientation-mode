@@ -1,5 +1,7 @@
 package com.arashivision.sdk.demo.ui.capture
 
+import android.os.Handler
+import android.os.Looper
 import android.view.View
 import com.arashivision.sdk.demo.core.vr.VrSourceView
 import com.arashivision.sdk.demo.ext.instaCameraManager
@@ -27,8 +29,11 @@ class CapturePlayerVrSource(
         runCatching {
             instaCameraManager.setPipeline(mainPlayerView.pipeline)
         }
-        secondPlayerView?.destroy()
+        val viewToDestroy = secondPlayerView
         secondPlayerView = null
+        Handler(Looper.getMainLooper()).postDelayed({
+            runCatching { viewToDestroy?.destroy() }
+        }, VR_POST_DESTROY_DELAY_MS)
     }
 
     override fun applyOrientation(
@@ -74,9 +79,7 @@ class CapturePlayerVrSource(
                 }
 
                 override fun onReleaseCameraPipeline() {
-                    runCatching {
-                        instaCameraManager.setPipeline(null)
-                    }
+                    logger.d("Second player pipeline released (ignoring)")
                 }
             },
         )
@@ -85,10 +88,30 @@ class CapturePlayerVrSource(
             secondPlayerView?.prepare(params)
         }
         secondPlayerView?.play()
+        copyPlayerZoom()
+    }
+
+    private fun copyPlayerZoom() {
+        val src = mainPlayerView
+        val dst = secondPlayerView ?: return
+        val zoomMethods = listOf("getZoom" to "setZoom", "getFov" to "setFov")
+        for ((getter, setter) in zoomMethods) {
+            try {
+                val mGet = src.javaClass.getMethod(getter)
+                val mSet = dst.javaClass.getMethod(setter, Float::class.javaPrimitiveType)
+                val value = mGet.invoke(src) as? Float ?: continue
+                mSet.invoke(dst, value)
+                logger.i("Copied $getter=${value} to second player")
+                return
+            } catch (_: NoSuchMethodException) {
+            } catch (_: Exception) {
+            }
+        }
     }
 
     companion object {
         private const val VR_IPD_YAW_DEG = 3.0f
         private const val VR_LENS_OFFSET_DEG = 180.0f
+        private const val VR_POST_DESTROY_DELAY_MS = 500L
     }
 }

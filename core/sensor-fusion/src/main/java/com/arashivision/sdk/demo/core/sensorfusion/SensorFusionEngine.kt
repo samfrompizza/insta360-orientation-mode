@@ -21,7 +21,7 @@ class SensorFusionEngine(
 ) {
     companion object {
         const val SLERP_SMOOTHING_ALPHA = 0.12f
-        const val DEFAULT_SENSITIVITY = 1.2f
+        const val DEFAULT_SENSITIVITY = 0.42f
         const val YAW_SENSITIVITY_FACTOR = 0.04f
         const val PITCH_SENSITIVITY_FACTOR = 0.02f
 
