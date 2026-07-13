@@ -32,7 +32,7 @@ class CaptureActivity :
     ) {
     private val logger: Logger = XLog.tag(CaptureActivity::class.java.simpleName).build()
 
-    private val gyroController: GyroOrientationController by lazy {
+    val gyroController: GyroOrientationController by lazy {
         GyroOrientationController(
             context = this,
             getDisplayRotation = { windowManager.defaultDisplay.rotation },

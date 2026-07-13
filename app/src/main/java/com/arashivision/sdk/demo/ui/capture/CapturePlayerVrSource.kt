@@ -51,7 +51,7 @@ class CapturePlayerVrSource(
             val cls = view.javaClass
             try {
                 val mYaw = cls.getMethod("setYaw", Float::class.javaPrimitiveType)
-                mYaw.invoke(view, yawDeg + VR_IPD_YAW_DEG)
+                mYaw.invoke(view, yawDeg + VR_IPD_YAW_DEG + VR_LENS_OFFSET_DEG)
             } catch (_: NoSuchMethodException) {
             }
             try {
@@ -85,9 +85,7 @@ class CapturePlayerVrSource(
                 }
 
                 override fun onReleaseCameraPipeline() {
-                    runCatching {
-                        instaCameraManager.setPipeline(null)
-                    }
+                    logger.d("Second player pipeline released (ignoring)")
                 }
             },
         )
@@ -96,9 +94,16 @@ class CapturePlayerVrSource(
             secondPlayerView?.prepare(params)
         }
         secondPlayerView?.play()
+
+        runCatching {
+            val yaw = activity.gyroController.getSmoothedYaw()
+            val pitch = activity.gyroController.getSmoothedPitch()
+            applyOrientation(yaw, pitch)
+        }
     }
 
     companion object {
         private const val VR_IPD_YAW_DEG = 3.0f
+        private const val VR_LENS_OFFSET_DEG = 180.0f
     }
 }
