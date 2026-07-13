@@ -10,3 +10,4 @@ Bug2.txt
 questions.txt
 *.md
 !AGENTS.md
+!README.md
