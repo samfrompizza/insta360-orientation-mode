@@ -8,3 +8,5 @@ gradlew.bat
 local.properties
 Bug2.txt
 questions.txt
+*.md
+!AGENTS.md
